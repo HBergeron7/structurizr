@@ -51,6 +51,9 @@ public final class StructurizrDslParser extends StructurizrDslTokens {
     private Features features = new Features();
     private HttpClient httpClient = new HttpClient();
 
+    private Map<String, List<ProvidesParser>> providers = new HashMap<>();
+    private Map<String, List<RequiresParser>> requirements = new HashMap<>();
+
     private Map<String,Map<String,Archetype>> archetypes = Map.of(
             StructurizrDslTokens.GROUP_TOKEN, new HashMap<>(),
             StructurizrDslTokens.CUSTOM_ELEMENT_TOKEN, new HashMap<>(),
@@ -290,6 +293,20 @@ public final class StructurizrDslParser extends StructurizrDslTokens {
                         // do nothing
 
                     } else if (DslContext.CONTEXT_END_TOKEN.equals(tokens.get(0))) {
+                        // When the mode ends, evaluate all requirements in the model and create relationships
+                        if (inContext(ModelDslContext.class)) {
+                           System.out.println("Create Relationships based on Requirements");
+                           for (var requirement : requirements.entrySet()) {
+                               for (var provider : providers.getOrDefault(requirement.getKey(), new ArrayList<>())) {
+                                   for (var requirer : requirement.getValue()) {
+                                       System.out.println("Relationship: " + requirer.getElement().getName() + " gets '" + requirement.getKey() + "' from " + provider.getElement().getName());
+                                       List<String> allTags = new ArrayList<String>(provider.getTags());
+                                       allTags.addAll(requirer.getTags());
+                                       var relationship = requirer.getElement().uses(provider.getElement(), provider.getDescription(), provider.getTechnology(), null, allTags.toArray(new String[0]));
+                                   }
+                               }
+                           }
+                        }
                         endContext();
 
                     } else if (INCLUDE_FILE_TOKEN.equalsIgnoreCase(firstToken)) {
@@ -1193,6 +1210,36 @@ public final class StructurizrDslParser extends StructurizrDslTokens {
                     } else if (inContext(UsersDslContext.class)) {
                         new UserRoleParser().parse(getContext(), tokens);
 
+                    } else if (PROVIDES_TOKEN.equalsIgnoreCase(firstToken) && inContext(SoftwareSystemDslContext.class)) {
+                        throw new RuntimeException(firstToken + " is not yet supported for " + SoftwareSystemDslContext.class);
+
+                    } else if (PROVIDES_TOKEN.equalsIgnoreCase(firstToken) && inContext(ContainerDslContext.class)) {
+                        ProvidesParser provider = new ProvidesParser();
+                        provider.parse(getContext(ContainerDslContext.class), tokens);
+                        var list = providers.getOrDefault(provider.getIdentifier(), new ArrayList<>());
+                        list.add(provider);
+                        providers.putIfAbsent(provider.getIdentifier(), list);
+                        // Need to register Identifier for "a = provides" syntax to enable later use
+                        //registerIdentifier(identifier, relationship);
+                        //throw new RuntimeException(firstToken + " is not yet supported for " + ContainerDslContext.class);
+
+                    } else if (PROVIDES_TOKEN.equalsIgnoreCase(firstToken) && inContext(ComponentDslContext.class)) {
+                        throw new RuntimeException(firstToken + " is not yet supported for " + ComponentDslContext.class);
+
+                    } else if (REQUIRES_TOKEN.equalsIgnoreCase(firstToken) && inContext(SoftwareSystemDslContext.class)) {
+                        throw new RuntimeException(firstToken + " is not yet supported for " + SoftwareSystemDslContext.class);
+
+                    } else if (REQUIRES_TOKEN.equalsIgnoreCase(firstToken) && inContext(ContainerDslContext.class)) {
+                        RequiresParser requirer = new RequiresParser();
+                        requirer.parse(getContext(ContainerDslContext.class), tokens);
+                        var list = requirements.getOrDefault(requirer.getIdentifier(), new ArrayList<>());
+                        list.add(requirer);
+                        requirements.putIfAbsent(requirer.getIdentifier(), list);
+                        //throw new RuntimeException(firstToken + " is not yet supported for " + ContainerDslContext.class);
+
+                    } else if (REQUIRES_TOKEN.equalsIgnoreCase(firstToken) && inContext(ComponentDslContext.class)) {
+                        throw new RuntimeException(firstToken + " is not yet supported for " + ComponentDslContext.class);
+
                     } else if (DOCS_TOKEN.equalsIgnoreCase(firstToken) && inContext(WorkspaceDslContext.class)) {
                         if (features.isEnabled(Features.DOCUMENTATION)) {
                             new DocsParser().parse(getContext(WorkspaceDslContext.class), dslFile, tokens);
@@ -1294,6 +1341,7 @@ public final class StructurizrDslParser extends StructurizrDslTokens {
                         }
                     }
                 }
+
             } catch (Exception e) {
                 if (e.getMessage() != null) {
                     throw new StructurizrDslParserException(e.getMessage(), dslFile, dslLine.getLineNumber(), line);
