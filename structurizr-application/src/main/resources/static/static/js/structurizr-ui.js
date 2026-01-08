@@ -1,5 +1,4 @@
-structurizr.ui.DEFAULT_FONT_NAME = 'Open Sans, Helvetica, Arial';
-structurizr.ui.DEFAULT_FONT_URL = undefined;
+structurizr.ui.DEFAULT_FONT_NAME = 'Tahoma, Verdana, Helvetica, Arial';
 
 structurizr.ui.RENDERING_MODE_COOKIE_NAME = 'structurizr.renderingMode';
 structurizr.ui.RENDERING_MODE_SYSTEM = '';
@@ -27,25 +26,10 @@ structurizr.ui.getBranding = function() {
         if (theme.logo !== undefined) {
             branding.logo = theme.logo;
         }
-
-        if (theme.font !== undefined) {
-            branding.font = theme.font;
-        }
     })
 
     if (structurizr.workspace.views.configuration.branding.logo !== undefined) {
         branding.logo = structurizr.workspace.views.configuration.branding.logo;
-    }
-
-    if (structurizr.workspace.views.configuration.branding.font !== undefined) {
-        branding.font = structurizr.workspace.views.configuration.branding.font;
-    }
-
-    if (branding.font === undefined) {
-        branding.font = {
-            name: structurizr.ui.DEFAULT_FONT_NAME,
-            url: structurizr.ui.DEFAULT_FONT_URL
-        }
     }
 
     return branding;
@@ -53,25 +37,6 @@ structurizr.ui.getBranding = function() {
 
 structurizr.ui.applyBranding = function() {
     var branding = structurizr.ui.getBranding();
-    if (branding.font.url) {
-        const head = document.head;
-        const link = document.createElement('link');
-
-        link.type = 'text/css';
-        link.rel = 'stylesheet';
-        link.href = branding.font.url;
-
-        head.appendChild(link);
-    }
-
-    var fontNames = '';
-    branding.font.name.split(',').forEach(function(fontName) {
-        fontNames += '"' + structurizr.util.escapeHtml(fontName.trim()) + '", ';
-    });
-
-    const brandingStyles = $('#brandingStyles');
-    brandingStyles.append('#documentationPanel { font-family: ' + fontNames.substr(0, fontNames.length-2) + ' }');
-
     if (branding.logo) {
         const brandingLogo = $('.brandingLogo');
         brandingLogo.attr('src', branding.logo);
@@ -79,9 +44,19 @@ structurizr.ui.applyBranding = function() {
     }
 }
 
-structurizr.ui.loadThemes = function(localPrebuiltThemesUrl, callback) {
+structurizr.ui.loadThemes = function(callback) {
     structurizr.workspace.views.configuration.themes.forEach(function(theme) {
-        structurizr.ui.loadTheme(localPrebuiltThemesUrl, theme);
+        if (theme.indexOf('http') === 0) {
+            structurizr.ui.loadTheme(theme);
+        } else {
+            structurizr.ui.themes.push(
+                {
+                    elements: [],
+                    relationships: [],
+                    logo: undefined
+                }
+            );
+        }
     });
 
     setTimeout(function() {
@@ -99,13 +74,7 @@ structurizr.ui.waitForThemesToLoad = function(callback) {
     }
 }
 
-structurizr.ui.loadTheme = function(localPrebuiltThemesUrl, url) {
-    // use local versions of the prebuilt themes if configured
-    const prebuiltThemesUrl = 'https://static.structurizr.com/themes/';
-    if (url.indexOf(prebuiltThemesUrl) === 0) {
-        url = localPrebuiltThemesUrl + url.substring(prebuiltThemesUrl.length);
-    }
-
+structurizr.ui.loadTheme = function( url) {
     $.get(url, undefined, function(data) {
         try {
             const theme = JSON.parse(data);
@@ -138,8 +107,7 @@ structurizr.ui.loadTheme = function(localPrebuiltThemesUrl, url) {
                 {
                     elements: theme.elements.sort(structurizr.util.sortStyles),
                     relationships: theme.relationships.sort(structurizr.util.sortStyles),
-                    logo: theme.logo,
-                    font: theme.font
+                    logo: theme.logo
                 }
             );
         } catch (e) {

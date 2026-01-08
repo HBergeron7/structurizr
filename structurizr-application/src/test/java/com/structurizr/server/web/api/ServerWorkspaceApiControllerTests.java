@@ -4,8 +4,12 @@ import com.structurizr.Workspace;
 import com.structurizr.api.HashBasedMessageAuthenticationCode;
 import com.structurizr.api.HmacContent;
 import com.structurizr.api.HttpHeaders;
+import com.structurizr.configuration.Configuration;
+import com.structurizr.configuration.Features;
+import com.structurizr.configuration.Profile;
+import com.structurizr.server.component.workspace.WorkspaceBranch;
 import com.structurizr.server.component.workspace.WorkspaceComponentException;
-import com.structurizr.server.domain.WorkspaceMetaData;
+import com.structurizr.server.domain.WorkspaceMetadata;
 import com.structurizr.server.web.MockHttpServletRequest;
 import com.structurizr.server.web.MockHttpServletResponse;
 import com.structurizr.server.web.MockWorkspaceComponent;
@@ -16,6 +20,8 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Base64;
 import java.util.Date;
+import java.util.List;
+import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -59,8 +65,8 @@ public class ServerWorkspaceApiControllerTests {
 
             controller.setWorkspaceComponent(new MockWorkspaceComponent() {
                 @Override
-                public WorkspaceMetaData getWorkspaceMetaData(long workspaceId) {
-                    WorkspaceMetaData wmd = new WorkspaceMetaData(1);
+                public WorkspaceMetadata getWorkspaceMetadata(long workspaceId) {
+                    WorkspaceMetadata wmd = new WorkspaceMetadata(1);
                     wmd.setApiKey("key");
                     wmd.setApiSecret("secret");
 
@@ -84,8 +90,8 @@ public class ServerWorkspaceApiControllerTests {
 
             controller.setWorkspaceComponent(new MockWorkspaceComponent() {
                 @Override
-                public WorkspaceMetaData getWorkspaceMetaData(long workspaceId) {
-                    WorkspaceMetaData wmd = new WorkspaceMetaData(1);
+                public WorkspaceMetadata getWorkspaceMetadata(long workspaceId) {
+                    WorkspaceMetadata wmd = new WorkspaceMetadata(1);
                     wmd.setApiKey("key");
                     wmd.setApiSecret("secret");
 
@@ -108,8 +114,8 @@ public class ServerWorkspaceApiControllerTests {
 
         controller.setWorkspaceComponent(new MockWorkspaceComponent() {
             @Override
-            public WorkspaceMetaData getWorkspaceMetaData(long workspaceId) {
-                WorkspaceMetaData wmd = new WorkspaceMetaData(1);
+            public WorkspaceMetadata getWorkspaceMetadata(long workspaceId) {
+                WorkspaceMetadata wmd = new WorkspaceMetadata(1);
                 wmd.setApiKey("key");
                 wmd.setApiSecret("secret");
 
@@ -140,8 +146,8 @@ public class ServerWorkspaceApiControllerTests {
     void putWorkspace_ReturnsAnApiError_WhenNoNonceHeaderIsSpecified() {
         controller.setWorkspaceComponent(new MockWorkspaceComponent() {
             @Override
-            public WorkspaceMetaData getWorkspaceMetaData(long workspaceId) {
-                WorkspaceMetaData wmd = new WorkspaceMetaData(1);
+            public WorkspaceMetadata getWorkspaceMetadata(long workspaceId) {
+                WorkspaceMetadata wmd = new WorkspaceMetadata(1);
                 wmd.setApiKey("key");
                 wmd.setApiSecret("secret");
 
@@ -163,8 +169,8 @@ public class ServerWorkspaceApiControllerTests {
     void putWorkspace_ReturnsAnApiError_WhenNoContentMd5HeaderIsSpecified() {
         controller.setWorkspaceComponent(new MockWorkspaceComponent() {
             @Override
-            public WorkspaceMetaData getWorkspaceMetaData(long workspaceId) {
-                WorkspaceMetaData wmd = new WorkspaceMetaData(1);
+            public WorkspaceMetadata getWorkspaceMetadata(long workspaceId) {
+                WorkspaceMetadata wmd = new WorkspaceMetadata(1);
                 wmd.setApiKey("key");
                 wmd.setApiSecret("secret");
 
@@ -186,8 +192,8 @@ public class ServerWorkspaceApiControllerTests {
     void putWorkspace_ReturnsAnApiError_WhenTheContentMd5HeaderDoesNotMatchTheHashOfTheContent() {
         controller.setWorkspaceComponent(new MockWorkspaceComponent() {
             @Override
-            public WorkspaceMetaData getWorkspaceMetaData(long workspaceId) {
-                WorkspaceMetaData wmd = new WorkspaceMetaData(1);
+            public WorkspaceMetadata getWorkspaceMetadata(long workspaceId) {
+                WorkspaceMetadata wmd = new WorkspaceMetadata(1);
                 wmd.setApiKey("key");
                 wmd.setApiSecret("secret");
 
@@ -210,8 +216,8 @@ public class ServerWorkspaceApiControllerTests {
     void putWorkspace_PutsTheWorkspace_WhenTheAuthorizationHeaderIsCorrectlySpecified() throws Exception {
         controller.setWorkspaceComponent(new MockWorkspaceComponent() {
             @Override
-            public WorkspaceMetaData getWorkspaceMetaData(long workspaceId) {
-                WorkspaceMetaData wmd = new WorkspaceMetaData(1);
+            public WorkspaceMetadata getWorkspaceMetadata(long workspaceId) {
+                WorkspaceMetadata wmd = new WorkspaceMetadata(1);
                 wmd.setApiKey("key");
                 wmd.setApiSecret("secret");
 
@@ -231,13 +237,13 @@ public class ServerWorkspaceApiControllerTests {
 
     @Test
     void lockWorkspace_LocksTheWorkspace_WhenTheWorkspaceIsUnlocked() throws Exception {
-        final WorkspaceMetaData workspaceMetaData = new WorkspaceMetaData(1);
+        final WorkspaceMetadata workspaceMetaData = new WorkspaceMetadata(1);
         workspaceMetaData.setApiKey("key");
         workspaceMetaData.setApiSecret("secret");
 
         controller.setWorkspaceComponent(new MockWorkspaceComponent() {
             @Override
-            public WorkspaceMetaData getWorkspaceMetaData(long workspaceId) {
+            public WorkspaceMetadata getWorkspaceMetadata(long workspaceId) {
                 return workspaceMetaData;
             }
 
@@ -268,7 +274,7 @@ public class ServerWorkspaceApiControllerTests {
 
     @Test
     void lockWorkspace_DoesNotLockTheWorkspace_WhenTheWorkspaceIsLocked() throws Exception {
-        final WorkspaceMetaData workspaceMetaData = new WorkspaceMetaData(1);
+        final WorkspaceMetadata workspaceMetaData = new WorkspaceMetadata(1);
         workspaceMetaData.setApiKey("key");
         workspaceMetaData.setApiSecret("secret");
         workspaceMetaData.setLockedUser("user1@example.com");
@@ -276,7 +282,7 @@ public class ServerWorkspaceApiControllerTests {
 
         controller.setWorkspaceComponent(new MockWorkspaceComponent() {
             @Override
-            public WorkspaceMetaData getWorkspaceMetaData(long workspaceId) {
+            public WorkspaceMetadata getWorkspaceMetadata(long workspaceId) {
                 return workspaceMetaData;
             }
 
@@ -300,7 +306,7 @@ public class ServerWorkspaceApiControllerTests {
 
     @Test
     void unlockWorkspace_UnlocksTheWorkspace_WhenTheWorkspaceIsLocked() throws Exception {
-        final WorkspaceMetaData workspaceMetaData = new WorkspaceMetaData(1);
+        final WorkspaceMetadata workspaceMetaData = new WorkspaceMetadata(1);
         workspaceMetaData.setApiKey("key");
         workspaceMetaData.setApiSecret("secret");
         workspaceMetaData.setLockedUser("user1@example.com");
@@ -308,7 +314,7 @@ public class ServerWorkspaceApiControllerTests {
 
         controller.setWorkspaceComponent(new MockWorkspaceComponent() {
             @Override
-            public WorkspaceMetaData getWorkspaceMetaData(long workspaceId) {
+            public WorkspaceMetadata getWorkspaceMetadata(long workspaceId) {
                 return workspaceMetaData;
             }
 
@@ -332,6 +338,365 @@ public class ServerWorkspaceApiControllerTests {
         assertFalse(workspaceMetaData.isLocked());
         assertNull(workspaceMetaData.getLockedUser());
         assertNull(workspaceMetaData.getLockedAgent());
+    }
+
+    @Test
+    void getBranches_ReturnsAnApiError_WhenBranchesAreNotEnabled() {
+        Configuration.init(Profile.Server, new Properties());
+        Configuration.getInstance().setFeatureDisabled(Features.WORKSPACE_BRANCHES);
+
+        try {
+            controller.getBranches(1, request, response);
+            fail();
+        } catch (ApiException e) {
+            assertEquals("Workspace branches are not enabled for this installation", e.getMessage());
+        }
+    }
+
+    @Test
+    void getBranches_ReturnsAnApiError_WhenANegativeWorkspaceIdIsSpecified() {
+        Configuration.init(Profile.Server, new Properties());
+        Configuration.getInstance().setFeatureEnabled(Features.WORKSPACE_BRANCHES);
+
+        try {
+            controller.getBranches(-1, request, response);
+            fail();
+        } catch (ApiException e) {
+            assertEquals("Workspace ID must be greater than 1", e.getMessage());
+        }
+    }
+
+    @Test
+    void getBranches_ReturnsAnApiError_WhenNoAuthorizationHeaderIsSpecified() {
+        Configuration.init(Profile.Server, new Properties());
+        Configuration.getInstance().setFeatureEnabled(Features.WORKSPACE_BRANCHES);
+
+        try {
+            controller.getBranches(1, request, response);
+            fail();
+        } catch (HttpUnauthorizedException e) {
+            assertEquals("Authorization header must be provided", e.getMessage());
+        }
+    }
+
+    @Test
+    void getBranches_ReturnsAnApiError_WhenTheAuthorizationHeaderIsIncorrectlySpecified() {
+        Configuration.init(Profile.Server, new Properties());
+        Configuration.getInstance().setFeatureEnabled(Features.WORKSPACE_BRANCHES);
+
+        try {
+            request.addHeader(HttpHeaders.AUTHORIZATION, "123");
+            request.addHeader(HttpHeaders.NONCE, "1234567890");
+            request.addHeader(HttpHeaders.CONTENT_MD5, "ZDQxZDhjZDk4ZjAwYjIwNGU5ODAwOTk4ZWNmODQyN2U=");
+
+            controller.setWorkspaceComponent(new MockWorkspaceComponent() {
+                @Override
+                public WorkspaceMetadata getWorkspaceMetadata(long workspaceId) {
+                    WorkspaceMetadata wmd = new WorkspaceMetadata(1);
+                    wmd.setApiKey("key");
+                    wmd.setApiSecret("secret");
+
+                    return wmd;
+                }
+            });
+
+            controller.getBranches(1, request, response);
+            fail();
+        } catch (HttpUnauthorizedException e) {
+            assertEquals("Invalid authorization header", e.getMessage());
+        }
+    }
+
+    @Test
+    void getBranches_ReturnsAnApiError_WhenAnIncorrectApiKeyIsSpecifiedInTheAuthorizationHeader() {
+        Configuration.init(Profile.Server, new Properties());
+        Configuration.getInstance().setFeatureEnabled(Features.WORKSPACE_BRANCHES);
+
+        try {
+            request.addHeader(HttpHeaders.AUTHORIZATION, "otherkey:NWNkODEzYjVkZDE2ZGIzYmFlZDcxNjM5MjY3YjFhNGZiNDc5YjY1MzZiMzkwMjUyYzk3MGVhM2IyNmU4ZWI5OQ==");
+            request.addHeader(HttpHeaders.NONCE, "1234567890");
+            request.addHeader(HttpHeaders.CONTENT_MD5, "ZDQxZDhjZDk4ZjAwYjIwNGU5ODAwOTk4ZWNmODQyN2U=");
+
+            controller.setWorkspaceComponent(new MockWorkspaceComponent() {
+                @Override
+                public WorkspaceMetadata getWorkspaceMetadata(long workspaceId) {
+                    WorkspaceMetadata wmd = new WorkspaceMetadata(1);
+                    wmd.setApiKey("key");
+                    wmd.setApiSecret("secret");
+
+                    return wmd;
+                }
+            });
+
+            controller.getBranches(1, request, response);
+            fail();
+        } catch (HttpUnauthorizedException e) {
+            assertEquals("Incorrect API key", e.getMessage());
+        }
+    }
+
+    @Test
+    void getBranches_ReturnsTheBranches_WhenTheAuthorizationHeaderIsCorrectlySpecified() throws Exception {
+        Configuration.init(Profile.Server, new Properties());
+        Configuration.getInstance().setFeatureEnabled(Features.WORKSPACE_BRANCHES);
+
+        controller.setWorkspaceComponent(new MockWorkspaceComponent() {
+            @Override
+            public WorkspaceMetadata getWorkspaceMetadata(long workspaceId) {
+                WorkspaceMetadata wmd = new WorkspaceMetadata(1);
+                wmd.setApiKey("key");
+                wmd.setApiSecret("secret");
+
+                return wmd;
+            }
+
+            @Override
+            public List<WorkspaceBranch> getWorkspaceBranches(long workspaceId) {
+                return List.of(
+                        new WorkspaceBranch("branch2"),
+                        new WorkspaceBranch("branch1")
+                );
+            }
+        });
+
+        HashBasedMessageAuthenticationCode code = new HashBasedMessageAuthenticationCode("secret");
+        HmacContent hmacContent = new HmacContent("GET", "/api/workspace/1/branch", new Md5Digest().generate(""), "", "1234567890");
+        String generatedHmac = code.generate(hmacContent.toString());
+
+        request.addHeader("Authorization", "key:" + Base64.getEncoder().encodeToString(generatedHmac.getBytes()));
+        request.addHeader("Nonce", "1234567890");
+
+        String json = controller.getBranches(1, request, response);
+        assertEquals("""
+                ["branch1","branch2"]""", json);
+    }
+
+    @Test
+    void deleteBranch_ReturnsAnApiError_WhenBranchesAreNotEnabled() {
+        Configuration.init(Profile.Server, new Properties());
+        Configuration.getInstance().setFeatureDisabled(Features.WORKSPACE_BRANCHES);
+
+        try {
+            controller.deleteBranch(1, "branch", request, response);
+            fail();
+        } catch (ApiException e) {
+            assertEquals("Workspace branches are not enabled for this installation", e.getMessage());
+        }
+    }
+
+    @Test
+    void deleteBranch_ReturnsAnApiError_WhenANegativeWorkspaceIdIsSpecified() {
+        Configuration.init(Profile.Server, new Properties());
+        Configuration.getInstance().setFeatureEnabled(Features.WORKSPACE_BRANCHES);
+
+        try {
+            controller.deleteBranch(-1, "branch", request, response);
+            fail();
+        } catch (ApiException e) {
+            assertEquals("Workspace ID must be greater than 1", e.getMessage());
+        }
+    }
+
+    @Test
+    void deleteBranch_ReturnsAnApiError_WhenNoAuthorizationHeaderIsSpecified() {
+        Configuration.init(Profile.Server, new Properties());
+        Configuration.getInstance().setFeatureEnabled(Features.WORKSPACE_BRANCHES);
+
+        try {
+            controller.deleteBranch(1, "branch", request, response);
+            fail();
+        } catch (HttpUnauthorizedException e) {
+            assertEquals("Authorization header must be provided", e.getMessage());
+        }
+    }
+
+    @Test
+    void deleteBranch_ReturnsAnApiError_WhenTheAuthorizationHeaderIsIncorrectlySpecified() {
+        Configuration.init(Profile.Server, new Properties());
+        Configuration.getInstance().setFeatureEnabled(Features.WORKSPACE_BRANCHES);
+
+        try {
+            request.addHeader(HttpHeaders.AUTHORIZATION, "123");
+            request.addHeader(HttpHeaders.NONCE, "1234567890");
+            request.addHeader(HttpHeaders.CONTENT_MD5, "ZDQxZDhjZDk4ZjAwYjIwNGU5ODAwOTk4ZWNmODQyN2U=");
+
+            controller.setWorkspaceComponent(new MockWorkspaceComponent() {
+                @Override
+                public WorkspaceMetadata getWorkspaceMetadata(long workspaceId) {
+                    WorkspaceMetadata wmd = new WorkspaceMetadata(1);
+                    wmd.setApiKey("key");
+                    wmd.setApiSecret("secret");
+
+                    return wmd;
+                }
+            });
+
+            controller.deleteBranch(1, "branch", request, response);
+            fail();
+        } catch (HttpUnauthorizedException e) {
+            assertEquals("Invalid authorization header", e.getMessage());
+        }
+    }
+
+    @Test
+    void deleteBranch_ReturnsAnApiError_WhenAnIncorrectApiKeyIsSpecifiedInTheAuthorizationHeader() {
+        Configuration.init(Profile.Server, new Properties());
+        Configuration.getInstance().setFeatureEnabled(Features.WORKSPACE_BRANCHES);
+
+        try {
+            request.addHeader(HttpHeaders.AUTHORIZATION, "otherkey:NWNkODEzYjVkZDE2ZGIzYmFlZDcxNjM5MjY3YjFhNGZiNDc5YjY1MzZiMzkwMjUyYzk3MGVhM2IyNmU4ZWI5OQ==");
+            request.addHeader(HttpHeaders.NONCE, "1234567890");
+            request.addHeader(HttpHeaders.CONTENT_MD5, "ZDQxZDhjZDk4ZjAwYjIwNGU5ODAwOTk4ZWNmODQyN2U=");
+
+            controller.setWorkspaceComponent(new MockWorkspaceComponent() {
+                @Override
+                public WorkspaceMetadata getWorkspaceMetadata(long workspaceId) {
+                    WorkspaceMetadata wmd = new WorkspaceMetadata(1);
+                    wmd.setApiKey("key");
+                    wmd.setApiSecret("secret");
+
+                    return wmd;
+                }
+            });
+
+            controller.deleteBranch(1, "branch", request, response);
+            fail();
+        } catch (HttpUnauthorizedException e) {
+            assertEquals("Incorrect API key", e.getMessage());
+        }
+    }
+
+    @Test
+    void deleteBranch_ThrowsAnException_WhenTheAuthorizationHeaderIsCorrectlySpecifiedButTheMainBranchIsSpecified() throws Exception {
+        Configuration.init(Profile.Server, new Properties());
+        Configuration.getInstance().setFeatureEnabled(Features.WORKSPACE_BRANCHES);
+
+        controller.setWorkspaceComponent(new MockWorkspaceComponent() {
+            @Override
+            public WorkspaceMetadata getWorkspaceMetadata(long workspaceId) {
+                WorkspaceMetadata wmd = new WorkspaceMetadata(1);
+                wmd.setApiKey("key");
+                wmd.setApiSecret("secret");
+
+                return wmd;
+            }
+
+            @Override
+            public List<WorkspaceBranch> getWorkspaceBranches(long workspaceId) {
+                return List.of(
+                        new WorkspaceBranch("branch2"),
+                        new WorkspaceBranch("branch1")
+                );
+            }
+        });
+
+        // 1. "" as the branch
+        HashBasedMessageAuthenticationCode code = new HashBasedMessageAuthenticationCode("secret");
+        HmacContent hmacContent = new HmacContent("DELETE", "/api/workspace/1/branch/", new Md5Digest().generate(""), "", "1234567890");
+        String generatedHmac = code.generate(hmacContent.toString());
+
+        request.addHeader("Authorization", "key:" + Base64.getEncoder().encodeToString(generatedHmac.getBytes()));
+        request.addHeader("Nonce", "1234567890");
+
+        try {
+            controller.deleteBranch(1, "", request, response);
+            fail();
+        } catch (Exception e) {
+            assertEquals("The main branch cannot be deleted", e.getMessage());
+        }
+
+        // 2. "main" as the branch
+        hmacContent = new HmacContent("DELETE", "/api/workspace/1/branch/main", new Md5Digest().generate(""), "", "1234567890");
+        generatedHmac = code.generate(hmacContent.toString());
+        request.addHeader("Authorization", "key:" + Base64.getEncoder().encodeToString(generatedHmac.getBytes()));
+
+        try {
+            controller.deleteBranch(1, "main", request, response);
+            fail();
+        } catch (Exception e) {
+            assertEquals("The main branch cannot be deleted", e.getMessage());
+        }
+    }
+
+    @Test
+    void deleteBranch_ReturnsTrue_WhenTheAuthorizationHeaderIsCorrectlySpecifiedAndTheBranchDoesNotExist() throws Exception {
+        Configuration.init(Profile.Server, new Properties());
+        Configuration.getInstance().setFeatureEnabled(Features.WORKSPACE_BRANCHES);
+
+        controller.setWorkspaceComponent(new MockWorkspaceComponent() {
+            @Override
+            public WorkspaceMetadata getWorkspaceMetadata(long workspaceId) {
+                WorkspaceMetadata wmd = new WorkspaceMetadata(1);
+                wmd.setApiKey("key");
+                wmd.setApiSecret("secret");
+
+                return wmd;
+            }
+
+            @Override
+            public List<WorkspaceBranch> getWorkspaceBranches(long workspaceId) {
+                return List.of(
+                        new WorkspaceBranch("branch2"),
+                        new WorkspaceBranch("branch1")
+                );
+            }
+        });
+
+        // 1. "" as the branch
+        HashBasedMessageAuthenticationCode code = new HashBasedMessageAuthenticationCode("secret");
+        HmacContent hmacContent = new HmacContent("DELETE", "/api/workspace/1/branch/branch3", new Md5Digest().generate(""), "", "1234567890");
+        String generatedHmac = code.generate(hmacContent.toString());
+
+        request.addHeader("Authorization", "key:" + Base64.getEncoder().encodeToString(generatedHmac.getBytes()));
+        request.addHeader("Nonce", "1234567890");
+
+        ApiResponse apiResponse = controller.deleteBranch(1, "branch3", request, response);
+        assertFalse(apiResponse.isSuccess());
+        assertEquals("Workspace branch \"branch3\" does not exist", apiResponse.getMessage());
+    }
+
+    @Test
+    void deleteBranch_ReturnsTrue_WhenTheAuthorizationHeaderIsCorrectlySpecified() throws Exception {
+        Configuration.init(Profile.Server, new Properties());
+        Configuration.getInstance().setFeatureEnabled(Features.WORKSPACE_BRANCHES);
+
+        StringBuilder buf = new StringBuilder();
+
+        controller.setWorkspaceComponent(new MockWorkspaceComponent() {
+            @Override
+            public WorkspaceMetadata getWorkspaceMetadata(long workspaceId) {
+                WorkspaceMetadata wmd = new WorkspaceMetadata(1);
+                wmd.setApiKey("key");
+                wmd.setApiSecret("secret");
+
+                return wmd;
+            }
+
+            @Override
+            public List<WorkspaceBranch> getWorkspaceBranches(long workspaceId) {
+                return List.of(
+                        new WorkspaceBranch("branch2"),
+                        new WorkspaceBranch("branch1")
+                );
+            }
+
+            @Override
+            public boolean deleteBranch(long workspaceId, String branch) {
+                buf.append("deleteBranch(" + workspaceId + ", " + branch + ")");
+                return true;
+            }
+        });
+
+        HashBasedMessageAuthenticationCode code = new HashBasedMessageAuthenticationCode("secret");
+        HmacContent hmacContent = new HmacContent("DELETE", "/api/workspace/1/branch/branch1", new Md5Digest().generate(""), "", "1234567890");
+        String generatedHmac = code.generate(hmacContent.toString());
+
+        request.addHeader("Authorization", "key:" + Base64.getEncoder().encodeToString(generatedHmac.getBytes()));
+        request.addHeader("Nonce", "1234567890");
+
+        ApiResponse apiResponse = controller.deleteBranch(1, "branch1", request, response);
+        assertTrue(apiResponse.isSuccess());
+        assertEquals("deleteBranch(1, branch1)", buf.toString());
     }
 
 }

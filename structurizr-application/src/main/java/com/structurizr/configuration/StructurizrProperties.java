@@ -7,8 +7,6 @@ public class StructurizrProperties {
 
     public static final String EDITABLE_PROPERTY = "structurizr.editable";
 
-    public static final String WORKSPACE_FILENAME = "structurizr.workspace.filename";
-
     public static final String WORKSPACE_THREADS = "structurizr.workspace.threads";
 
     public static final String WORKSPACE_EVENT_LISTENER_PLUGIN = "structurizr.plugin.workspaceeventlistener";
@@ -25,14 +23,11 @@ public class StructurizrProperties {
     public static final String AUTHENTICATION_IMPLEMENTATION = "structurizr.authentication";
     public static final String AUTHENTICATION_VARIANT_NONE = "none";
     public static final String AUTHENTICATION_VARIANT_FILE = "file";
-    public static final String AUTHENTICATION_VARIANT_SAML = "saml";
 
     public static final String SESSION_IMPLEMENTATION = "structurizr.session";
     public static final String SESSION_VARIANT_LOCAL = "local";
-    public static final String SESSION_VARIANT_REDIS = "redis";
 
     public static final String DEFAULT_DATA_DIRECTORY_PATH = "/usr/local/structurizr";
-    public static final String DEFAULT_FILENAME = "workspace";
     public static final String DEFAULT_MAX_WORKSPACE_VERSIONS = "30";
     public static final String DEFAULT_NUMBER_OF_THREADS = "10";
 
@@ -40,20 +35,15 @@ public class StructurizrProperties {
 
     public static final String DATA_STORAGE_IMPLEMENTATION = "structurizr.data";
     public static final String DATA_STORAGE_VARIANT_FILE = "file";
-    public static final String DATA_STORAGE_VARIANT_AMAZON_WEB_SERVICES_S3 = "aws-s3";
-    public static final String DATA_STORAGE_VARIANT_AZURE_BLOB_STORAGE = "azure-blob";
 
     public static final String SEARCH_IMPLEMENTATION = "structurizr.search";
     public static final String SEARCH_VARIANT_NONE = "none";
     public static final String SEARCH_VARIANT_LUCENE = "lucene";
-    public static final String SEARCH_VARIANT_ELASTICSEARCH = "elasticsearch";
 
     public static final String CACHE_IMPLEMENTATION = "structurizr.cache";
     public static final String CACHE_EXPIRY_IN_MINUTES = "structurizr.cache.expiry";
     public static final String DEFAULT_CACHE_EXPIRY_IN_MINUTES = "5";
     public static final String CACHE_VARIANT_NONE = "none";
-    public static final String CACHE_VARIANT_LOCAL = "local";
-    public static final String CACHE_VARIANT_REDIS = "redis";
 
     public static final String WORKSPACES_PROPERTY = "structurizr.workspaces";
     public static final String SINGLE_WORKSPACE = "1";

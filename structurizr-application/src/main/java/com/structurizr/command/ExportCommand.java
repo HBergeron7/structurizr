@@ -8,6 +8,7 @@ import com.structurizr.export.plantuml.C4PlantUMLExporter;
 import com.structurizr.export.plantuml.StructurizrPlantUMLExporter;
 import com.structurizr.export.websequencediagrams.WebSequenceDiagramsExporter;
 import com.structurizr.http.HttpClient;
+import com.structurizr.util.BuiltInThemes;
 import com.structurizr.util.WorkspaceUtils;
 import com.structurizr.view.ColorScheme;
 import com.structurizr.view.ThemeUtils;
@@ -151,18 +152,10 @@ public class ExportCommand extends AbstractCommand {
                 writeStaticFile("css/fonts/katex/" + resource.getFilename(), outputDir);
             }
 
-            resources = resolver.getResources("classpath*:/static/static/css/fonts/open-sans/*") ;
-            for (Resource resource: resources){
-                writeStaticFile("css/fonts/open-sans/" + resource.getFilename(), outputDir);
-            }
-
             resources = resolver.getResources("classpath*:/static/static/img/*") ;
             for (Resource resource: resources){
                 writeStaticFile("img/" + resource.getFilename(), outputDir);
             }
-
-            // add default views if no views exist
-            addDefaultViewsAndStyles(workspace);
 
             // clear all documentation - this isn't supported by the static site
             workspace.getDocumentation().clear();
@@ -181,8 +174,8 @@ public class ExportCommand extends AbstractCommand {
                 // only inline the theme amd create default views if the user wants a diagram export
                 HttpClient httpClient = new HttpClient();
                 httpClient.allow(".*");
+
                 ThemeUtils.loadThemes(workspace, httpClient);
-                addDefaultViewsAndStyles(workspace);
             }
 
             Exporter exporter = findExporter(format, workspacePath);

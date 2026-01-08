@@ -145,7 +145,7 @@ public final class ThemeUtils {
         workspace.getViews().getConfiguration().getStyles().inlineTheme(theme);
     }
 
-    private static Theme fromJson(String json) throws Exception {
+    public static Theme fromJson(String json) throws Exception {
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.enable(DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT);
         objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -167,7 +167,6 @@ public final class ThemeUtils {
                     workspace.getViews().getConfiguration().getStyles().getElements(),
                     workspace.getViews().getConfiguration().getStyles().getRelationships()
             );
-            theme.setFont(workspace.getViews().getConfiguration().getBranding().getFont());
             theme.setLogo(workspace.getViews().getConfiguration().getBranding().getLogo());
 
             writer.write(objectMapper.writeValueAsString(theme));

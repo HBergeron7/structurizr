@@ -27,7 +27,6 @@
     <link href="<c:url value="/static/css/structurizr-embed.css" />" rel="stylesheet" media="screen" />
     </c:if>
     <link href="<c:url value="/static/css/structurizr-print.css" />" rel="stylesheet" media="print" />
-    <link href="/static/css/open-sans.css" rel="stylesheet" />
 
     <script src="/static/js/jquery-3.7.1.min.js"></script>
     <script src="/static/js/bootstrap-5.3.7.min.js"></script>
@@ -58,7 +57,7 @@
         
         <div class="row">
             <div class="col-2" style="padding: 18px 20px 10px 20px">
-                <a id="brandingLogoAnchor" href="/"><img src="/static/img/structurizr-banner.png" alt="Structurizr" class="img-light img-responsive brandingLogo" /><img src="/static/img/structurizr-banner-dark.png" alt="Structurizr" class="img-dark img-responsive brandingLogo" /></a>
+                <a id="brandingLogoAnchor" href="/"><img src="/static/img/structurizr-banner-light.png" alt="Structurizr" class="img-light img-responsive brandingLogo" /><img src="/static/img/structurizr-banner-dark.png" alt="Structurizr" class="img-dark img-responsive brandingLogo" /></a>
             </div>
             <div class="col-10 centered" style="padding: 20px 20px 10px 20px; text-align: right;">
                 <span class="topNavigationItem" style="margin-right: 0">
@@ -73,7 +72,7 @@
 
                 <c:if test="${authenticationEnabled}">
                 <c:choose>
-                    <c:when test="${authenticated eq true}">
+                    <c:when test="${user.authenticated}">
                         <span class="topNavigationItem" style="margin-right: 0">
                             <a href="/user/profile"><span class="label structurizrBackgroundLight" style="font-size: 18px"><img src="/static/bootstrap-icons/person.svg" class="icon-sm icon-white" /> ${user.username}</span></a>
                         </span>

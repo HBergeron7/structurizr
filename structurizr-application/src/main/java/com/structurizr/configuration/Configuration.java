@@ -153,10 +153,6 @@ public class Configuration {
         return webUrl + "/api";
     }
 
-    public String getThemesUrl() {
-        return webUrl + "/static/themes/";
-    }
-
     public boolean isSafeMode() {
         return false;
     }
@@ -243,7 +239,6 @@ public class Configuration {
 
         if (profile == Profile.Local) {
             setDefault(EDITABLE_PROPERTY, TRUE);
-            setDefault(WORKSPACE_FILENAME, DEFAULT_FILENAME);
             setDefault(WORKSPACES_PROPERTY, SINGLE_WORKSPACE);
             setDefault(AUTO_SAVE_INTERVAL_PROPERTY, DEFAULT_AUTO_SAVE_INTERVAL_IN_MILLISECONDS);
             setDefault(AUTO_REFRESH_INTERVAL_PROPERTY, DEFAULT_AUTO_REFRESH_INTERVAL_IN_MILLISECONDS);
@@ -288,7 +283,7 @@ public class Configuration {
         features.configure(Features.DIAGRAM_ANONYMOUS_THUMBNAILS, Boolean.parseBoolean(getProperty(Features.DIAGRAM_ANONYMOUS_THUMBNAILS)));
 
         String search = getProperty(SEARCH_IMPLEMENTATION);
-        features.configure(Features.WORKSPACE_SEARCH, search.equals(SEARCH_VARIANT_LUCENE) || search.equals(SEARCH_VARIANT_ELASTICSEARCH));
+        features.configure(Features.WORKSPACE_SEARCH, !search.equals(SEARCH_VARIANT_NONE));
 
         // for backwards compatibility (older versions had structurizr.dslEditor=true)
         if (!isFeatureEnabled(Features.UI_DSL_EDITOR)) {
@@ -360,7 +355,7 @@ public class Configuration {
     private void logAllProperties(Log log, Properties properties) {
         log.info("***********************************************************************************");
 
-        String propertiesToMask = ".*encryption|.*key|.*password";
+        String propertiesToMask = ".*encryption|.*key|.*password|.*license";
 
         Set<String> propertyNames = new TreeSet<>(properties.stringPropertyNames());
         for (String name : propertyNames) {

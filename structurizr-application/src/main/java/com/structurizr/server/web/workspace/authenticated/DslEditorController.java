@@ -6,11 +6,12 @@ import com.structurizr.dsl.StructurizrDslParser;
 import com.structurizr.dsl.StructurizrDslParserException;
 import com.structurizr.inspection.DefaultInspector;
 import com.structurizr.server.component.workspace.WorkspaceValidationUtils;
-import com.structurizr.server.domain.WorkspaceMetaData;
+import com.structurizr.server.domain.WorkspaceMetadata;
 import com.structurizr.configuration.Configuration;
 import com.structurizr.configuration.Features;
 import com.structurizr.server.domain.User;
 import com.structurizr.server.web.Views;
+import com.structurizr.util.BuiltInThemes;
 import com.structurizr.util.DslTemplate;
 import com.structurizr.util.StringUtils;
 import com.structurizr.util.WorkspaceUtils;
@@ -41,13 +42,23 @@ public class DslEditorController extends AbstractWorkspaceController {
             return showError("dsl-editor-disabled", model);
         }
 
-        WorkspaceMetaData workspaceMetaData = workspaceComponent.getWorkspaceMetaData(workspaceId);
-        if (workspaceMetaData == null) {
+        WorkspaceMetadata workspaceMetadata = workspaceComponent.getWorkspaceMetadata(workspaceId);
+        if (workspaceMetadata == null) {
             return show404Page(model);
         }
 
-        if (workspaceMetaData.isClientEncrypted()) {
+        if (workspaceMetadata.isClientEncrypted()) {
             return showError("workspace-is-client-side-encrypted", model);
+        }
+
+        if (Configuration.getInstance().isAuthenticationEnabled()) {
+            if (workspaceMetadata.hasUsersConfigured() && !workspaceMetadata.isWriteUser(getUser())) {
+                if (workspaceMetadata.isReadUser(getUser())) {
+                    return showError("workspace-is-readonly", model);
+                } else {
+                    return show404Page(model);
+                }
+            }
         }
 
         model.addAttribute("publishThumbnails", StringUtils.isNullOrEmpty(branch) && StringUtils.isNullOrEmpty(version));
@@ -58,15 +69,7 @@ public class DslEditorController extends AbstractWorkspaceController {
             // ignore
         }
 
-        if (!workspaceMetaData.hasNoUsersConfigured() && !workspaceMetaData.isWriteUser(getUser())) {
-            if (workspaceMetaData.isReadUser(getUser())) {
-                return showError("workspace-is-readonly", model);
-            } else {
-                return show404Page(model);
-            }
-        }
-
-        return lockWorkspaceAndShowAuthenticatedView(Views.DSL_EDITOR, workspaceMetaData, branch, version, model, false);
+        return lockWorkspaceAndShowAuthenticatedView(Views.DSL_EDITOR, workspaceMetadata, branch, version, model, false);
     }
 
     @RequestMapping(value = "/workspace/{workspaceId}/dsl-editor", method = RequestMethod.POST, produces = "application/json; charset=UTF-8")
@@ -75,13 +78,13 @@ public class DslEditorController extends AbstractWorkspaceController {
             @PathVariable("workspaceId") long workspaceId,
             @RequestBody String json
     ) {
-        WorkspaceMetaData workspaceMetaData = workspaceComponent.getWorkspaceMetaData(workspaceId);
-        if (workspaceMetaData == null) {
+        WorkspaceMetadata workspaceMetadata = workspaceComponent.getWorkspaceMetadata(workspaceId);
+        if (workspaceMetadata == null) {
             return new DslEditorResponse(false, "404");
         }
 
         User user = getUser();
-        if (!workspaceMetaData.hasNoUsersConfigured() && !workspaceMetaData.isWriteUser(getUser())) {
+        if (!workspaceMetadata.hasNoUsersConfigured() && !workspaceMetadata.isWriteUser(getUser())) {
             return new DslEditorResponse(false, "404");
         }
 
@@ -90,7 +93,7 @@ public class DslEditorController extends AbstractWorkspaceController {
 
             String dsl = DslUtils.getDsl(oldWorkspace);
             if (StringUtils.isNullOrEmpty(dsl)) {
-                dsl = DslTemplate.generate(workspaceMetaData.getName(), workspaceMetaData.getDescription());
+                dsl = DslTemplate.generate(workspaceMetadata.getName(), workspaceMetadata.getDescription());
             }
 
             try {
@@ -123,16 +126,19 @@ public class DslEditorController extends AbstractWorkspaceController {
         Workspace workspace = parser.getWorkspace();
         DslUtils.setDsl(workspace, dsl);
 
-        // add default views if no views are explicitly defined
-        if (!workspace.getModel().isEmpty() && workspace.getViews().isEmpty()) {
-            workspace.getViews().createDefaultViews();
-        }
-
         // validate workspace scope
         WorkspaceValidationUtils.validateWorkspaceScope(workspace);
 
         // run default inspections
         new DefaultInspector(workspace);
+
+        // inline built-in theme icons
+        BuiltInThemes.inlineIcons(workspace);
+
+        // add default views if no views are explicitly defined
+        if (!workspace.getModel().isEmpty() && workspace.getViews().isEmpty()) {
+            workspace.getViews().createDefaultViews();
+        }
 
         return workspace;
     }
