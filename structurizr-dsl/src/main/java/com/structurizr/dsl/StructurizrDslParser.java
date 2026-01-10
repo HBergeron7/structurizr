@@ -249,6 +249,8 @@ public final class StructurizrDslParser extends StructurizrDslTokens {
         for (DslLine dslLine : dslLines) {
             String line = dslLine.getSource();
 
+            System.out.println("LINE: " + line);
+
             if (line.startsWith(BOM)) {
                 // this caters for files encoded as "UTF-8 with BOM"
                 line = line.substring(1);
@@ -280,6 +282,7 @@ public final class StructurizrDslParser extends StructurizrDslTokens {
                     }
 
                     String firstToken = tokens.get(0);
+                    System.out.println("FIRST: " + firstToken);
 
                     if (line.trim().startsWith(MULTI_LINE_COMMENT_START_TOKEN) && line.trim().endsWith(MULTI_LINE_COMMENT_END_TOKEN)) {
                         // do nothing
@@ -310,6 +313,7 @@ public final class StructurizrDslParser extends StructurizrDslTokens {
                         endContext();
 
                     } else if (INCLUDE_FILE_TOKEN.equalsIgnoreCase(firstToken)) {
+                        System.out.println("INCLUDE_FILE_TOKEN");
                         String leadingSpace = line.substring(0, line.indexOf(INCLUDE_FILE_TOKEN));
 
                         List<IncludedFile> files = new IncludeParser().parse(getContext(), dslFile, tokens);
