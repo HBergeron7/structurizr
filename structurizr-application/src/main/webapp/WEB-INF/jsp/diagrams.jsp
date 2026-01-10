@@ -27,6 +27,7 @@
     </c:when>
     <c:when test="${workspace.editable eq false && embed eq true && showDiagramSelector eq false}">
         <%-- embedded mode, without the diagram selector --%>
+        <div id="embeddedBanner" style="position: fixed; z-index: 100; width: 100%; opacity: 90%"></div>
     </c:when>
     <c:otherwise>
         <div id="diagramControls">
@@ -170,18 +171,21 @@
         event.preventDefault();
         structurizr.ui.setRenderingMode(structurizr.ui.RENDERING_MODE_LIGHT);
         structurizr.diagram.setDarkMode(structurizr.ui.isDarkMode());
+        refreshThumbnail();
     });
 
     $('#renderingModeDarkLink').click(function(event) {
         event.preventDefault();
         structurizr.ui.setRenderingMode(structurizr.ui.RENDERING_MODE_DARK);
         structurizr.diagram.setDarkMode(structurizr.ui.isDarkMode());
+        refreshThumbnail();
     });
 
     $('#renderingModeSystemLink').click(function(event) {
         event.preventDefault();
         structurizr.ui.setRenderingMode(structurizr.ui.RENDERING_MODE_SYSTEM);
         structurizr.diagram.setDarkMode(structurizr.ui.isDarkMode());
+        refreshThumbnail();
     });
 
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
@@ -276,17 +280,11 @@
                     options.includeMetadata = true;
                 }
 
-                var svg = structurizr.diagram.exportCurrentDiagramToSVG(options.includeMetadata);
-                svg = replaceLocalThemes(svg);
-
-                return svg;
+                return structurizr.diagram.exportCurrentDiagramToSVG(options.includeMetadata);
             };
 
             this.exportCurrentDiagramKeyToSVG = function() {
-                var svg = structurizr.diagram.exportCurrentDiagramKeyToSVG();
-                svg = replaceLocalThemes(svg);
-
-                return svg;
+                return structurizr.diagram.exportCurrentDiagramKeyToSVG();
             };
 
             this.getViews = function() {
