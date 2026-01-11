@@ -10,7 +10,7 @@ class StructurizrDslTokens {
     static final String CUSTOM_ELEMENT_TOKEN = "element";
     static final String PERSON_TOKEN = "person";
     static final String SOFTWARE_SYSTEM_TOKEN = "softwareSystem";
-    static final String REQUIRES_TOKEN = "requires";
+    static final String CONSUMES_TOKEN = "consumes";
     static final String PROVIDES_TOKEN = "provides";
     static final String RELATIONSHIP_TOKEN = "->";
     static final String NO_RELATIONSHIP_TOKEN = "-/>";
