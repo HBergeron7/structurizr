@@ -470,7 +470,22 @@ public class WorkspaceComponentImplTests extends AbstractTestsBase {
         final StringBuffer jsonBuffer = new StringBuffer();
 
         String expectedJson = """
-                {"configuration":{},"description":"Description","documentation":{},"id":1,"lastModifiedDate":"%s","model":{},"name":"Name","views":{"configuration":{"branding":{},"styles":{},"terminology":{}}}}""";
+                {
+                  "configuration" : { },
+                  "description" : "Description",
+                  "documentation" : { },
+                  "id" : 1,
+                  "lastModifiedDate" : "%s",
+                  "model" : { },
+                  "name" : "Name",
+                  "views" : {
+                    "configuration" : {
+                      "branding" : { },
+                      "styles" : { },
+                      "terminology" : { }
+                    }
+                  }
+                }""";
 
         WorkspaceComponent workspaceComponent = new WorkspaceComponentImpl(new MockWorkspaceAdapter() {
             @Override
@@ -752,7 +767,7 @@ public class WorkspaceComponentImplTests extends AbstractTestsBase {
             workspaceComponent.putWorkspace(1, "", json);
             fail();
         } catch (WorkspaceComponentException e) {
-            assertEquals("Strict workspace scope validation has been enabled for this on-premises installation. Unscoped workspaces are not permitted - see https://docs.structurizr.com/workspaces for more information.", e.getMessage());
+            assertEquals("Strict workspace scope validation has been enabled for this installation. Unscoped workspaces are not permitted - see https://docs.structurizr.com/basics/workspace-scope for more information.", e.getMessage());
         }
     }
 
@@ -809,7 +824,22 @@ public class WorkspaceComponentImplTests extends AbstractTestsBase {
 
         assertEquals(1, workspaceId);
         assertEquals(String.format("""
-                {"configuration":{},"description":"Description","documentation":{},"id":1,"lastModifiedDate":"%s","model":{},"name":"Workspace 0001","views":{"configuration":{"branding":{},"styles":{},"terminology":{}}}}""", DateUtils.formatIsoDate(workspaceMetaData.getLastModifiedDate())), jsonBuffer.toString());
+                {
+                  "configuration" : { },
+                  "description" : "Description",
+                  "documentation" : { },
+                  "id" : 1,
+                  "lastModifiedDate" : "%s",
+                  "model" : { },
+                  "name" : "Workspace 0001",
+                  "views" : {
+                    "configuration" : {
+                      "branding" : { },
+                      "styles" : { },
+                      "terminology" : { }
+                    }
+                  }
+                }""", DateUtils.formatIsoDate(workspaceMetaData.getLastModifiedDate())), jsonBuffer.toString());
     }
 
     @Test

@@ -1,17 +1,22 @@
 package com.structurizr.server.web.workspace;
 
+import com.structurizr.configuration.Features;
 import com.structurizr.configuration.Profile;
 import com.structurizr.server.component.search.SearchComponent;
+import com.structurizr.server.component.workspace.WorkspaceBranch;
 import com.structurizr.server.component.workspace.WorkspaceComponent;
 import com.structurizr.configuration.Configuration;
 import com.structurizr.server.domain.User;
 import com.structurizr.server.domain.WorkspaceMetadata;
 import com.structurizr.server.web.AbstractController;
 import com.structurizr.util.JsonUtils;
+import com.structurizr.util.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.ui.ModelMap;
+
+import java.util.List;
 
 import static com.structurizr.configuration.StructurizrProperties.AUTO_REFRESH_INTERVAL_PROPERTY;
 
@@ -37,11 +42,32 @@ public abstract class AbstractWorkspaceController extends AbstractController {
 
     protected final String showView(String view, WorkspaceMetadata workspaceMetadata, String branch, String version, ModelMap model, boolean editable, boolean showHeaderAndFooter) {
         try {
+            if (WorkspaceBranch.isMainBranch(branch)) {
+                branch = "";
+            } else {
+                if (!StringUtils.isNullOrEmpty(branch) && !Configuration.getInstance().isFeatureEnabled(Features.WORKSPACE_BRANCHES)) {
+                    return showError("workspace-branches-not-enabled", model);
+                }
+
+                // check branch exists
+                WorkspaceBranch.validateBranchName(branch);
+
+                final String requestedBranch = branch;
+                List<WorkspaceBranch> branches = workspaceComponent.getWorkspaceBranches(workspaceMetadata.getId());
+
+                if (branches.stream().noneMatch(b -> b.getName().equals(requestedBranch))) {
+                    model.addAttribute("errorMessage", "Branch \"" + requestedBranch + "\" does not exist");
+                    return show500Page(model);
+                }
+
+                workspaceMetadata.setBranch(branch);
+            }
+
             if (editable) {
                 workspaceMetadata.setEditable(true);
 
                 if (Configuration.getInstance().getProfile() == Profile.Server) {
-                    if (workspaceMetadata.isPublicWorkspace() || workspaceMetadata.hasNoUsersConfigured()) {
+                    if (workspaceMetadata.isPublicWorkspace()) {
                         model.addAttribute("sharingUrlPrefix", "/share/" + workspaceMetadata.getId());
                     }
                 }
@@ -53,8 +79,8 @@ public abstract class AbstractWorkspaceController extends AbstractController {
             }
 
             addCommonAttributes(model, workspaceMetadata.getName(), showHeaderAndFooter);
+            addUrlSuffix(branch, version, model);
 
-            workspaceMetadata.setBranch(branch);
             workspaceMetadata.setInternalVersion(version);
             model.addAttribute("workspace", workspaceMetadata);
             model.addAttribute("showToolbar", true);

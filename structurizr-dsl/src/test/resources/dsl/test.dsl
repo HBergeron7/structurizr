@@ -215,7 +215,6 @@ workspace "Name" "Description" {
             description "Description"
 
             include *
-            autoLayout
 
             properties {
                 "Name" "Value"
@@ -370,6 +369,8 @@ workspace "Name" "Description" {
                 width 400
                 position 50
                 opacity 50
+                metadata false
+                description false
                 properties {
                     "Name" "Value"
                 }

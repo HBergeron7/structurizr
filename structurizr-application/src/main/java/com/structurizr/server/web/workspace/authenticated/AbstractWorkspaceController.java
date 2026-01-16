@@ -6,6 +6,7 @@ import com.structurizr.configuration.Profile;
 import com.structurizr.dsl.StructurizrDslParserException;
 import com.structurizr.server.component.workspace.WorkspaceBranch;
 import com.structurizr.server.component.workspace.WorkspaceComponentException;
+import com.structurizr.server.domain.Permission;
 import com.structurizr.server.domain.User;
 import com.structurizr.server.domain.WorkspaceMetadata;
 import com.structurizr.util.RandomGuidGenerator;
@@ -15,6 +16,7 @@ import org.apache.commons.logging.LogFactory;
 import org.springframework.ui.ModelMap;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * Base class for all controllers underneath /workspace.
@@ -46,41 +48,20 @@ abstract class AbstractWorkspaceController extends com.structurizr.server.web.wo
             return show404Page(model);
         }
 
-        if (WorkspaceBranch.isMainBranch(branch)) {
-            branch = "";
-        } else {
-            // check branch exists
-            WorkspaceBranch.validateBranchName(branch);
-
-            final String requestedBranch = branch;
-            List<WorkspaceBranch> branches = workspaceComponent.getWorkspaceBranches(workspaceId);
-
-            if (branches.stream().noneMatch(b -> b.getName().equals(requestedBranch))) {
-                model.addAttribute("errorMessage", "Branch \"" + requestedBranch + "\" does not exist");
-                return show500Page(model);
-            }
-        }
-
-        if (!StringUtils.isNullOrEmpty(branch) && !Configuration.getInstance().isFeatureEnabled(Features.WORKSPACE_BRANCHES)) {
-            return showError("workspace-branches-not-enabled", model);
-        } else {
-            workspaceMetadata.setBranch(branch);
-        }
-
         User user = getUser();
-//        if (Configuration.getInstance().getProfile() == Profile.Server) {
-//            boolean authenticationEnabled = Configuration.getInstance().isAuthenticationEnabled();
-//            if (user == null && authenticationEnabled) {
-//                return show404Page(model);
-//            }
-//        }
+        Set<Permission> permissions = workspaceMetadata.getPermissions(user);
 
-        if (!workspaceMetadata.hasAccess(getUser())) {
+        if (permissions.isEmpty()) {
             return show404Page(model);
         }
 
-            String urlPrefix = "/workspace/" + workspaceMetadata.getId();
+        if (WorkspaceBranch.isMainBranch(branch)) {
+            branch = "";
+        }
+
+        String urlPrefix = "/workspace/" + workspaceMetadata.getId();
         model.addAttribute(URL_PREFIX, urlPrefix);
+
         if (!StringUtils.isNullOrEmpty(branch)) {
             model.addAttribute("thumbnailUrl", urlPrefix + "/branch/" + branch + "/images/");
         } else {
@@ -95,21 +76,11 @@ abstract class AbstractWorkspaceController extends com.structurizr.server.web.wo
             }
         }
 
-        if (WorkspaceBranch.isMainBranch(branch)) {
-            branch = "";
-        }
-
-        if (!StringUtils.isNullOrEmpty(branch) && !Configuration.getInstance().isFeatureEnabled(Features.WORKSPACE_BRANCHES)) {
-            return showError("workspace-branches-not-enabled", model);
-        }
-
-        addUrlSuffix(branch, version, model);
-
         function.run(workspaceMetadata);
 
-        if (!Configuration.getInstance().isAuthenticationEnabled() || workspaceMetadata.hasNoUsersConfigured() || workspaceMetadata.isWriteUser(user)) {
+        if (permissions.contains(Permission.Write)) {
             return showView(view, workspaceMetadata, branch, version, model, editable, showHeaderAndFooter);
-        } else if (workspaceMetadata.isReadUser(user)) {
+        } else if (permissions.contains(Permission.Read)) {
             return showView(view, workspaceMetadata, branch, version, model, false, showHeaderAndFooter);
         } else {
             return show404Page(model);
@@ -117,6 +88,15 @@ abstract class AbstractWorkspaceController extends com.structurizr.server.web.wo
     }
 
     protected final String lockWorkspaceAndShowAuthenticatedView(String view, WorkspaceMetadata workspaceMetadata, String branch, String version, ModelMap model, boolean showHeaderAndFooter) {
+        Set<Permission> permissions = workspaceMetadata.getPermissions(getUser());
+        if (!permissions.contains(Permission.Write)) {
+            if (permissions.contains(Permission.Read)) {
+                return showError("workspace-is-readonly", model);
+            } else {
+                return show404Page(model);
+            }
+        }
+
         boolean success = false;
         String agent = AGENT + "/" + view + "/" + new RandomGuidGenerator().generate();
 

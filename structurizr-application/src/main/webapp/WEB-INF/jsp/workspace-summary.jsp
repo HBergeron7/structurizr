@@ -150,7 +150,12 @@
 
             <c:if test="${authenticationEnabled}">
             <div class="navigationItem">
-                <a href="<c:out value="${urlPrefix}" />/users"><img src="/static/bootstrap-icons/people.svg" class="icon-sm" /> Users</a>
+                <a href="<c:out value="${urlPrefix}" />/users"><img src="/static/bootstrap-icons/people.svg" class="icon-sm" /> Users and roles</a>
+                <div style="margin-bottom: 5px;">
+                    <img src="/static/bootstrap-icons/pencil.svg" class="icon-xs" style="margin-left: 26px;" /> ${workspace.numberOfWriteUsers}
+                    <br />
+                    <img src="/static/bootstrap-icons/eye.svg" class="icon-xs" style="margin-left: 26px;" /> ${workspace.numberOfReadUsers}
+                </div>
             </div>
             </c:if>
             </c:if>
@@ -166,7 +171,6 @@
                     <c:out value="${workspace.description}" escapeXml="true" />
                 </p>
 
-                <c:if test="${fn:startsWith(urlPrefix, '/workspace')}">
                 <div class="centered" style="margin-top: 20px">
                     <c:if test="${not empty branches}">
                     <form id="workspaceBranchForm" class="form-inline" style="display: inline-block" method="get" action="<c:out value="${urlPrefix}" />">
@@ -179,6 +183,7 @@
                     </form>
                     </c:if>
 
+                    <c:if test="${fn:startsWith(urlPrefix, '/workspace')}">
                     <c:if test="${not empty versions && versions.size() > 1}">
                     <form id="workspaceVersionForm" class="form-inline" style="display: inline-block" method="get" action="<c:out value="${urlPrefix}" />">
                         <c:if test="${not empty branch}">
@@ -340,10 +345,6 @@
     }
 
     function workspaceLoaded() {
-        if (structurizr.workspace.getProperty('structurizr.dslEditor') === 'false') {
-            $('.dslEditorNavigation').addClass('hidden');
-        }
-
         $('#workspaceName').html(structurizr.util.escapeHtml(structurizr.workspace.name));
         $('#workspaceDescription').html(structurizr.util.escapeHtml(structurizr.workspace.description));
         var diagramsDiv = $('#diagrams');

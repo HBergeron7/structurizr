@@ -126,7 +126,7 @@
                 </c:if>
 
                 <c:if test="${structurizrConfiguration.profile == 'Playground'}">
-                    <button id="embeddedExportToPNGButton" class="btn btn-default" title="Export diagram and key/legend to PNG"><img src="/static/bootstrap-icons/filetype-png.svg" class="icon-btn" /></button>
+                    <button id="embeddedExportButton" class="btn btn-default" title="Export diagram and key/legend to PNG/SVG"><img src="/static/bootstrap-icons/file-earmark-image.svg" class="icon-btn" /></button>
                 </c:if>
 
                 <div class="btn-group">
@@ -137,7 +137,7 @@
                 <button id="exitFullScreenButton" class="btn btn-default hidden" title="Exit Full Screen [Escape]"><img src="/static/bootstrap-icons/fullscreen-exit.svg" class="icon-btn" /></button>
 
                 <script nonce="${scriptNonce}">
-                    $('#embeddedExportToPNGButton').click(function() { exportToPNG(); });
+                    $('#embeddedExportButton').click(function() { exportToImages(); });
 
                     $('#zoomOutButton').click(function() { structurizr.diagram.zoomOut(); });
                     $('#zoomInButton').click(function() { structurizr.diagram.zoomIn(); });
@@ -154,7 +154,6 @@
 <%@ include file="/WEB-INF/fragments/diagrams/embed.jspf" %>
 </c:if>
 <%@ include file="/WEB-INF/fragments/diagrams/export.jspf" %>
-<%@ include file="/WEB-INF/fragments/diagrams/publish.jspf" %>
 <%@ include file="/WEB-INF/fragments/diagrams/perspectives.jspf" %>
 <%@ include file="/WEB-INF/fragments/diagrams/filter.jspf" %>
 <%@ include file="/WEB-INF/fragments/diagrams/auto-layout.jspf" %>
@@ -256,15 +255,15 @@
                     options = {};
                 }
 
-                if (options.includeMetadata === undefined) {
-                    options.includeMetadata = true;
+                if (options.metadata === undefined) {
+                    options.metadata = true;
                 }
 
                 if (options.crop === undefined) {
                     options.crop = false;
                 }
 
-                return structurizr.diagram.exportCurrentDiagramToPNG(options.includeMetadata, options.crop, callback);
+                return structurizr.diagram.exportCurrentDiagramToPNG(options, callback);
             };
 
             this.exportCurrentDiagramKeyToPNG = function(callback) {
@@ -280,7 +279,7 @@
                     options.includeMetadata = true;
                 }
 
-                return structurizr.diagram.exportCurrentDiagramToSVG(options.includeMetadata);
+                return structurizr.diagram.exportCurrentDiagramToSVG(options).markup;
             };
 
             this.exportCurrentDiagramKeyToSVG = function() {
@@ -347,10 +346,8 @@
         initControls();
         initKeyboardShortcuts();
 
-        <c:if test="${structurizrConfiguration.profile eq 'Server'}">
-        <c:if test="${workspace.editable && not empty workspace.apiKey}">
+        <c:if test="${structurizrConfiguration.profile eq 'Server' && workspace.editable}">
         new structurizr.Lock(${workspace.id}, '${userAgent}');
-        </c:if>
         </c:if>
 
         progressMessage.hide();
@@ -994,36 +991,7 @@
 
     function changeView(view, callback) {
         structurizr.diagram.reset();
-
-        // var actualView = view;
-        // if (view.type === structurizr.constants.FILTERED_VIEW_TYPE) {
-        //     actualView = structurizr.workspace.findViewByKey(view.baseViewKey);
-        // }
-
-        // if (actualView.automaticLayout) {
-        //     structurizr.diagram.changeView(view.key, function () {
-        //         structurizr.diagram.applyAutomaticLayout(
-        //             actualView.automaticLayout.rankDirection,
-        //             actualView.automaticLayout.rankSeparation,
-        //             actualView.automaticLayout.nodeSeparation,
-        //             actualView.automaticLayout.edgeSeparation,
-        //             actualView.automaticLayout.vertices,
-        //             50,
-        //             100,
-        //             true
-        //         );
-        //
-        //         if (structurizr.diagram.getCurrentViewOrFilter().type !== structurizr.constants.FILTERED_VIEW_TYPE) {
-        //             structurizr.diagram.autoPageSize();
-        //         }
-        //
-        //         if (callback) {
-        //             callback();
-        //         }
-        //     });
-        // } else {
-            structurizr.diagram.changeView(view.key, callback);
-        // }
+        structurizr.diagram.changeView(view.key, callback);
     }
 
     function initQuickNavigation() {
@@ -1257,13 +1225,38 @@
         });
     }
 
+    function publishImage(filename, imageAsBase64EncodedDataUri, callback) {
+        $.ajax({
+            url: '/workspace/${workspace.id}/images/' + encodeURIComponent(filename),
+            type: "PUT",
+            contentType: 'text/plain',
+            cache: false,
+            headers: {
+                'Content-Type': 'text/plain'
+            },
+            dataType: 'json',
+            data: imageAsBase64EncodedDataUri
+        })
+        .done(function(data, textStatus, jqXHR) {
+            if (callback) {
+                callback();
+            }
+        })
+        .fail(function (jqXHR, textStatus, errorThrown) {
+            if (callback) {
+                callback();
+            }
+            logError(jqXHR, textStatus, errorThrown);
+        });
+    }
+
     function putImage(viewKey, filename, imageAsBase64EncodedDataUri, callback) {
         <c:choose>
         <c:when test="${not empty workspace.branch}">
-        const url = '/workspace/${workspace.id}/branch/${workspace.branch}/images/' + encodeURIComponent(filename);
+        const url = '${urlPrefix}/branch/${workspace.branch}/images/' + encodeURIComponent(filename);
         </c:when>
         <c:otherwise>
-        const url = '/workspace/${workspace.id}/images/' + encodeURIComponent(filename);
+        const url = '${urlPrefix}/images/' + encodeURIComponent(filename);
         </c:otherwise>
         </c:choose>
 
@@ -1284,7 +1277,6 @@
             }
         })
         .fail(function (jqXHR, textStatus, errorThrown) {
-            // status[viewKey] = true;
             console.log(jqXHR);
             console.log(jqXHR.status);
             console.log("Text status: " + textStatus);

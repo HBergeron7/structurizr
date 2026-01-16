@@ -27,9 +27,6 @@ abstract class LocalFileSystemWorkspaceAdapter extends AbstractFileSystemWorkspa
 
     private static final Log log = LogFactory.getLog(LocalFileSystemWorkspaceAdapter.class);
 
-    private final String API_KEY = new RandomGuidGenerator().generate();
-    private final String API_SECRET = new RandomGuidGenerator().generate();
-
     private long lastModifiedDate = 0;
 
     LocalFileSystemWorkspaceAdapter(File dataDirectory) {
@@ -142,7 +139,7 @@ abstract class LocalFileSystemWorkspaceAdapter extends AbstractFileSystemWorkspa
         workspace.setLastModifiedDate(DateUtils.removeMilliseconds(DateUtils.getNow()));
 
         try {
-            putWorkspace(new WorkspaceMetadata(workspaceId), WorkspaceUtils.toJson(workspace, false), null);
+            putWorkspace(new WorkspaceMetadata(workspaceId), WorkspaceUtils.toJson(workspace, true), null);
         } catch (Exception e) {
             log.warn(e);
         }
@@ -186,9 +183,6 @@ abstract class LocalFileSystemWorkspaceAdapter extends AbstractFileSystemWorkspa
     @Override
     public WorkspaceMetadata getWorkspaceMetadata(long workspaceId) {
         WorkspaceMetadata wmd = new WorkspaceMetadata(workspaceId);
-        wmd.setApiKey(API_KEY);
-        wmd.setApiSecret(API_SECRET);
-
         Workspace workspace = loadWorkspace(workspaceId);
         if (workspace != null) {
             wmd.setName(workspace.getName());
@@ -209,7 +203,7 @@ abstract class LocalFileSystemWorkspaceAdapter extends AbstractFileSystemWorkspa
         File[] files = directory.listFiles();
         if (files != null) {
             for (File file : files) {
-                if (file.getName().startsWith(".") || file.getName().equals(StructurizrProperties.CONFIGURATION_FILE_NAME)) {
+                if (file.getName().startsWith(".") || file.getName().equals(StructurizrProperties.CONFIGURATION_FILENAME)) {
                     // ignore
                 } else if (file.isFile()) {
                     if (file.getName().equals(WORKSPACE_JSON_FILENAME) && new File(file.getParentFile(), WORKSPACE_DSL_FILENAME).exists()) {
@@ -277,6 +271,11 @@ abstract class LocalFileSystemWorkspaceAdapter extends AbstractFileSystemWorkspa
     @Override
     public long getLastModifiedDate() {
         return lastModifiedDate;
+    }
+
+    @Override
+    public void removeOldWorkspaceVersions() {
+        // not supported
     }
 
 }

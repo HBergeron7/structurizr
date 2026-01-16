@@ -4,10 +4,10 @@
 <script type="text/javascript" src="<c:url value="/static/js/structurizr-content.js" />"></script>
 <script type="text/javascript" src="<c:url value="/static/js/structurizr-documentation.js" />"></script>
 <script type="text/javascript" src="/static/js/markdown-it-13.0.1.min.js"></script>
-<script type="text/javascript" src="/static/js/katex-0.16.4.min.js"></script>
+<script type="text/javascript" src="/static/js/katex-0.16.27.min.js"></script>
 <script type="text/javascript" src="/static/js/asciidoctor-2.2.6.min.js"></script>
 
-<link href="/static/css/katex-0.16.4.min.css" rel="stylesheet" media="screen" />
+<link href="/static/css/katex-0.16.27.min.css" rel="stylesheet" media="screen" />
 <link href="<c:url value="/static/css/structurizr-asciidoctor.css" />" rel="stylesheet" media="screen" />
 <link href="<c:url value="/static/css/structurizr-documentation.css" />" rel="stylesheet" media="screen" />
 
@@ -44,21 +44,6 @@
             <div class="navigationItemSeparator"></div>
 
             <div class="navigationItem">
-                <c:if test="${not empty sharingUrlPrefix}">
-                <a id="shareLink" href="" title="Share"><img src="/static/bootstrap-icons/share-fill.svg" class="icon-sm" /></a>
-                |
-                <script nonce="${scriptNonce}">
-                    $('#shareLink').click(function(event) {
-                        event.preventDefault();
-
-                        if (requestedScope === WORKSPACE_SCOPE) {
-                            window.open('${sharingUrlPrefix}/documentation/' + window.location.hash);
-                        } else {
-                            window.open('${sharingUrlPrefix}/documentation/' + requestedScope + window.location.hash);
-                        }
-                    });
-                </script>
-                </c:if>
                 <a id="exportLink" href="" class="hidden" title="Export to offline HTML page"><img src="/static/bootstrap-icons/filetype-html.svg" class="icon-sm" /></a> |
                 <a id="renderingModeLightLink" href="" title="Light"><img src="/static/bootstrap-icons/sun.svg" class="icon-sm" /></a> |
                 <a id="renderingModeDarkLink" href="" title="Dark"><img src="/static/bootstrap-icons/moon-fill.svg" class="icon-sm" /></a> |
@@ -635,7 +620,12 @@
     }
 
     function exportDocumentationToOfflineHtmlPage(callback) {
-        const exportWindow = window.open('/static/html/offline-documentation.html');
+        var exportWindow;
+        if (structurizr.ui.isDarkMode()) {
+            exportWindow = window.open('/static/html/offline-documentation-dark.html');
+        } else {
+            exportWindow = window.open('/static/html/offline-documentation-light.html');
+        }
 
         const exportDocumentation = function() {
             const documentationContentDiv = exportWindow.document.getElementById('documentationContent');
@@ -666,7 +656,7 @@
                             var embeddedDiagramDiv = exportWindow.document.createElement("div");
                             embeddedDiagramDiv.className = 'img-thumbnail';
 
-                            var svgMarkupForDiagram = iframe.contentWindow.structurizr.diagram.exportCurrentDiagramToSVG(true);
+                            var svgMarkupForDiagram = iframe.contentWindow.structurizr.diagram.exportCurrentDiagramToSVG({ metadata: true, crop: false}).markup;
                             var svgMarkupForDiagramKey = iframe.contentWindow.structurizr.diagram.exportCurrentDiagramKeyToSVG();
 
                             var parentDiv = iframe.parentNode;

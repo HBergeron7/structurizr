@@ -13,10 +13,12 @@ import com.structurizr.io.json.EncryptedJsonWriter;
 import com.structurizr.server.domain.*;
 import com.structurizr.server.domain.User;
 import com.structurizr.util.DateUtils;
+import com.structurizr.util.ImageUtils;
 import com.structurizr.util.StringUtils;
 import com.structurizr.util.WorkspaceUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.io.File;
@@ -146,7 +148,9 @@ class WorkspaceComponentImpl implements WorkspaceComponent {
             } else {
                 // authenticated request
                 for (WorkspaceMetadata workspace : workspaces) {
-                    if (workspace.hasAccess(user)) {
+                    Set<Permission> permissions = workspace.getPermissions(user);
+
+                    if (!permissions.isEmpty()) {
                         // user is configured to see the workspace
                         workspace.setUrlPrefix("/workspace");
                         filteredWorkspaces.add(workspace);
@@ -164,6 +168,10 @@ class WorkspaceComponentImpl implements WorkspaceComponent {
 
     @Override
     public WorkspaceMetadata getWorkspaceMetadata(long workspaceId) throws WorkspaceComponentException {
+        if (workspaceId < 0) {
+            throw new IllegalArgumentException("Invalid workspace ID: " + workspaceId);
+        }
+
         WorkspaceMetadata wmd = workspaceMetadataCache.get(workspaceId);
 
         if (wmd == null) {
@@ -255,11 +263,7 @@ class WorkspaceComponentImpl implements WorkspaceComponent {
             try {
                 // create and write the workspace metadata
                 WorkspaceMetadata workspaceMetadata = new WorkspaceMetadata(workspaceId);
-                if (user != null) {
-                    workspaceMetadata.setOwner(user.getUsername());
-                }
-                workspaceMetadata.setApiKey(UUID.randomUUID().toString());
-                workspaceMetadata.setApiSecret(UUID.randomUUID().toString());
+                workspaceMetadata.regenerateApiKey();
 
                 putWorkspaceMetadata(workspaceMetadata);
             } catch (Exception e) {
@@ -273,7 +277,7 @@ class WorkspaceComponentImpl implements WorkspaceComponent {
                 workspace.getConfiguration().setScope(WorkspaceScope.SoftwareSystem);
             }
 
-            String json = WorkspaceUtils.toJson(workspace, false);
+            String json = WorkspaceUtils.toJson(workspace, true);
 
             putWorkspace(workspaceId, null, json);
 
@@ -311,13 +315,6 @@ class WorkspaceComponentImpl implements WorkspaceComponent {
             if (workspaceMetadata == null) {
                 workspaceMetadata = new WorkspaceMetadata(workspaceId);
             }
-
-            // todo: workspace event listener plugin
-//            if (Configuration.getInstance().getWorkspaceEventListener() != null) {
-//                WorkspaceEvent event = createWorkspaceEvent(workspaceMetadata, json);
-//                Configuration.getInstance().getWorkspaceEventListener().beforeSave(event);
-//                json = event.getJson();
-//            }
 
             if (json.contains(ENCRYPTION_STRATEGY_STRING) && json.contains(CIPHERTEXT_STRING)) {
                 EncryptedJsonReader jsonReader = new EncryptedJsonReader();
@@ -378,7 +375,7 @@ class WorkspaceComponentImpl implements WorkspaceComponent {
                     encryptedJsonWriter.write(encryptedWorkspace, stringWriter);
                     jsonToBeStored = stringWriter.toString();
                 } else {
-                    jsonToBeStored = WorkspaceUtils.toJson(workspace, false);
+                    jsonToBeStored = WorkspaceUtils.toJson(workspace, true);
                 }
             }
 
@@ -402,7 +399,7 @@ class WorkspaceComponentImpl implements WorkspaceComponent {
                     if (configuration != null) {
 
                         // only configure workspace visibility and users if no admin users/roles are defined
-                        if (Configuration.getInstance().isAuthenticationEnabled() && Configuration.getInstance().getAdminUsersAndRoles().isEmpty()) {
+                        if (Configuration.getInstance().isAuthenticationEnabled() && !Configuration.getInstance().adminUsersEnabled()) {
                             if (configuration.getVisibility() != null) {
                                 workspaceMetadata.setPublicWorkspace(configuration.getVisibility() == Visibility.Public);
                             }
@@ -434,55 +431,6 @@ class WorkspaceComponentImpl implements WorkspaceComponent {
             throw new WorkspaceComponentException(e.getMessage(), e);
         }
     }
-
-//    private WorkspaceEvent createWorkspaceEvent(WorkspaceMetaData workspaceMetadata, String workspaceAsJson) {
-//        return new WorkspaceEvent() {
-//
-//            private String json = workspaceAsJson;
-//
-//            @Override
-//            public WorkspaceProperties getWorkspaceProperties() {
-//                return workspaceMetadata.toWorkspaceProperties();
-//            }
-//
-//            @Override
-//            public String getJson() {
-//                return json;
-//            }
-//
-//            @Override
-//            public void setJson(String json) {
-//                this.json = json;
-//            }
-//        };
-//
-//            public WorkspaceProperties(WorkspaceMetaData workspaceMetadata) {
-//            this.id = workspaceMetadata.getId();
-//            this.name = workspaceMetadata.getName();
-//            this.description = workspaceMetadata.getDescription();
-//
-//            this.users = new LinkedHashSet<>();
-//            for (String user : workspaceMetadata.getReadUsers()) {
-//                users.add(new com.structurizr.configuration.User(user, Role.ReadOnly));
-//            }
-//            for (String user : workspaceMetadata.getWriteUsers()) {
-//                users.add(new com.structurizr.configuration.User(user, Role.ReadWrite));
-//            }
-//
-//            if (workspaceMetadata.isPublicWorkspace()) {
-//                this.visibility = Visibility.Public;
-//            } else {
-//                this.visibility = Visibility.Private;
-//            }
-//
-//            this.lastModifiedDate = workspaceMetadata.getLastModifiedDate();
-//        }
-//
-//        this.workspaceId = workspaceMetadata.getId();
-//        this.workspaceProperties = new WorkspaceProperties(workspaceMetadata);
-//        this.json = json;
-//
- //    }
 
     @Override
     public List<WorkspaceVersion> getWorkspaceVersions(long workspaceId, String branch) {
@@ -584,20 +532,11 @@ class WorkspaceComponentImpl implements WorkspaceComponent {
 
     @Override
     public boolean putImage(long workspaceId, String branch, String filename, File file) {
-        if (isImage(filename)) {
+        if (ImageUtils.isImage(filename)) {
             return workspaceAdapter.putImage(workspaceId, branch, filename, file);
         } else {
             throw new WorkspaceComponentException(filename + " is not an image");
         }
-    }
-
-    private boolean isImage(String filename) {
-        if (StringUtils.isNullOrEmpty(filename)) {
-            return false;
-        }
-
-        filename = filename.toLowerCase();
-        return filename.endsWith(".jpg") || filename.endsWith(".jpeg") || filename.endsWith(".png") || filename.endsWith(".gif");
     }
 
     @Override
@@ -618,6 +557,12 @@ class WorkspaceComponentImpl implements WorkspaceComponent {
     @Override
     public long getLastModifiedDate() {
         return workspaceAdapter.getLastModifiedDate();
+    }
+
+    @Scheduled(cron="@midnight")
+    public void removeOldWorkspaceVersions() {
+        log.debug("Removing old workspace versions");
+        workspaceAdapter.removeOldWorkspaceVersions();
     }
 
 }

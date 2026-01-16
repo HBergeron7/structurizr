@@ -3,12 +3,12 @@ package com.structurizr.server.domain;
 import com.structurizr.configuration.Configuration;
 import com.structurizr.util.DateUtils;
 import com.structurizr.util.StringUtils;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
-import static com.structurizr.util.DateUtils.USER_FRIENDLY_DATE_FORMAT;
 import static com.structurizr.util.DateUtils.UTC_TIME_ZONE;
 
 public class WorkspaceMetadata {
@@ -24,10 +24,8 @@ public class WorkspaceMetadata {
     static final String LAST_MODIFIED_DATE_PROPERTY = "lastModifiedDate";
     static final String SIZE_PROPERTY = "size";
     static final String API_KEY_PROPERTY = "apiKey";
-    static final String API_SECRET_PROPERTY = "apiSecret";
     static final String PUBLIC_PROPERTY = "public";
     static final String SHARING_TOKEN_PROPERTY = "sharingToken";
-    static final String OWNER_PROPERTY = "owner";
     static final String LOCKED_USER_PROPERTY = "lockedUser";
     static final String LOCKED_AGENT_PROPERTY = "lockedAgent";
     static final String LOCKED_DATE_PROPERTY = "lockedDate";
@@ -42,7 +40,6 @@ public class WorkspaceMetadata {
     private long size;
     private boolean clientSideEncrypted = false;
     private String apiKey;
-    private String apiSecret;
     private boolean publicWorkspace = false;
     private String sharingToken = "";
     private String urlPrefix = "/workspace";
@@ -105,12 +102,14 @@ public class WorkspaceMetadata {
         this.apiKey = apiKey;
     }
 
-    public String getApiSecret() {
-        return apiSecret;
-    }
+    public String regenerateApiKey() {
+        BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+        String apiKey = UUID.randomUUID().toString();
+        String hashedApiKey = encoder.encode(apiKey);
 
-    public void setApiSecret(String apiSecret) {
-        this.apiSecret = apiSecret;
+        setApiKey(hashedApiKey);
+
+        return apiKey;
     }
 
     public boolean isPublicWorkspace() {
@@ -155,14 +154,6 @@ public class WorkspaceMetadata {
 
     public void setArchived(boolean archived) {
         this.archived = archived;
-    }
-
-    public boolean hasNoUsersConfigured() {
-        return readUsers.isEmpty() && writeUsers.isEmpty();
-    }
-
-    public boolean hasUsersConfigured() {
-        return !hasNoUsersConfigured();
     }
 
     public Date getLastModifiedDate() {
@@ -253,23 +244,69 @@ public class WorkspaceMetadata {
         return !StringUtils.isNullOrEmpty(sharingToken);
     }
 
-    public String getOwner() {
-        return owner;
-    }
+    public final Set<Permission> getPermissions(User user) {
+        Set<Permission> permissions = new HashSet<>();
 
-    public void setOwner(String owner) {
-        this.owner = owner;
-    }
+        if (!Configuration.getInstance().isAuthenticationEnabled()) {
+            // authentication is disabled - user can do everything
+            permissions.add(Permission.Admin);
+            permissions.add(Permission.Write);
+            permissions.add(Permission.Read);
+        } else {
+            if (user.getAuthenticationMethod() == AuthenticationMethod.NONE) {
+                // do nothing - unauthenticated user
+            } else {
+                if (hasUsersConfigured()) {
+                    // workspace write/read users configured
+                    if (Configuration.getInstance().adminUsersEnabled()) {
+                        if (user.isAdmin()) {
+                            permissions.add(Permission.Admin);
+                            permissions.add(Permission.Write);
+                            permissions.add(Permission.Read);
+                        } else {
+                            if (isWriteUser(user)) {
+                                permissions.add(Permission.Write);
+                                permissions.add(Permission.Read);
+                            } else if (isReadUser(user)) {
+                                permissions.add(Permission.Read);
+                            }
+                        }
+                    } else {
+                        if (isWriteUser(user)) {
+                            permissions.add(Permission.Admin);
+                            permissions.add(Permission.Write);
+                            permissions.add(Permission.Read);
+                        }
 
-    public boolean hasAccess(User user) {
-        return !Configuration.getInstance().isAuthenticationEnabled() || hasNoUsersConfigured() || user.isAdmin() || isWriteUser(user) || isReadUser(user);
+                        if (isReadUser(user)) {
+                            permissions.add(Permission.Read);
+                        }
+                    }
+                } else {
+                    // no workspace write/read users configured
+                    if (Configuration.getInstance().adminUsersEnabled()) {
+                        if (user.isAdmin()) {
+                            permissions.add(Permission.Admin);
+                        }
+                        permissions.add(Permission.Write);
+                        permissions.add(Permission.Read);
+                    } else {
+                        permissions.add(Permission.Admin);
+                        permissions.add(Permission.Write);
+                        permissions.add(Permission.Read);
+                    }
+                }
+            }
+        }
+
+        return permissions;
     }
 
     public Set<String> getReadUsers() {
         return new LinkedHashSet<>(readUsers);
     }
 
-    public boolean isReadUser(User user) {
+    boolean isReadUser(User user) {
         if (user == null) {
             return false;
         } else {
@@ -295,7 +332,7 @@ public class WorkspaceMetadata {
         return new LinkedHashSet<>(writeUsers);
     }
 
-    public boolean isWriteUser(User user) {
+    boolean isWriteUser(User user) {
         if (Configuration.getInstance().isAuthenticationEnabled()) {
             if (user == null) {
                 return false;
@@ -321,8 +358,20 @@ public class WorkspaceMetadata {
         writeUsers.clear();
     }
 
-    public boolean isOwner(User user) {
-        return StringUtils.isNullOrEmpty(owner) || owner.equals(user.getUsername());
+    public int getNumberOfWriteUsers() {
+        return writeUsers.size();
+    }
+
+    public int getNumberOfReadUsers() {
+        return readUsers.size();
+    }
+
+    boolean hasNoUsersConfigured() {
+        return readUsers.isEmpty() && writeUsers.isEmpty();
+    }
+
+    boolean hasUsersConfigured() {
+        return !hasNoUsersConfigured();
     }
 
     public String getBranch() {
@@ -397,10 +446,8 @@ public class WorkspaceMetadata {
         }
         workspace.setSize(Long.parseLong(properties.getProperty(SIZE_PROPERTY, "0")));
         workspace.setApiKey(properties.getProperty(API_KEY_PROPERTY, ""));
-        workspace.setApiSecret(properties.getProperty(API_SECRET_PROPERTY, ""));
         workspace.setPublicWorkspace("true".equals(properties.getProperty(PUBLIC_PROPERTY, "false")));
         workspace.setSharingToken(properties.getProperty(SHARING_TOKEN_PROPERTY, ""));
-        workspace.setOwner(properties.getProperty(OWNER_PROPERTY, ""));
         workspace.setArchived("true".equals(properties.getProperty(ARCHIVED_PROPERTY)));
 
         workspace.setLockedUser(properties.getProperty(LOCKED_USER_PROPERTY, null));
@@ -469,9 +516,6 @@ public class WorkspaceMetadata {
             properties.setProperty(LAST_MODIFIED_DATE_PROPERTY, "");
         }
 
-        if (!StringUtils.isNullOrEmpty(this.getOwner())) {
-            properties.setProperty(OWNER_PROPERTY, this.getOwner());
-        }
         properties.setProperty(READ_USERS_AND_ROLES_PROPERTY, toCommaSeparatedString(this.getReadUsers()));
         properties.setProperty(WRITE_USERS_AND_ROLES_PROPERTY, toCommaSeparatedString(this.getWriteUsers()));
 
@@ -480,7 +524,6 @@ public class WorkspaceMetadata {
         properties.setProperty(SIZE_PROPERTY, "" + this.getSize());
 
         properties.setProperty(API_KEY_PROPERTY, this.getApiKey());
-        properties.setProperty(API_SECRET_PROPERTY, this.getApiSecret());
 
         properties.setProperty(PUBLIC_PROPERTY, "" + this.isPublicWorkspace());
 

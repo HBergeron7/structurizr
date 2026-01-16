@@ -68,6 +68,8 @@ public class Configuration {
         if (!getWorkDirectory().exists()) {
             getWorkDirectory().mkdirs();
         }
+
+        configureLogging();
     }
 
     public static Configuration init(Profile profile, Properties properties) {
@@ -161,6 +163,10 @@ public class Configuration {
         return new HashSet<>(adminUsersAndRoles);
     }
 
+    public boolean adminUsersEnabled() {
+        return !adminUsersAndRoles.isEmpty();
+    }
+
     private void setAdminUsersAndRoles(String... usersAndRoles) {
         adminUsersAndRoles = new HashSet<>();
         if (usersAndRoles != null) {
@@ -185,7 +191,7 @@ public class Configuration {
     }
 
     private void loadProperties() {
-        File file = new File(getDataDirectory(), StructurizrProperties.CONFIGURATION_FILE_NAME);
+        File file = new File(getDataDirectory(), StructurizrProperties.CONFIGURATION_FILENAME);
         Properties propertiesFromFile = new Properties();
         try {
             if (file.exists()) {
@@ -226,6 +232,7 @@ public class Configuration {
     }
 
     private void setDefaults() {
+        setDefault(DEBUG, FALSE);
         setDefault(NETWORK_TIMEOUT, DEFAULT_NETWORK_TIMEOUT_OF_SIXTY_SECONDS);
 
         if (profile != Profile.Playground) {
@@ -249,15 +256,11 @@ public class Configuration {
             setDefault(MAX_WORKSPACE_VERSIONS, DEFAULT_MAX_WORKSPACE_VERSIONS);
             setDefault(CACHE_EXPIRY_IN_MINUTES, DEFAULT_CACHE_EXPIRY_IN_MINUTES);
             setDefault(ADMIN_USERS_AND_ROLES, "");
-            setDefault(WORKSPACE_EVENT_LISTENER_PLUGIN, "");
-            setDefault(DSL_EDITOR, FALSE); // backwards compatibility
 
             setDefault(Features.UI_DSL_EDITOR, FALSE);
             setDefault(Features.WORKSPACE_ARCHIVING, FALSE);
             setDefault(Features.WORKSPACE_BRANCHES, FALSE);
             setDefault(Features.WORKSPACE_SCOPE_VALIDATION, Features.WORKSPACE_SCOPE_VALIDATION_RELAXED);
-            setDefault(Features.DIAGRAM_REVIEWS, TRUE);
-            setDefault(Features.DIAGRAM_ANONYMOUS_THUMBNAILS, FALSE);
         }
     }
 
@@ -279,15 +282,30 @@ public class Configuration {
         features.configure(Features.WORKSPACE_ARCHIVING, Boolean.parseBoolean(getProperty(Features.WORKSPACE_ARCHIVING)));
         features.configure(Features.WORKSPACE_BRANCHES, Boolean.parseBoolean(getProperty(Features.WORKSPACE_BRANCHES)));
         features.configure(Features.WORKSPACE_SCOPE_VALIDATION, getProperty(Features.WORKSPACE_SCOPE_VALIDATION).equalsIgnoreCase(Features.WORKSPACE_SCOPE_VALIDATION_STRICT));
-        features.configure(Features.DIAGRAM_REVIEWS, Boolean.parseBoolean(getProperty(Features.DIAGRAM_REVIEWS)));
-        features.configure(Features.DIAGRAM_ANONYMOUS_THUMBNAILS, Boolean.parseBoolean(getProperty(Features.DIAGRAM_ANONYMOUS_THUMBNAILS)));
+    }
 
-        // for backwards compatibility (older versions had structurizr.dslEditor=true)
-        if (!isFeatureEnabled(Features.UI_DSL_EDITOR)) {
-            features.configure(Features.UI_DSL_EDITOR, Boolean.parseBoolean(getProperty(DSL_EDITOR)));
+    private void configureLogging() {
+        boolean debug = Boolean.parseBoolean(getProperty(StructurizrProperties.DEBUG));
+        if (debug) {
+            System.setProperty(LOGGING_LEVEL_STRUCTURIZR, "debug");
+            System.setProperty(LOGGING_LEVEL_OTHER, "debug");
+        } else {
+            System.setProperty(LOGGING_LEVEL_STRUCTURIZR, "info");
+            System.setProperty(LOGGING_LEVEL_OTHER, "warn");
         }
 
-        properties.remove(DSL_EDITOR); // not needed after the feature has been configured
+        if (StringUtils.isNullOrEmpty(System.getProperty(LOGGING_FILENAME))) {
+            File logDirectory = new File(getWorkDirectory(), "logs");
+            if (getDataDirectory().canWrite()) {
+                logDirectory.mkdir();
+                File logFilename = new File(logDirectory, "structurizr.log");
+                System.setProperty(LOGGING_FILENAME, logFilename.getAbsolutePath());
+                properties.setProperty(LOGGING_FILENAME, logFilename.getAbsolutePath());
+            } else {
+                // don't write logs
+                System.setProperty(LOGGING_FILENAME, "");
+            }
+        }
     }
 
     public StructurizrDslParser createStructurizrDslParser() {

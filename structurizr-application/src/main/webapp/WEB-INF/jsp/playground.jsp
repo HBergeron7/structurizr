@@ -10,61 +10,7 @@
     progressMessage.show('<p>Loading workspace...</p>');
 </script>
 
-<style>
-    #sourceTextArea {
-        border: solid 1px #dddddd;
-    }
-    .section {
-        padding-bottom: 0;
-    }
-
-    pre {
-        padding: 5px;
-    }
-
-    #editorControls {
-        padding: 0;
-        border: none;
-        box-shadow: none;
-    }
-
-    .ace_structurizr_keyword {
-        color: #1168BD;
-    }
-
-    .ace_structurizr_keyword_disabled {
-        color: #cccccc;
-    }
-
-    .ace_structurizr_variable {
-        color: #772222;
-    }
-
-    .ace_structurizr_string {
-        color: #555555;
-    }
-
-    .ace_structurizr_comment {
-        color: #999999;
-    }
-
-    .ace_structurizr_default {
-        color: #777777;
-    }
-
-    .ace_structurizr_brace {
-        color: #1168BD;
-    }
-
-    .ace_structurizr_constant {
-        color: #00aa00;
-    }
-
-    .ace_structurizr_whitespace {
-    }
-</style>
-
-<div class="section" style="padding-top: 20px">
+<div class="section" style="padding-top: 20px; padding-bottom: 0">
     <div class="row" style="margin-left: 0; margin-right: 0; padding-bottom: 0">
         <div id="sourcePanel" class="col-6 centered">
 
@@ -74,7 +20,7 @@
                 <input id="json" name="json" type="hidden" />
 
                 <div style="text-align: left; margin-bottom: 10px">
-                    <div id="editorControls" style="float: right">
+                    <div id="sourceControls" style="float: right">
                         <div class="btn-group">
                             <label class="btn btn-default small">
                                 <img src="/static/bootstrap-icons/file-earmark-arrow-up.svg" class="icon-btn" />
@@ -88,14 +34,19 @@
                         </div>
 
                         <div class="btn-group">
+                            <button id="themeBrowserButton" class="btn btn-default" title="Theme browser"><img src="/static/bootstrap-icons/palette.svg" class="icon-btn" /></button>
+                        </div>
+
+                        <div class="btn-group">
                             <button id="sourceButton" class="btn btn-default" title="Source"><img src="/static/bootstrap-icons/code-slash.svg" class="icon-btn" /></button>
                             <button id="diagramsButton" class="btn btn-default" title="Diagrams"><img src="/static/bootstrap-icons/bounding-box.svg" class="icon-btn" /></button>
                         </div>
 
-                        <button id="renderButton" class="btn btn-default"><img src="/static/bootstrap-icons/play.svg" class="icon-btn" /> Render</button>
+                        <button id="renderButton" class="btn btn-primary"><img src="/static/bootstrap-icons/play.svg" class="icon-btn icon-white" /></button>
                     </div>
 
                     <div>
+                        <a href="https://docs.structurizr.com" target="_blank"><img src="/static/img/structurizr-logo.png" alt="Structurizr logo" class="img-responsive" style="max-height: 38px; margin-top: -3px;" /></a>
                         <%@ include file="/WEB-INF/fragments/dsl/language-reference.jspf" %>
                     </div>
                 </div>
@@ -104,7 +55,8 @@
             </form>
 
             <div class="smaller" style="margin-top: 5px">
-                <a href="https://docs.structurizr.com" target="_blank">Structurizr v${version.buildNumber}</a> |
+                <a href="https://docs.structurizr.com" target="_blank">Structurizr v${version.buildNumber}</a>
+                &nbsp;&nbsp;&nbsp;
                 <a id="renderingModeLightLink" href="" title="Light"><img src="/static/bootstrap-icons/sun.svg" class="icon-xs" /></a> |
                 <a id="renderingModeDarkLink" href="" title="Dark"><img src="/static/bootstrap-icons/moon-fill.svg" class="icon-xs" /></a> |
                 <a id="renderingModeSystemLink" href="" title="System"><img src="/static/bootstrap-icons/sliders.svg" class="icon-xs" /></a>
@@ -123,7 +75,7 @@
             <div id="viewListPanel" style="margin-bottom: 10px">
                 <div class="form-inline">
                     <span id="diagramNavButtons" class="hidden">
-                        <button id="viewSourceButton" class="btn btn-default" title="Source"><img src="/static/bootstrap-icons/code-slash.svg" class="icon-btn" /> View source</button>
+                        <button id="viewSourceButton" class="btn btn-primary" title="Source" style="margin-top: -4px;"><img src="/static/bootstrap-icons/code-slash.svg" class="icon-btn icon-white" /> View source</button>
                     </span>
                     <select id="viewsList" class="form-select" style="width: auto; display: inline-block;"></select>
                 </div>
@@ -154,6 +106,7 @@
     $('#homeButton').click(function(event) { event.preventDefault(); window.location.href = '/'; });
     $('#loadFromLocalStorageButton').click(function(event) { loadFromLocalStorage(event); });
     $('#saveToLocalStorageButton').click(function(event) { saveToLocalStorage(event); });
+    $('#themeBrowserButton').click(function(event) { openThemeBrowser(event); });
     $('#sourceButton').click(function(event) { sourceButtonClicked(event); });
     $('#diagramsButton').click(function(event) { diagramsButtonClicked(event); });
     $('#viewSourceButton').click(function(event) { sourceButtonClicked(event); });
@@ -221,10 +174,10 @@
     }
 
     function resize() {
-        const editorControlsHeight = $('#editorControls').outerHeight();
+        const sourceControlsHeight = $('#sourceControls').outerHeight();
         const verticalPadding = 60;
 
-        $('#sourceTextArea').css('height', (window.innerHeight - editorControlsHeight - verticalPadding) + 'px');
+        $('#sourceTextArea').css('height', (window.innerHeight - sourceControlsHeight - verticalPadding) + 'px');
         if (editor) {
             editor.resize(true);
         }
@@ -355,6 +308,11 @@
         } catch (e) {
             console.log(e);
         }
+    }
+
+    function openThemeBrowser(e) {
+        e.preventDefault();
+        window.open('/theme-browser', "structurizrThemeBrowser", "top=100,left=300,width=800,height=800,location=no,menubar=no,status=no,toolbar=no");
     }
 
     function sourceButtonClicked(e) {

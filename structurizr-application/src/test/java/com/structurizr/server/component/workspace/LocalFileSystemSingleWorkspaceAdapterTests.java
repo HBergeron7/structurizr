@@ -77,8 +77,6 @@ class LocalFileSystemSingleWorkspaceAdapterTests extends AbstractWorkspaceAdapte
         WorkspaceMetadata wmd = workspaceAdapter.getWorkspaceMetadata(1);
         assertEquals("JSON", wmd.getName());
         assertEquals("Description", wmd.getDescription());
-        assertFalse(StringUtils.isNullOrEmpty(wmd.getApiKey()));
-        assertFalse(StringUtils.isNullOrEmpty(wmd.getApiSecret()));
     }
 
     @Test
@@ -93,8 +91,6 @@ class LocalFileSystemSingleWorkspaceAdapterTests extends AbstractWorkspaceAdapte
         WorkspaceMetadata wmd = workspaceAdapter.getWorkspaceMetadata(1);
         assertEquals("DSL", wmd.getName());
         assertEquals("Description", wmd.getDescription());
-        assertFalse(StringUtils.isNullOrEmpty(wmd.getApiKey()));
-        assertFalse(StringUtils.isNullOrEmpty(wmd.getApiSecret()));
     }
 
     @Override
@@ -127,6 +123,16 @@ class LocalFileSystemSingleWorkspaceAdapterTests extends AbstractWorkspaceAdapte
     @Override
     protected WorkspaceAdapter getWorkspaceAdapter() {
         return workspaceAdapter;
+    }
+
+    @Test
+    void getDataDirectory_ThrowsAnException_WhenTheWorkspaceIdIsNot1() {
+        try {
+            workspaceAdapter.getDataDirectory(2);
+            fail();
+        } catch (Exception e) {
+            assertEquals("Workspace ID must be 1", e.getMessage());
+        }
     }
 
 }

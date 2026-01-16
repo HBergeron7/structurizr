@@ -76,7 +76,15 @@
                 <c:choose>
                     <c:when test="${user.authenticated}">
                         <span class="topNavigationItem" style="margin-right: 0">
-                            <a href="/user/profile"><span class="label structurizrBackgroundLight" style="font-size: 18px"><img src="/static/bootstrap-icons/person.svg" class="icon-sm icon-white" /> ${user.username}</span></a>
+                            <a href="/user/profile">
+                                <span class="label structurizrBackgroundLight" style="font-size: 18px">
+                                    <c:choose>
+                                        <c:when test="${user.admin}"><img src="/static/bootstrap-icons/person-fill-gear.svg" class="icon-md icon-white" /></c:when>
+                                        <c:otherwise><img src="/static/bootstrap-icons/person-fill.svg" class="icon-md icon-white" /></c:otherwise>
+                                    </c:choose>
+                                ${user.username}
+                                </span>
+                            </a>
                         </span>
                     </c:when>
                     <c:otherwise>
@@ -91,8 +99,7 @@
     </div>
 
     <c:forEach var="message" items="${messages.unreadMessages}">
-    <div style="margin: 10px" class="alert alert-${message.type} alert-dismissible" role="alert" style="margin-bottom: 0">
-        <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+    <div style="margin: 10px" class="alert alert-${message.type} centered" role="alert" style="margin-bottom: 0">
         ${message.text}
     </div>
     </c:forEach>

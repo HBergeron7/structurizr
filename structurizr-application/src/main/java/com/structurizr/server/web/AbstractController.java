@@ -85,8 +85,6 @@ public abstract class AbstractController {
         } else {
             model.addAttribute("pageTitle", "Structurizr - " + pageTitle);
         }
-
-        model.addAttribute("diagramReviewFeatureEnabled", Configuration.getInstance().isFeatureEnabled(Features.DIAGRAM_REVIEWS));
     }
 
     protected String calculateUrlPrefix(long workspaceId) {
@@ -140,6 +138,8 @@ public abstract class AbstractController {
         } else if (!StringUtils.isNullOrEmpty(version)) {
             WorkspaceVersion.validateVersionIdentifier(version);
             model.addAttribute(URL_SUFFIX, String.format("?version=%s", version));
+        } else {
+            model.addAttribute(URL_SUFFIX, "");
         }
     }
 

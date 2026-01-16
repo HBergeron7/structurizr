@@ -2,11 +2,15 @@
 
     <c:if test="${showFooter eq true}">
     <div id="footer">
-        <p>
-            <a href="https://docs.structurizr.com" target="_blank">Structurizr v<span id="buildNumber">${version.buildNumber}</span></a>
-            <c:if test="${user.authenticated}">
-            | <a href="/signout">Sign out</a>
-            </c:if>
+        <p id="versionDetails">
+            <c:choose>
+            <c:when test="${structurizrConfiguration.profile == 'Local'}">
+            <a href="https://docs.structurizr.com/local" target="_blank">Structurizr v${version.buildNumber}</a>
+            </c:when>
+            <c:otherwise>
+            <a href="https://docs.structurizr.com/server" target="_blank">Structurizr v${version.buildNumber}</a>
+            </c:otherwise>
+            </c:choose>
         </p>
         <p>
             <a id="renderingModeLightLink" href="" title="Light"><img src="/static/bootstrap-icons/sun.svg" class="icon-sm" /></a> |
@@ -22,6 +26,13 @@
             console.log(url + ':' + lineNo + ':' + columnNo);
             console.log(error);
         };
+
+        function logError(msg, url, lineNo, error) {
+            console.log(msg);
+            console.log(url);
+            console.log(lineNo);
+            console.log(error);
+        }
 
         $('#renderingModeLightLink').click(function(event) {
             event.preventDefault();

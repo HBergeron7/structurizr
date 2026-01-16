@@ -151,7 +151,7 @@ label {
 }
 
 a {
-    color: #1168BD;
+    color: #3066B7;
     text-decoration: none;
 }
 
@@ -168,7 +168,7 @@ a {
     color: #ffffff;
 }
 .structurizrBackgroundBase {
-    background: #1168BD;
+    background: #3066B7;
     color: #ffffff;
 }
 .structurizrBackgroundLight {
@@ -184,10 +184,10 @@ a {
 }
 
 .label-primary {
-    background: #1168BD;
+    background: #3066B7;
 }
 .label-branch {
-    background: #02172C;
+    background: #08427B;
     color: #ffffff;
     font-size: 12px;
 }
@@ -511,7 +511,7 @@ hr {
 }
 
 .joint-link.joint-theme-default .marker-vertex {
-    fill: #1168BD;
+    fill: #dd0000;
     r: 25px;
 }
 
@@ -561,7 +561,7 @@ hr {
 }
 
 .brandingLogo {
-    max-height: 35px;
+    max-height: 48px;
     margin-top: 5px;
 }
 
@@ -570,6 +570,14 @@ hr {
 }
 .btn-active {
     background: #999999;
+}
+.btn-primary, .btn-primary:hover, .btn-primary:active {
+    background: #3066B7;
+    border-color: #3066B7;
+}
+.btn-danger, .btn-danger:hover, .btn-danger:active {
+    background: darkred;
+    border-color: darkred;
 }
 
 #quickFindModal .selected {
@@ -602,4 +610,37 @@ hr {
 .btn-default:disabled {
     background: #ffffff;
     border: solid 1px #ffffff;
+}
+
+.ace_editor {
+    border: solid 1px #dddddd;
+}
+.ace_content {
+    background: white;
+}
+.ace_structurizr_keyword {
+    color: #1168BD;
+}
+.ace_structurizr_keyword_disabled {
+    color: #cccccc;
+}
+.ace_structurizr_variable {
+    color: #772222;
+}
+.ace_structurizr_string {
+    color: #555555;
+}
+.ace_structurizr_comment {
+    color: #999999;
+}
+.ace_structurizr_default {
+    color: #777777;
+}
+.ace_structurizr_brace {
+    color: #1168BD;
+}
+.ace_structurizr_constant {
+    color: #00aa00;
+}
+.ace_structurizr_whitespace {
 }

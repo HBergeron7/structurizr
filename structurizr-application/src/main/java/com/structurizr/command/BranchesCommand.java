@@ -25,11 +25,7 @@ public class BranchesCommand extends AbstractCommand {
         options.addOption(option);
 
         option = new Option("key", "apiKey", true, "Workspace API key");
-        option.setRequired(true);
-        options.addOption(option);
-
-        option = new Option("secret", "apiSecret", true, "Workspace API secret");
-        option.setRequired(true);
+        option.setRequired(false);
         options.addOption(option);
 
         CommandLineParser commandLineParser = new DefaultParser();
@@ -38,7 +34,6 @@ public class BranchesCommand extends AbstractCommand {
         String apiUrl = "";
         long workspaceId = 1;
         String apiKey = "";
-        String apiSecret = "";
 
         try {
             CommandLine cmd = commandLineParser.parse(options, args);
@@ -46,7 +41,6 @@ public class BranchesCommand extends AbstractCommand {
             apiUrl = cmd.getOptionValue("structurizrApiUrl", "https://api.structurizr.com");
             workspaceId = Long.parseLong(cmd.getOptionValue("workspaceId"));
             apiKey = cmd.getOptionValue("apiKey");
-            apiSecret = cmd.getOptionValue("apiSecret");
         } catch (ParseException e) {
             log.error(e.getMessage());
             formatter.printHelp("branches", options);
@@ -55,9 +49,9 @@ public class BranchesCommand extends AbstractCommand {
         }
 
         log.debug("Getting branches for workspace " + workspaceId + " at " + apiUrl);
-        WorkspaceApiClient client = new WorkspaceApiClient(apiUrl, apiKey, apiSecret);
+        WorkspaceApiClient client = new WorkspaceApiClient(apiUrl, workspaceId, apiKey);
         client.setAgent(getAgent());
-        String[] branches = client.getBranches(workspaceId);
+        String[] branches = client.getBranches();
 
         ObjectMapper mapper = new ObjectMapper();
         System.out.println(mapper.writeValueAsString(branches));

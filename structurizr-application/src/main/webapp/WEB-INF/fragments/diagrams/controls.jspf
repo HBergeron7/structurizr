@@ -42,23 +42,17 @@
         </script>
 
         <div class="btn-group">
-            <button id="exportToPNGButton" class="btn btn-default" title="Export diagram and key/legend to PNG"><img src="/static/bootstrap-icons/filetype-png.svg" class="icon-btn" /></button>
-            <button id="exportToSVGButton" class="btn btn-default" title="Export diagram and key to SVG"><img src="/static/bootstrap-icons/filetype-svg.svg" class="icon-btn" /></button>
+            <button id="exportImagesButton" class="btn btn-default" title="Export diagram and key/legend to PNG/SVG"><img src="/static/bootstrap-icons/file-earmark-image.svg" class="icon-btn" /></button>
 
             <c:if test="${structurizrConfiguration.profile eq 'Server'}">
             <button id="embedDiagramButton" class="btn btn-default" title="Embed"><img src="/static/bootstrap-icons/code-slash.svg" class="icon-btn" /></button>
             <script nonce="${scriptNonce}">$('#embedDiagramButton').click(function() { openEmbedModal(); });</script>
             </c:if>
 
-            <c:if test="${not empty sharingUrlPrefix}">
-            <button id="shareButton" class="btn btn-default" title="Share"><img src="/static/bootstrap-icons/share.svg" class="icon-btn" /></button>
-            <script nonce="${scriptNonce}">$('#shareButton').click(function() { window.open('${sharingUrlPrefix}/diagrams#' + structurizr.diagram.getCurrentViewOrFilter().key); });</script>
-            </c:if>
             <button id="helpButton" class="btn btn-default" title="Help"><img src="/static/bootstrap-icons/question-circle.svg" class="icon-btn" /></button>
         </div>
         <script nonce="${scriptNonce}">
-            $('#exportToPNGButton').click(function() { exportToPNG(); });
-            $('#exportToSVGButton').click(function() { exportToSVG(); });
+            $('#exportImagesButton').click(function() { exportToImages(); });
             $('#helpButton').click(function() { window.open('https://docs.structurizr.com/ui/diagrams'); });
         </script>
 
