@@ -21,3 +21,6 @@ replay_pid*
 structurizr-application/extensions
 
 *.json
+
+*.swp
+*.sh

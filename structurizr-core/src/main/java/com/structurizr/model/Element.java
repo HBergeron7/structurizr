@@ -192,6 +192,33 @@ public abstract class Element extends ModelItem {
         return null;
     }
 
+    /**
+     * Gets the efferent (outgoing) relationship with the specified element and technology.
+     *
+     * @param element       the element to look for
+     * @param technology    the relationship technology
+     * @return  a Relationship object, or null if the specified relationship doesn't exist
+     */
+    public Relationship getEfferentRelationshipByTechnologyWith(Element element, String technology) {
+        if (element == null) {
+            return null;
+        }
+
+        if (technology == null) {
+            technology = "";
+        }
+
+        for (Relationship relationship : relationships) {
+            if (relationship.getDestination().equals(element) && technology.equals(relationship.getTechnology())) {
+                return relationship;
+            }
+        }
+
+        return null;
+    }
+
+
+
     boolean has(Relationship relationship) {
         return relationships.stream().anyMatch(r -> r.getDestination().equals(relationship.getDestination()) && r.getDescription().equals(relationship.getDescription()));
     }

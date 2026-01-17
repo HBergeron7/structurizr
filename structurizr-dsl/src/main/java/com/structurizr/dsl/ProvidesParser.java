@@ -17,8 +17,8 @@ final class ProvidesParser extends AbstractParser {
         StaticStructureElement element;
         String identifier;
         String action;
-        String description;
-        String technology;
+        String description = null;
+        String technology = null;
         List<String> properties = new ArrayList<>();
         List<String> tags = new ArrayList<>();
 

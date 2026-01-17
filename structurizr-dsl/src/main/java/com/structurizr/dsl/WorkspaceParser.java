@@ -3,6 +3,7 @@ package com.structurizr.dsl;
 import com.structurizr.Workspace;
 import com.structurizr.http.RemoteContent;
 import com.structurizr.model.CreateImpliedRelationshipsUnlessAnyRelationshipExistsStrategy;
+import com.structurizr.model.CreateImpliedRelationshipsCombinedByTechnologyStrategy;
 import com.structurizr.model.Element;
 import com.structurizr.model.Relationship;
 import com.structurizr.util.FeatureNotEnabledException;
@@ -107,7 +108,7 @@ final class WorkspaceParser extends AbstractParser {
             }
         }
 
-        workspace.getModel().setImpliedRelationshipsStrategy(new CreateImpliedRelationshipsUnlessAnyRelationshipExistsStrategy());
+        workspace.getModel().setImpliedRelationshipsStrategy(new CreateImpliedRelationshipsCombinedByTechnologyStrategy());
 
         return workspace;
     }

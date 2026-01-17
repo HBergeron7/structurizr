@@ -15,8 +15,8 @@ final class ConsumesParser extends AbstractParser {
     Consumes parse(ElementDslContext context, Tokens tokens) {
         StaticStructureElement element;
         String identifier;
-        String technology;
-        String description;
+        String technology = null;
+        String description = null;
         List<String> filters = new ArrayList<>();
         List<String> tags = new ArrayList<>();
 

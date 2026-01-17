@@ -4,7 +4,7 @@ package com.structurizr.model;
  * This strategy creates implied relationships between all valid combinations of the parent elements,
  * unless the same relationship already exists between them.
  */
-public class CreateImpliedRelationshipsUnlessSameRelationshipExistsStrategy extends AbstractImpliedRelationshipsStrategy {
+public class CreateImpliedRelationshipsCombinedByTechnologyStrategy extends AbstractImpliedRelationshipsStrategy {
 
     @Override
     public void createImpliedRelationships(Relationship relationship) {
@@ -15,9 +15,17 @@ public class CreateImpliedRelationshipsUnlessSameRelationshipExistsStrategy exte
             while (destination != null) {
                 if (impliedRelationshipIsAllowed(source, destination)) {
                     boolean createRelationship = !source.hasEfferentRelationshipWith(destination, relationship.getDescription());
+                    // Get existing relationship with matching technology
+                    Relationship curRelationship = source.getEfferentRelationshipByTechnologyWith(destination, relationship.getTechnology());
 
-                    if (createRelationship) {
+                    if (curRelationship == null) {
                         createImpliedRelationship(relationship, source, destination);
+                    } else {
+                        if (!curRelationship.getDescription().contains(relationship.getDescription())) {
+                            String description = curRelationship.getDescription() + "/" + relationship.getDescription();
+                            Model model = curRelationship.getModel();
+                            model.modifyRelationship(curRelationship, description, curRelationship.getTechnology());
+                        }
                     }
                 }
 

@@ -249,8 +249,6 @@ public final class StructurizrDslParser extends StructurizrDslTokens {
         for (DslLine dslLine : dslLines) {
             String line = dslLine.getSource();
 
-            System.out.println("LINE: " + line);
-
             if (line.startsWith(BOM)) {
                 // this caters for files encoded as "UTF-8 with BOM"
                 line = line.substring(1);
@@ -282,7 +280,6 @@ public final class StructurizrDslParser extends StructurizrDslTokens {
                     }
 
                     String firstToken = tokens.get(0);
-                    System.out.println("FIRST: " + firstToken);
 
                     if (line.trim().startsWith(MULTI_LINE_COMMENT_START_TOKEN) && line.trim().endsWith(MULTI_LINE_COMMENT_END_TOKEN)) {
                         // do nothing
@@ -304,19 +301,34 @@ public final class StructurizrDslParser extends StructurizrDslTokens {
                             for (var consumer : consumers.entrySet()) {
                                 for (var provider : providers.entrySet()) {
                                     //Create a relationship for each unique technology
-                                    Map<String, Relationship> relationships = new ArrayList<>();
-                                    
+                                    Map<String, RelationshipGroup> relationshipGroups = new HashMap<>();
+
                                     for (var consumes : consumer.getValue()) {
-                                        for (var provides : provides.getValue()) {
+                                        for (var provides : provider.getValue()) {
+                                            System.out.println("Compare: " + consumes.getElement().getName() + " and " + provides.getElement().getName());
+
                                             if (provides.matches(consumes)) {
-               
-                                            if (consumes.getIdentifier() == provides.getIdentifer()) {
-                                                System.out.println("Relationship: " + consumer.getElement().getName() + " gets '" + requirement.getKey() + "' from " + provider.getElement().getName());
-                                                List<String> allTags = new ArrayList<String>(provider.getTags());
-                                                allTags.addAll(consumer.getTags());
-                                                var relationship = consumer.getElement().uses(provider.getElement(), provider.getAction(), provider.getTechnology(), null, allTags.toArray(new String[0]));
+                                                System.out.println("MATCH: " + provides.getAction());
+
+                                                RelationshipGroup relationshipGroup = relationshipGroups.get(consumes.getTechnology());
+                                                if (relationshipGroup != null) {
+                                                    System.out.println("Found previous relationship");
+                                                    relationshipGroup.addTags(provides.getTags());
+                                                    relationshipGroup.appendDescription(provides.getAction());
+                                                } else
+                                                {
+                                                    List<String> allTags = new ArrayList<String>(provides.getTags());
+                                                    allTags.addAll(consumes.getTags());
+                                                    relationshipGroup = new RelationshipGroup(consumes.getElement(), provides.getElement(), provides.getTechnology(), provides.getAction(), allTags);
+                                                    relationshipGroups.put(consumes.getTechnology(), relationshipGroup);
+                                                }
                                             }
                                         }
+                                    }
+
+                                    // Create combined relationships at the end to ensure implied relationships are created correctly
+                                    for (var rgrp : relationshipGroups.values()) {
+                                        rgrp.getConsumer().uses(rgrp.getProvider(), rgrp.getDescription(), rgrp.getTechnology(), null, rgrp.getTags().toArray(new String[0]));
                                     }
                                 }
                             }
@@ -324,7 +336,6 @@ public final class StructurizrDslParser extends StructurizrDslTokens {
                         endContext();
 
                     } else if (INCLUDE_FILE_TOKEN.equalsIgnoreCase(firstToken)) {
-                        System.out.println("INCLUDE_FILE_TOKEN");
                         String leadingSpace = line.substring(0, line.indexOf(INCLUDE_FILE_TOKEN));
 
                         List<IncludedFile> files = new IncludeParser().parse(getContext(), dslFile, tokens);
@@ -1233,7 +1244,7 @@ public final class StructurizrDslParser extends StructurizrDslTokens {
 
                     } else if (PROVIDES_TOKEN.equalsIgnoreCase(firstToken) && inContext(ContainerDslContext.class)) {
                         ProvidesParser parser = new ProvidesParser();
-                        var provides = praser.parse(getContext(ContainerDslContext.class), tokens);
+                        var provides = parser.parse(getContext(ContainerDslContext.class), tokens);
                         var list = providers.getOrDefault(provides.getElement().getId(), new ArrayList<>());
                         list.add(provides);
                         providers.putIfAbsent(provides.getElement().getId(), list);

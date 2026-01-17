@@ -11,7 +11,7 @@ final class Consumes {
     private String description;
     private List<String> tags;
 
-    Provides(StaticStructureElement element, String identifier, String technology, List<String> filters, String description, List<String> tags) {
+    Consumes(StaticStructureElement element, String identifier, String technology, List<String> filters, String description, List<String> tags) {
         this.element = element;
         this.identifier = identifier;
         this.technology = technology;

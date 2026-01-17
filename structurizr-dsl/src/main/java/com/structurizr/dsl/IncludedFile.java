@@ -30,11 +30,9 @@ final class IncludedFile {
         
         for (String line : lines) {
             String trimmed = line.trim();
-            System.out.println("INCLUDE LINE: " + trimmed);
             
             if (!insideSection && trimmed.startsWith(section)) {
                 insideSection = true;
-                System.out.println("INSIDE SECTION");
                 if (trimmed.contains("{")) {
                     braceCount=1;
                     continue;
@@ -47,14 +45,13 @@ final class IncludedFile {
                     if (c == '}') braceCount--;
                 }
                
-                System.out.println("BRACES: " + braceCount);
- 
                 if (braceCount == 0) {
                     break;
                 }
 
-                System.out.println("ADD LINE");
-                sectionContent.add(line);
+                if(!trimmed.contains(StructurizrDslTokens.INCLUDE_FILE_TOKEN)) { 
+                    sectionContent.add(line);
+                }
             }
         }
 
