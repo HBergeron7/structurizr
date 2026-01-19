@@ -1,0 +1,73 @@
+<style>
+    #detailsPanel {
+        font-size: 14px;
+        color: #000000;
+        background: #eeeeee;
+        padding-top: 5px;
+        margin: 0px;
+        border: 0px;
+        width: 100%;
+        max-width: 100%;
+    }
+    #detailsPanelName {
+        font-size: 20px;
+        font-weight: normal;
+    }
+    #detailsPanelParent {
+        font-size: 8px;
+    }
+    #detailsPanelMetadata {
+        font-size: 10px;
+    }
+    #detailsPanelType {
+        font-size: 10px;
+    }
+    #detailsPanelDescription {
+        font-size: 12px;
+        margin-top: 10px;
+    }
+    #detailsPanelTags {
+        margin-top: 10px;
+        font-size: 10px;
+    }
+    #detailsPanelProperties {
+        margin-top: 15px;
+        font-size: 10px;
+    }
+    #detailsPanelUrl {
+        margin-top: 10px;
+        font-size: 10px;
+    }
+    #detailsPanel .tag {
+        border-width: 1px;
+        border-style: solid;
+        padding: 3px 3px 3px 3px;
+        margin: 3px 3px 3px 0;
+        border-radius: 6px;
+        white-space: nowrap;
+        display: inline-block;
+    }
+</style>
+
+<style media="print">
+    #detailsPanel {
+        display: none;
+    }
+</style>
+
+<div id="detailsPanel">
+    <div id="detailsPanelHeader">
+        <div id="detailsPanelName"></div>
+        <div id="detailsPanelParent"></div>
+        <div id="detailsPanelMetadata"></div>
+        <div id="detailsPanelDescription"></div>
+        <hr />
+    </div>
+    <div id="detailsPanelTags"></div>
+    <div id="detailsPanelProperties"></div>
+    <div id="detailsPanelUrl"></div>
+    <div id="detailsPanelAdditionalContent"></div>
+</div>
+
+<script type="text/javascript" src="<c:url value="/static/js/structurizr-details-panel.js" />"></script>
+

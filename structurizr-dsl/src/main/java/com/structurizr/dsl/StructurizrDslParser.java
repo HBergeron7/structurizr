@@ -295,7 +295,6 @@ public final class StructurizrDslParser extends StructurizrDslTokens {
                     } else if (DslContext.CONTEXT_END_TOKEN.equals(tokens.get(0))) {
                         // When the mode ends, evaluate all requirements in the model and create relationships
                         if (inContext(ModelDslContext.class)) {
-                            System.out.println("Create Relationships based on Requirements");
                             //TODO: Review better ways to do this. Each list should be small but this is a lot of nested loops
                             // For all elements that consume loop through provider elements and create all relationships
                             for (var consumer : consumers.entrySet()) {
@@ -305,14 +304,9 @@ public final class StructurizrDslParser extends StructurizrDslTokens {
 
                                     for (var consumes : consumer.getValue()) {
                                         for (var provides : provider.getValue()) {
-                                            System.out.println("Compare: " + consumes.getElement().getName() + " and " + provides.getElement().getName());
-
                                             if (provides.matches(consumes)) {
-                                                System.out.println("MATCH: " + provides.getAction());
-
                                                 RelationshipGroup relationshipGroup = relationshipGroups.get(consumes.getTechnology());
                                                 if (relationshipGroup != null) {
-                                                    System.out.println("Found previous relationship");
                                                     relationshipGroup.addTags(provides.getTags());
                                                     relationshipGroup.appendDescription(provides.getAction());
                                                 } else

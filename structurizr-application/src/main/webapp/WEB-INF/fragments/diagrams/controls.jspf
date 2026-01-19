@@ -12,6 +12,8 @@
             <button id="diagramKeyButton" class="btn btn-default" title="Diagram key [i]"><img src="/static/bootstrap-icons/info-circle.svg" class="icon-btn" /></button>
             <button id="diagramTooltipOnButton" class="btn btn-default diagramTooltipOnButton" title="Diagram tooltips on [t]"><img src="/static/bootstrap-icons/chat-square-text.svg" class="icon-btn" /></button>
             <button id="diagramTooltipOffButton" class="btn btn-default hidden diagramTooltipOffButton" title="Diagram tooltips off [t]"><img src="/static/bootstrap-icons/chat-square-text-fill.svg" class="icon-btn" /></button>
+            <button id="detailsPanelOnButton" class="btn btn-default detailsPanelOnButton" title="Diagram details panel on"><img src="/static/bootstrap-icons/layout-text-sidebar.svg" class="icon-btn" /></button>
+            <button id="detailsPanelOffButton" class="btn btn-default hidden detailsPanelOffButton" title="Diagram details panel off"><img src="/static/bootstrap-icons/layout-text-sidebar-reverse.svg" class="icon-btn" /></button>
             <button id="filterOnButton" class="btn btn-default"  title="Filter"><img src="/static/bootstrap-icons/funnel.svg" class="icon-btn" /></button>
             <button id="filterOffButton" class="btn btn-default hidden" title="Filter"><img src="/static/bootstrap-icons/funnel-fill.svg" class="icon-btn" /></button>
             <button id="perspectivesOnButton" class="btn btn-default hidden" title="Perspectives"><img src="/static/bootstrap-icons/binoculars.svg" class="icon-btn" /></button>
@@ -27,6 +29,8 @@
             $('#diagramKeyButton').click(function() { showKey(); });
             $('#diagramTooltipOnButton').click(function() { toggleTooltip(); });
             $('#diagramTooltipOffButton').click(function() { toggleTooltip(); });
+            $('#detailsPanelOnButton').click(function() { detailsPanelOn(); });
+            $('#detailsPanelOffButton').click(function() { detailsPanelOff(); });
             $('#filterOnButton').click(function() {
                 openFilterModal();
                 $('#filterOnButton').addClass('hidden');

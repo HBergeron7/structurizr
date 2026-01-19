@@ -82,7 +82,7 @@
 
     </div>
 
-    <div class="col-10" style="padding: 0">
+    <div class="col-8" id="diagramColumn" style="padding: 0">
         <div id="diagram" tabindex="1" style="position: relative; <c:if test="${embed}">background: transparent;</c:if>">
             <%@ include file="/WEB-INF/fragments/progress-message.jspf" %>
             <%@ include file="/WEB-INF/fragments/diagrams/key.jspf" %>
@@ -147,6 +147,9 @@
                 </script>
             </div>
         </div>
+    </div>
+    <div class="col-2 collapse show" id="detailsPanelColumn">
+        <%@ include file="/WEB-INF/fragments/details-panel.jspf" %>
     </div>
 </div>
 
@@ -235,6 +238,7 @@
         structurizr.diagram.setDarkMode(structurizr.ui.isDarkMode());
 
         structurizr.diagram.setTooltip(tooltip);
+        structurizr.diagram.setDetailsPanel(detailsPanel);
         structurizr.diagram.setLasso(lasso);
         structurizr.diagram.setNavigationEnabled(true);
         structurizr.diagram.onWorkspaceChanged(workspaceChanged);
@@ -1459,6 +1463,22 @@
             $('.diagramTooltipOnButton').addClass('hidden');
             $('.diagramTooltipOffButton').removeClass('hidden');
         }
+    }
+
+    function detailsPanelOn() {
+        $('#detailsPanelColumn').removeClass('d-none');
+        $('#diagramColumn').removeClass('col-10');
+        $('#diagramColumn').addClass('col-8');
+        $('.detailsPanelOnButton').addClass('hidden');
+        $('.detailsPanelOffButton').removeClass('hidden');
+    }
+
+    function detailsPanelOff() {
+        $('#detailsPanelColumn').addClass('d-none');
+        $('#diagramColumn').addClass('col-10');
+        $('#diagramColumn').removeClass('col-8');
+        $('.detailsPanelOnButton').removeClass('hidden');
+        $('.detailsPanelOffButton').addClass('hidden');
     }
 
     function getViewDropDown() {

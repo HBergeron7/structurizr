@@ -28,6 +28,7 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
     var totalWidthOfKey;
     var totalHeightOfKey;
     var tooltip;
+    var detailsPanel;
     var lasso;
 
     var editable = diagramIsEditable;
@@ -311,6 +312,10 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
 
     this.setTooltip = function(t) {
         tooltip = t;
+    };
+
+    this.setDetailsPanel = function(d) {
+        detailsPanel = d;
     };
 
     this.setLasso = function(l) {
@@ -6262,7 +6267,16 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
                 } else {
                     self.deselectAllElements();
                 }
+            } else {
+                if (cellView.model.elementInView) {
+                    console.log('Clicked Element: ' + cellView.model.elementInView.id);
+                    showDetailsForElement(structurizr.workspace.findElementById(cellView.model.elementInView.id), cellView.model._computedStyle);
+                } else if (cellView.model.relationshipInView) {
+                    console.log('Clicked Relationship: ' + cellView.model.relationshipInView.id);
+                    showDetailsForRelationship(structurizr.workspace.findRelationshipById(cellView.model.relationshipInView.id), cellView.model.relationshipInView, cellView.model._computedStyle);
+                }
             }
+            
         });
     }
 
@@ -6503,6 +6517,30 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
         }
 
         tooltip.showTooltipForRelationship(relationship, relationshipInView, style, x, y, false, filter.perspective);
+    }
+
+    function showDetailsForElement(element, style) {
+        if (filter.perspective !== undefined && elementHasPerspective(element) === false) {
+            return;
+        }
+
+        if (detailsPanel === undefined) {
+            return;
+        }
+
+        detailsPanel.showDetailsForElement(element, style, filter.perspective);
+    }
+
+    function showDetailsForRelationship(relationship, relationshipInView, style) {
+        if (filter.perspective !== undefined && relationshipHasPerspective(relationship) === false) {
+            return;
+        }
+
+        if (detailsPanel === undefined) {
+            return;
+        }
+
+        detailsPanel.showDetailsForRelationship(relationship, relationshipInView, style, filter.perspective);
     }
 
     this.toggleMetadata = function() {
