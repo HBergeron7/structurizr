@@ -30,7 +30,7 @@
 
 <div class="section" style="padding-top: 20px; padding-bottom: 0">
     <div class="row" style="margin-left: 0; margin-right: 0; padding-bottom: 0">
-        <div id="sourcePanel" class="col-6 centered">
+        <div id="sourcePanel" class="col-5 centered">
 
             <div style="text-align: left; margin-bottom: 10px">
                 <div id="sourceControls" style="float: right">
@@ -44,10 +44,6 @@
                     </label>
                     <div class="btn-group">
                         <button id="themeBrowserButton" class="btn btn-default" title="Theme browser"><img src="/static/bootstrap-icons/palette.svg" class="icon-btn" /></button>
-                    </div>
-                    <div class="btn-group">
-                        <button id="sourceButton" class="btn btn-default" title="Source"><img src="/static/bootstrap-icons/code-slash.svg" class="icon-btn" /></button>
-                        <button id="diagramsButton" class="btn btn-default" title="Diagrams"><img src="/static/bootstrap-icons/bounding-box.svg" class="icon-btn" /></button>
                     </div>
                     <button id="saveButton" class="btn btn-default" title="Save workspace" disabled="disabled" style="text-shadow: none"><img src="/static/bootstrap-icons/folder-check.svg" class="icon-btn" /></button>
                     <button id="renderButton" class="btn btn-primary"><img src="/static/bootstrap-icons/play.svg" class="icon-btn icon-white" /></button>
@@ -74,7 +70,7 @@
                 </c:if>
             </div>
         </div>
-        <div id="diagramsPanel" class="col-6 centered">
+        <div id="diagramsPanel" class="col-7 centered">
             <div id="viewListPanel" style="margin-bottom: 10px">
                 <div class="form-inline">
                         <span id="diagramNavButtons" class="hidden">
@@ -96,16 +92,11 @@
     var editor;
     var editorRendered = false;
     var structurizrDiagramIframeRendered = false;
-    var sourceVisible = true;
-    var diagramsVisible = true;
     var unsavedChanges = false;
 
     $('#dashboardButton').click(function() { window.location.href='/'; });
     $('#workspaceSummaryButton').click(function() { window.location.href='${urlPrefix}${urlSuffix}'; });
     $('#themeBrowserButton').click(function(event) { openThemeBrowser(event); });
-    $('#sourceButton').click(function(event) { sourceButtonClicked(event); });
-    $('#diagramsButton').click(function(event) { diagramsButtonClicked(event); });
-    $('#viewSourceButton').click(function(event) { sourceButtonClicked(event); });
     $('#saveButton').click(function() { saveWorkspace(); });
     $('#renderButton').click(function() { refresh(); });
 
@@ -114,7 +105,6 @@
     function reloadWorkspace() {
         structurizrDiagramIframeRendered = false;
         hideError();
-        showSourceAndDiagrams();
 
         structurizrApiClient.getWorkspace(undefined,
             function(response) {
@@ -133,10 +123,6 @@
 
     $(window).on("beforeunload", function() {
         return beforeunload();
-    });
-
-    $(window).on("unload", function() {
-        navigator.sendBeacon('/workspace/${workspace.id}/unlock?agent=${userAgent}');
     });
 
     function workspaceLoaded() {
@@ -211,7 +197,6 @@
 
             viewsList.change(function () {
                 viewInFocus = $(this).val();
-                console.log(viewInFocus);
                 changeView();
             });
         }
@@ -227,17 +212,25 @@
         progressMessage.hide();
     }
 
+    const paddingTop = 20;
+    const paddingBottom = 60;
+
+    function getMaxHeightOfDiagramEditor() {
+        return window.innerHeight - $('#banner').outerHeight() - $('#viewListPanel').outerHeight() - paddingTop - paddingBottom;
+    }
+
     function resize() {
         const sourceControlsHeight = $('#sourceControls').outerHeight();
         const bannerHeight = $('#banner').outerHeight();
-        const verticalPadding = 60;
 
-        $('#sourceTextArea').css('height', (window.innerHeight - sourceControlsHeight - bannerHeight - verticalPadding) + 'px');
+        $('#sourceTextArea').css('height', (window.innerHeight - sourceControlsHeight - bannerHeight - paddingBottom) + 'px');
         if (editor) {
             editor.resize(true);
         }
-        structurizr.embed.setMaxHeight(window.innerHeight - bannerHeight - verticalPadding - 20);
-        structurizr.embed.resizeEmbeddedDiagrams();
+
+        $('.structurizrEmbed').css('width', '100%');
+        $('.structurizrEmbed').css('max-height', getMaxHeightOfDiagramEditor() + 'px');
+        structurizr.embed.resize();
     }
 
     function renderStructurizrDiagram() {
@@ -246,16 +239,15 @@
             diagramEditorDiv.empty();
 
             var diagramIdentifier = viewInFocus;
-            var domId = 'diagramEditorIframe';
-            var embedUrl = '/embed?workspace=${workspace.id}&branch=${workspace.branch}&version=${param.version}&view=' + encodeURIComponent(diagramIdentifier) + '&editable=true&urlPrefix=${urlPrefix}&iframe=' + domId;
-            diagramEditorDiv.append('<div style="text-align: center"><iframe id="' + domId + '" class="structurizrEmbed thumbnail" src="' + embedUrl + '" width="100%" height="' + window.innerHeight + 'px" marginwidth="0" marginheight="0" frameborder="0" scrolling="no" allowfullscreen="true"></iframe></div>');
+            var embedUrl = '/embed?workspace=${workspace.id}&branch=${workspace.branch}&version=${param.version}&view=' + encodeURIComponent(diagramIdentifier) + '&editable=true&urlPrefix=${urlPrefix}';
+            diagramEditorDiv.append('<div style="text-align: center"><iframe class="structurizrEmbed thumbnail" src="' + embedUrl + '" style="width: 100%; max-height: ' + getMaxHeightOfDiagramEditor() + 'px; border: none; overflow: hidden;" allow="fullscreen"></iframe></div>');
 
             setTimeout(function () {
                 try {
-                    document.getElementById('diagramEditorIframe').contentWindow.structurizr.scripting = undefined;
-                    document.getElementById('diagramEditorIframe').contentWindow.structurizr.diagram.onWorkspaceChanged(workspaceChanged);
-                    document.getElementById('diagramEditorIframe').contentWindow.structurizr.diagram.onViewChanged(function(view) {
-                        document.getElementById('diagramEditorIframe').contentWindow.viewChanged(view);
+                    getEmbeddedDiagram().contentWindow.structurizr.scripting = undefined;
+                    getEmbeddedDiagram().contentWindow.structurizr.diagram.onWorkspaceChanged(workspaceChanged);
+                    getEmbeddedDiagram().contentWindow.structurizr.diagram.onViewChanged(function(view) {
+                        getEmbeddedDiagram().contentWindow.viewChanged(view);
 
                         if (document.getElementById('viewsList').value !== view) {
                             document.getElementById('viewsList').value = view;
@@ -278,9 +270,13 @@
 
     function changeView() {
         if (structurizr.workspace.hasViews()) {
-            document.getElementById('diagramEditorIframe').contentWindow.changeView(structurizr.workspace.findViewByKey(viewInFocus));
-            $('#diagramEditorIframe').focus();
+            getEmbeddedDiagram().contentWindow.changeView(structurizr.workspace.findViewByKey(viewInFocus));
+            $('.structurizrEmbed').focus();
         }
+    }
+
+    function getEmbeddedDiagram() {
+        return document.getElementsByClassName('structurizrEmbed')[0];
     }
 
     function workspaceChanged() {
@@ -328,7 +324,6 @@
             if (data.success === true) {
                 structurizrDiagramIframeRendered = false;
                 hideError();
-                showSourceAndDiagrams();
                 loadWorkspace(JSON.parse(data.workspace));
                 workspaceChanged();
             } else {
@@ -364,61 +359,6 @@
         window.open('/theme-browser', "structurizrThemeBrowser", "top=100,left=300,width=800,height=800,location=no,menubar=no,status=no,toolbar=no");
     }
 
-    function sourceButtonClicked(e) {
-        e.preventDefault();
-        if (sourceVisible === false || diagramsVisible === false) {
-            showSourceAndDiagrams();
-        } else {
-            hideDiagrams();
-        }
-
-        editor.focus();
-    }
-
-    function diagramsButtonClicked(e) {
-        e.preventDefault();
-        if (diagramsVisible === false || sourceVisible === false) {
-            showSourceAndDiagrams();
-        } else {
-            hideSource();
-        }
-
-        $('#diagramEditorIframe').focus();
-    }
-
-    function hideSource() {
-        $('#sourcePanel').addClass('hidden');
-        $('#diagramsPanel').removeClass('col-6');
-
-        sourceVisible = false;
-        $('#diagramNavButtons').removeClass('hidden');
-        resize();
-    }
-
-    function showSourceAndDiagrams() {
-        $('#sourcePanel').removeClass('hidden');
-        $('#sourcePanel').addClass('col-6');
-        $('#diagramsPanel').removeClass('hidden');
-        $('#diagramsPanel').addClass('col-6');
-
-        $('#diagramNavButtons').addClass('hidden');
-
-        sourceVisible = true;
-        diagramsVisible = true;
-
-        resize();
-    }
-
-    function hideDiagrams() {
-        $('#diagramsPanel').addClass('hidden');
-        $('#sourcePanel').removeClass('col-6');
-
-        diagramsVisible = false;
-        $('#sourceButton').addClass('hidden');
-        $('#diagramsButton').removeClass('hidden');
-        resize();
-    }
-
     function saveWorkspace() {
         var save = true;
         $('#saveButton').prop('disabled', true);
@@ -429,7 +369,7 @@
 
         if (save) {
             try {
-                const embeddedDiagramEditor = document.getElementById('diagramEditorIframe');
+                const embeddedDiagramEditor = getEmbeddedDiagram();
                 if (embeddedDiagramEditor && embeddedDiagramEditor.contentWindow && structurizr.workspace.hasViews()) {
                     structurizr.workspace.views.configuration.lastSavedView = embeddedDiagramEditor.contentWindow.structurizr.diagram.getCurrentViewOrFilter().key;
                 }
@@ -450,7 +390,7 @@
                     editor.session.getUndoManager().markClean();
 
                     try {
-                        const embeddedDiagramEditor = document.getElementById('diagramEditorIframe');
+                        const embeddedDiagramEditor = getEmbeddedDiagram();
                         if (embeddedDiagramEditor && embeddedDiagramEditor.contentWindow && structurizr.workspace.hasViews()) {
                             embeddedDiagramEditor.contentWindow.refreshThumbnail();
                         }
@@ -482,9 +422,7 @@
         }
     }
 
-    <c:if test="${workspace.editable && not empty workspace.apiKey}">
     new structurizr.Lock(${workspace.id}, '${userAgent}');
-    </c:if>
 </script>
 
 <c:choose>

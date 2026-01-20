@@ -23,8 +23,7 @@ public class CreateImpliedRelationshipsCombinedByTechnologyStrategy extends Abst
                     } else {
                         if (!curRelationship.getDescription().contains(relationship.getDescription())) {
                             String description = curRelationship.getDescription() + "/" + relationship.getDescription();
-                            Model model = curRelationship.getModel();
-                            model.modifyRelationship(curRelationship, description, curRelationship.getTechnology());
+                            curRelationship.setDescription(description);
                         }
                     }
                 }

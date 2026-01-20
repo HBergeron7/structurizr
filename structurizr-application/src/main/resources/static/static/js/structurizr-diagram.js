@@ -638,8 +638,6 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
                     box = createBox(view, element, elementStyle, positionX, positionY, 1);
                 }
 
-                box.set('size', { width: elementStyle.width, height: elementStyle.height });
-
                 cells.push(box);
                 cellsByElementId[element.id] = box;
 
@@ -987,9 +985,7 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
             }
         });
 
-        if (forceApplyAutomaticLayout) {
-            structurizr.diagram.applyAutomaticLayout('LeftRight', 300, 300, 300, true);
-        } else if (view.automaticLayout) {
+        if (view.automaticLayout) {
             if (view.automaticLayout) {
                 structurizr.diagram.applyAutomaticLayout(
                     view.automaticLayout.rankDirection,
@@ -999,6 +995,14 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
                     view.automaticLayout.vertices
                 );
             }
+        } else if (forceApplyAutomaticLayout) {
+            structurizr.diagram.applyAutomaticLayout(
+                structurizr.ui.DEFAULT_AUTOLAYOUT_RANK_DIRECTION,
+                structurizr.ui.DEFAULT_AUTOLAYOUT_RANK_SEPARATION,
+                structurizr.ui.DEFAULT_AUTOLAYOUT_NODE_SEPARATION,
+                structurizr.ui.DEFAULT_AUTOLAYOUT_EDGE_SEPARATION,
+                structurizr.ui.DEFAULT_AUTOLAYOUT_VERTICES
+            );
         }
 
         if (callback !== undefined) {
@@ -1677,6 +1681,10 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
         return diagramHeight;
     };
 
+    this.getAspectRatio = function() {
+        return diagramWidth / diagramHeight;
+    }
+
     function renderElementInternals(element, cell, configuration, width, horizontalOffset, height, verticalOffset) {
         const defaultIconWidth = 60;
         const defaultIconHeight = 60;
@@ -1944,7 +1952,7 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
     }
 
     function createHexagon(view, element, configuration, x, y) {
-        var width = Math.floor((configuration.width/2) * Math.sqrt(3));
+        var width = configuration.width;
         var height = Math.floor((configuration.width/2) * Math.sqrt(3));
 
         var points =    (configuration.width/4) + ",0 " +
@@ -1963,7 +1971,7 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
                 y: y
             },
             size: {
-                width: configuration.width,
+                width: width,
                 height: height
             },
             attrs: {
@@ -1988,7 +1996,7 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
 
     function createDiamond(view, element, configuration, x, y) {
         var width = configuration.width;
-        var height = configuration.height;
+        var height = configuration.width;
 
         var points =
             (width/2) + ",0 " +
@@ -2005,7 +2013,7 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
                 y: y
             },
             size: {
-                width: configuration.width,
+                width: width,
                 height: height
             },
             attrs: {
@@ -4431,8 +4439,13 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
 
     this.resize = function() {
         if (structurizr.ui.isFullScreen()) {
-            viewport.width($(window).width());
-            viewport.height($(window).height());
+            if (this.isEditable()) {
+                viewport.width($(window).width());
+                viewport.height($(window).height() - $('#diagramControls').height());
+            } else {
+                viewport.width($(window).width());
+                viewport.height($(window).height());
+            }
         } else {
             viewport.width(this.getPossibleViewportWidth());
 

@@ -12,21 +12,13 @@
 <script type="text/javascript" src="<c:url value="/static/js/structurizr-diagram.js" />"></script>
 <script type="text/javascript" src="<c:url value="/static/js/structurizr-healthcheck.js" />"></script>
 
-<c:if test="${structurizrConfiguration.profile eq 'Server'}">
+<c:if test="${retainWorkspaceLock}">
 <script type="text/javascript" src="<c:url value="/static/js/structurizr-lock.js" />"></script>
 </c:if>
 
 <c:choose>
-    <c:when test="${workspace.editable eq false && embed eq true && showDiagramSelector eq true}">
-        <%-- embedded mode, with the diagram selector --%>
-        <div id="diagramControls" class="form-group centered" style="margin-bottom: 0px;">
-            <div class="btn-group">
-                <select id="viewType" class="form-control" style="font-size: 12px;"></select>
-            </div>
-        </div>
-    </c:when>
-    <c:when test="${workspace.editable eq false && embed eq true && showDiagramSelector eq false}">
-        <%-- embedded mode, without the diagram selector --%>
+    <c:when test="${workspace.editable eq false && embed eq true}">
+        <%-- embedded mode, not editable --%>
         <div id="embeddedBanner" style="position: fixed; z-index: 100; width: 100%; opacity: 90%"></div>
     </c:when>
     <c:otherwise>
@@ -197,7 +189,6 @@
     });
 
     var embed = ${embed};
-    var diagramSelector = ${showDiagramSelector eq true};
     var views;
     const viewKeys = [];
     var viewsVisited = new structurizr.util.Stack();
@@ -340,17 +331,13 @@
         toggleTooltip();
         </c:if>
 
-        <c:if test="${showDiagramSelector eq true}">
-        initDiagramSelector();
-        </c:if>
-
         initQuickNavigation();
         initExports();
         initSizing();
         initControls();
         initKeyboardShortcuts();
 
-        <c:if test="${structurizrConfiguration.profile eq 'Server' && workspace.editable}">
+        <c:if test="${retainWorkspaceLock}">
         new structurizr.Lock(${workspace.id}, '${userAgent}');
         </c:if>
 
@@ -398,7 +385,7 @@
         } else {
             $('#diagramEditButtons').addClass('hidden');
 
-            if (embed && !diagramSelector) {
+            if (embed) {
                 $('#diagramControls').addClass('hidden');
             }
         }
@@ -561,8 +548,6 @@
 
     function selectDiagramByView(view)
     {
-        $('#viewType option[value="' + view.key + '"]').prop('selected', true);
-
         if (structurizr.workspace.id > 0) {
             $('.diagramThumbnail').removeClass('diagramThumbnailActive');
             var index = 1;
@@ -641,17 +626,6 @@
             };
 
             index++;
-        });
-    }
-
-    function initDiagramSelector() {
-        const viewsDropDown = $('#viewType');
-        viewsDropDown.empty();
-
-        views.forEach(function(view) {
-            viewsDropDown.append(
-                $('<option></option>').val(structurizr.util.escapeHtml(view.key)).html(structurizr.util.escapeHtml(structurizr.ui.getTitleForView(view)))
-            );
         });
     }
 
@@ -948,14 +922,6 @@
                     setTimeout(function() {
                         changeView(view, function() {
                             progressMessage.hide();
-
-                            <c:if test="${not empty iframe}">
-                            postDiagramAspectRatioToParentWindow();
-                            </c:if>
-
-                            <c:if test="${embed eq true && empty iframe}">
-                            postDiagramAspectRatioToParentWindow();
-                            </c:if>
                         });
                     }, 10);
                 }
@@ -969,12 +935,6 @@
                 }
             }
         });
-
-        <c:if test="${structurizrConfiguration.profile == 'Server' && workspace.editable && workspace.locked}">
-        $(window).on("unload", function() {
-            navigator.sendBeacon('/workspace/${workspace.id}/unlock?agent=${userAgent}');
-        });
-        </c:if>
 
         document.getElementById('diagram-viewport').addEventListener('wheel', function(event) {
                 if (event.ctrlKey === true) {
@@ -996,12 +956,20 @@
     function changeView(view, callback) {
         structurizr.diagram.reset();
         structurizr.diagram.changeView(view.key, callback);
+
+        <c:if test="${embed eq true}">
+        postDiagramAspectRatioToParentWindow();
+        </c:if>
     }
 
     function initQuickNavigation() {
         views.forEach(function(view) {
             const title = structurizr.util.escapeHtml(structurizr.ui.getTitleForView(view));
-            quickNavigation.addItem(title + ' <span class="viewKey">(#' + structurizr.util.escapeHtml(view.key) + ')</span>', '<c:out value="${urlPrefix}" />/${quickNavigationPath}<c:out value="${urlSuffix}" escapeXml="false" />#' + structurizr.util.escapeHtml(view.key));
+            <%--quickNavigation.addItem(title + ' <span class="viewKey">(#' + structurizr.util.escapeHtml(view.key) + ')</span>', '<c:out value="${urlPrefix}" />/${quickNavigationPath}<c:out value="${urlSuffix}" escapeXml="false" />#' + structurizr.util.escapeHtml(view.key));--%>
+            quickNavigation.addHandler(title + ' <span class="viewKey">(#' + structurizr.util.escapeHtml(view.key) + ')</span>',
+            function() {
+                window.location.hash = structurizr.util.escapeHtml(view.key);
+            })
         });
 
         quickNavigation.onOpen(function() {
@@ -1355,36 +1323,20 @@
         return element.documentation && element.documentation.decisions && element.documentation.decisions.length > 0;
     }
 
-    <c:if test="${not empty iframe}">
     function postDiagramAspectRatioToParentWindow() {
-        const diagramAspectRatio = (structurizr.diagram.getWidth() / structurizr.diagram.getHeight());
+        var toolbarHeight = 0;
         const diagramControls = document.getElementById("diagramControls");
-        var controlsHeight = 0;
         if (diagramControls) {
-            controlsHeight = diagramControls.offsetHeight;
+            toolbarHeight += diagramControls.offsetHeight;
         }
 
-        parent.postMessage({
-            iframe: '<c:out value="${iframe}" />',
-            aspectRatio: diagramAspectRatio,
-            controlsHeight: controlsHeight,
-            type: 'diagram',
-            view: structurizr.diagram.getCurrentViewOrFilter().key
-        }, '*');
-    }
-    </c:if>
-
-    <c:if test="${embed eq true && empty iframe}">
-    function postDiagramAspectRatioToParentWindow() {
-        var canvasHeight = document.getElementById("diagram-canvas").offsetHeight;
-
-        window.parent.postMessage(JSON.stringify({
+        window.parent.postMessage({
             src: window.location.toString(),
             context: 'iframe.resize',
-            height: canvasHeight // pixels
-        }), '*');
+            aspectRatio: structurizr.diagram.getAspectRatio(),
+            toolbarHeight: toolbarHeight
+        }, '*');
     }
-    </c:if>
 
     $('#embeddedControls').hover(
         function() {
@@ -1397,6 +1349,10 @@
 
     $(window).resize(function() {
         resize();
+
+        <c:if test="${embed eq true}">
+        postDiagramAspectRatioToParentWindow();
+        </c:if>
     });
 
     function resize() {
@@ -1411,14 +1367,6 @@
 
             structurizr.diagram.resize();
             structurizr.diagram.zoomToWidthOrHeight();
-
-            <c:if test="${not empty iframe}">
-            postDiagramAspectRatioToParentWindow();
-            </c:if>
-
-            <c:if test="${embed eq true && empty iframe}">
-            postDiagramAspectRatioToParentWindow();
-            </c:if>
         }
     }
 
@@ -1433,7 +1381,11 @@
         presentationMode = true;
 
         if (!structurizr.ui.isFullScreen()) {
-            structurizr.ui.enterFullScreen('diagram');
+            if (structurizr.diagram.isEditable()) {
+                structurizr.ui.enterFullScreen();
+            } else {
+                structurizr.ui.enterFullScreen('diagram');
+            }
         }
 
         $('#enterPresentationModeButton').addClass('hidden');
@@ -1481,20 +1433,9 @@
         $('.detailsPanelOffButton').addClass('hidden');
     }
 
-    function getViewDropDown() {
-        return $("#viewType");
-    }
-
     // function getPageSizeDropDown() {
     //     return $("#pageSize");
     // }
-
-    getViewDropDown().change(function() {
-        var key = getViewDropDown().val();
-        setTimeout(function() {
-            window.location.hash = encodeURIComponent(key);
-        }, 10);
-    });
 
     // getPageSizeDropDown().change(function() {
     //     var pageSize = getPageSizeDropDown().val();
@@ -1616,12 +1557,6 @@
         structurizr.diagram.changeColorOfElement(elementId, background);
     }
 </script>
-
-<c:if test="${embed eq true}">
-<script nonce="${scriptNonce}">
-    quickNavigation.disable();
-</script>
-</c:if>
 
 <c:choose>
     <c:when test="${loadWorkspaceFromParent eq true}">

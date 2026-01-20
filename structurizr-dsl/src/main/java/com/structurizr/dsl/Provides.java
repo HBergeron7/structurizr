@@ -24,12 +24,10 @@ final class Provides {
 
     boolean matches(Consumes consumes) {
         boolean match = identifier.equals(consumes.getIdentifier());
-        System.out.println("Identifier:" + match);
         
         if (match && consumes.getTechnology() != null) {
             match = technology.equals(consumes.getTechnology());
         }
-        System.out.println("Technology:" + match);
 
         if (match && !consumes.getFilters().isEmpty()) {
             for (String filter : consumes.getFilters()) {
@@ -37,7 +35,6 @@ final class Provides {
                 if (!match) break;
             }
         }
-        System.out.println("Filters:" + match);
 
         return match; 
     }

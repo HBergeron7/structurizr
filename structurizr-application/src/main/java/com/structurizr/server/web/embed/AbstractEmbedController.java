@@ -26,15 +26,12 @@ abstract class AbstractEmbedController extends AbstractWorkspaceController {
             WorkspaceMetadata workspaceMetadata,
             String branch,
             String diagramIdentifier,
-            boolean diagramSelector,
-            String iframe,
             boolean health,
             String perspective,
             ModelMap model) {
 
         diagramIdentifier = HtmlUtils.filterHtml(diagramIdentifier);
         diagramIdentifier = HtmlUtils.escapeQuoteCharacters(diagramIdentifier);
-        iframe = HtmlUtils.filterHtml(iframe);
         perspective = HtmlUtils.filterHtml(perspective);
 
         if (!StringUtils.isNullOrEmpty(diagramIdentifier)) {
@@ -70,10 +67,7 @@ abstract class AbstractEmbedController extends AbstractWorkspaceController {
 
         String json = workspaceComponent.getWorkspace(workspaceMetadata.getId(), branch, WorkspaceVersion.LATEST_VERSION);
         model.addAttribute("workspaceAsJson", JsonUtils.base64(json));
-        model.addAttribute("showToolbar", diagramSelector);
-        model.addAttribute("showDiagramSelector", diagramSelector);
         model.addAttribute("embed", true);
-        model.addAttribute("iframe", iframe);
         model.addAttribute("health", health);
         model.addAttribute("perspective", perspective);
         model.addAttribute("publishThumbnails", false);
