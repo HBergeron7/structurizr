@@ -21,7 +21,6 @@ public final class Configuration implements PropertyHolder {
     private static final String THEME_JSON = "/theme.json";
     private static final String ICON_JSON = "/icons.json";
 
-    private Branding branding = new Branding();
     private final Styles styles = new Styles();
     private final List<String> themes = new ArrayList<>();
     private Terminology terminology = new Terminology();
@@ -86,33 +85,16 @@ public final class Configuration implements PropertyHolder {
 
             if (Themes.isBuiltIn(theme)) {
                 themes.add(theme);
-            } else {
-                if (Url.isUrl(theme)) {
-                    if (theme.startsWith(STRUCTURIZR_CLOUD_SERVICE_THEMES_URL)) {
-                        String originalTheme = theme;
-                        theme = originalTheme.replace(STRUCTURIZR_CLOUD_SERVICE_THEMES_URL, "");
-                        theme = theme.replace(THEME_JSON, "");
-                        theme = theme.replace(ICON_JSON, "");
-
-                        if ("default".equals(theme)) {
-                            log.warn("""
-                            The "default" theme is deprecated and will be removed on 30 September 2026
-                            """);
-                            theme = originalTheme;
-                        } else {
-                            log.warn(String.format("""
-                                    The Structurizr cloud service will reach its End of Life (EOL) on 30 September 2026 - please change "%s" to "%s"
-                                    """, originalTheme, theme));
-                            theme = originalTheme;
-                        }
-                    }
-
-                    if (!themes.contains(theme)) {
-                        themes.add(theme);
-                    }
-                } else {
-                    throw new IllegalArgumentException(theme + " is not a valid URL.");
+            } else if (Url.isUrl(theme)) {
+                if (theme.startsWith(STRUCTURIZR_CLOUD_SERVICE_THEMES_URL)) {
+                    log.warn("The Structurizr cloud service will reach its End of Life (EOL) on 30 September 2026 and this theme will not be available");
                 }
+
+                if (!themes.contains(theme)) {
+                    themes.add(theme);
+                }
+            } else {
+                log.warn("Unknown theme: " + theme);
             }
         }
     }
@@ -154,24 +136,6 @@ public final class Configuration implements PropertyHolder {
 
     public void copyConfigurationFrom(Configuration configuration) {
         setLastSavedView(configuration.getLastSavedView());
-    }
-
-    /**
-     * Gets the Branding object associated with this workspace.
-     *
-     * @return  a Branding object
-     */
-    public Branding getBranding() {
-        return branding;
-    }
-
-    /**
-     * Sets the Branding object associated with this workspace.
-     *
-     * @param branding      a Branding object
-     */
-    void setBranding(Branding branding) {
-        this.branding = branding;
     }
 
     /**

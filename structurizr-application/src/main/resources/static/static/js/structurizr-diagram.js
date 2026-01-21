@@ -169,7 +169,7 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
         tags.push('Boundary:SoftwareSystem');
         tags.push('Boundary:Container');
         tags.push('Group');
-        tags.push('Diagram:Icon');
+        tags.push('Workspace:Logo');
         structurizr.workspace.views.configuration.styles.elements.forEach(function(elementStyle) {
             if (elementStyle.tag.indexOf('Group:') > -1) {
                 tags.push(elementStyle.tag);
@@ -203,11 +203,6 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
                 }
             })
         });
-
-        const branding = structurizr.ui.getBranding();
-        if (branding.logo) {
-            images.push(branding.logo);
-        }
 
         structurizr.workspace.views.imageViews.forEach(function(view) {
             if (view.content) {
@@ -2995,12 +2990,8 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
 
         var icon = structurizr.ui.findElementStyle( {
             type: undefined,
-            tags: 'Diagram:Icon'
+            tags: 'Workspace:Logo'
         }, darkMode).icon;
-
-        if (icon === undefined) {
-            icon = structurizr.ui.getBranding().logo;
-        }
 
         if (icon) {
             brandingLogo = new structurizr.shapes.BrandingImage({
@@ -3813,6 +3804,7 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
                 '.structurizrBoundary': {
                     stroke: stroke,
                     fill: fill,
+                    opacity: editable ? 0.6 : 1.0,
                     'stroke-width': strokeWidth,
                     'stroke-dasharray': dashArrayForElement(elementStyle),
                     rx: cornerRadius,
@@ -3907,7 +3899,8 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
                     stroke: stroke,
                     'stroke-width': strokeWidth,
                     'stroke-dasharray': dashArrayForElement(configuration),
-                    fill: fill
+                    fill: fill,
+                    opacity: editable ? 0.6 : 1.0
                 },
                 '.structurizrName': {
                     text: element.name,

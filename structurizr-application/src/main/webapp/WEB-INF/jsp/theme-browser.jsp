@@ -19,7 +19,7 @@
     .elementStyle {
         position: relative;
         display: inline-block;
-        width: 100px;
+        width: 120px;
         text-align: center;
         margin: 0px 10px 0px 10px;
         min-height: 200px;
@@ -57,7 +57,7 @@
     </div>
 
     <div id="themeName">Hello</div>
-    <span class="smaller">(press <code>Space</code> to search)</span>
+    <span class="smaller">(press <code>Space</code> to search, click to copy to clipboard)</span>
 
     <div id="elementStyles"></div>
 </div>
@@ -163,7 +163,9 @@
             });
 
             $('.elementStyle').click(function() {
-                selectStyle($(this).attr('id'));
+                const id = $(this).attr('id');
+                selectStyle(id);
+                copyTagToClipboard(id)
             });
         }
     }
@@ -178,12 +180,17 @@
             const element = document.getElementById(id);
             element.scrollIntoView();
             selectStyle(id);
+            copyTagToClipboard(id);
         });
     }
 
     function selectStyle(id) {
         $('.elementStyle').removeClass('selected');
         $('#' + id).addClass('selected');
-        structurizr.util.selectText(id + 'Tag');
+    }
+
+    function copyTagToClipboard(id) {
+        const tag = document.getElementById(id).textContent
+        navigator.clipboard.writeText(tag);
     }
 </script>

@@ -13,7 +13,7 @@ public final class Theme {
     private String description;
     private Collection<ElementStyle> elements = new LinkedList<>();
     private Collection<RelationshipStyle> relationships = new LinkedList<>();
-    private String logo;
+    private String license;
 
     Theme() {
     }
@@ -64,22 +64,12 @@ public final class Theme {
         this.relationships = relationships;
     }
 
-    public String getLogo() {
-        return logo;
+    public String getLicense() {
+        return license;
     }
 
-    /**
-     * Sets the URL of an image representing a logo.
-     *
-     * @param logo   a URL or data URI as a String
-     */
-    public void setLogo(String logo) {
-        if (StringUtils.isNullOrEmpty(logo)) {
-            this.logo = null;
-        } else {
-            ImageUtils.validateImage(logo);
-            this.logo = logo.trim();
-        }
+    public void setLicense(String license) {
+        this.license = license;
     }
 
 }

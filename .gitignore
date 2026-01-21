@@ -18,9 +18,10 @@ replay_pid*
 */target
 */build
 
-structurizr-application/extensions
+structurizr-*.json
+structurizr-application/src/main/resources/static/static/workspace.js
 
-*.json
+structurizr-application/extensions
 
 *.swp
 *.sh
