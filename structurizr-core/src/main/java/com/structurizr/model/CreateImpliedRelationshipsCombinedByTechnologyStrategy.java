@@ -14,7 +14,6 @@ public class CreateImpliedRelationshipsCombinedByTechnologyStrategy extends Abst
         while (source != null) {
             while (destination != null) {
                 if (impliedRelationshipIsAllowed(source, destination)) {
-                    boolean createRelationship = !source.hasEfferentRelationshipWith(destination, relationship.getDescription());
                     // Get existing relationship with matching technology
                     Relationship curRelationship = source.getEfferentRelationshipByTechnologyWith(destination, relationship.getTechnology());
 

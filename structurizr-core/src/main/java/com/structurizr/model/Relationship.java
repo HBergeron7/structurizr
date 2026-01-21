@@ -163,6 +163,10 @@ public final class Relationship extends ModelItem {
             Set<String> tags = new LinkedHashSet<>();
             tags.add(Tags.RELATIONSHIP);
 
+            if (technology != null && !technology.isBlank()) {
+                tags.add(technology);
+            }
+
             if (interactionStyle == InteractionStyle.Synchronous) {
                 tags.add(Tags.SYNCHRONOUS);
             } else if (interactionStyle == InteractionStyle.Asynchronous) {

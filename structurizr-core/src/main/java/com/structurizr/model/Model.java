@@ -458,7 +458,7 @@ public final class Model implements PropertyHolder {
         // and check that all relationships are unique
         for (Element element : getElements()) {
             for (Relationship relationship : element.getRelationships()) {
-                checkDescriptionIsUnique(element.getRelationships(), relationship);
+                checkRelationshipIsUnique(element.getRelationships(), relationship);
             }
         }
     }
@@ -523,8 +523,8 @@ public final class Model implements PropertyHolder {
         }
     }
 
-    private void checkDescriptionIsUnique(Collection<Relationship> relationships, Relationship relationship) {
-        if (relationships.stream().filter(r -> r.getDestination().equals(relationship.getDestination()) && r.getDescription().equals(relationship.getDescription())).count() != 1) {
+    private void checkRelationshipIsUnique(Collection<Relationship> relationships, Relationship relationship) {
+        if (relationships.stream().filter(r -> r.getDestination().equals(relationship.getDestination()) && r.getDescription().equals(relationship.getDescription()) && r.getTechnology().equals(relationship.getTechnology())).count() != 1) {
             throw new WorkspaceValidationException(
                     String.format(
                             "A relationship with the description \"%s\" already exists between \"%s\" and \"%s\".",
