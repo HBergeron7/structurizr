@@ -64,6 +64,7 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
     var cellsByElementId;
     var lines;
     var linesByRelationshipId;
+    var connections;
     var selectedElements = [];
     var highlightedElement = undefined;
     var highlightedLink = undefined;
@@ -392,6 +393,7 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
 
         lines = [];
         linesByRelationshipId = {};
+        connections = {};
         relationshipStylesInUse = [];
         relationshipStylesInUseMap = {};
 
@@ -915,10 +917,30 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
         }
 
         for (var i = 0; i < relationships.length; i++) {
-            var line = createArrow(relationships[i]);
+            const relationshipView = relationships[i];
+
+            var line = createArrow(relationshipView);
             if (line !== undefined) {
                 lines.push(line);
-                linesByRelationshipId[relationships[i].id] = line;
+                linesByRelationshipId[relationshipView.id] = line;
+
+                const relationship = structurizr.workspace.findRelationshipById(relationshipView.id);
+
+                const sourceElementId = relationship.sourceId;
+                var connectionsFromElement = connections[sourceElementId];
+                if (connectionsFromElement === undefined) {
+                    connectionsFromElement = [];
+                }
+                connectionsFromElement.push(paper.findViewByModel(line));
+                connections[sourceElementId] = connectionsFromElement;
+
+                const destinationElementId = relationship.destinationId;
+                var connectionsToElement = connections[destinationElementId];
+                if (connectionsToElement === undefined) {
+                    connectionsToElement = [];
+                }
+                connectionsToElement.push(paper.findViewByModel(line));
+                connections[destinationElementId] = connectionsToElement;
             }
         }
 
@@ -5358,6 +5380,20 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
         }
     };
 
+    function highlightRelationship(cellView) {
+        $('#' + cellView.id).children().first().css({
+            'stroke': '#aaaaaa',
+            'stroke-width': 15
+        });
+    }
+
+    function unhighlightRelationship(cellView) {
+        $('#' + cellView.id).children().first().css({
+            'stroke': '',
+            'stroke-width': 10
+        });
+    }
+
     function hideAllLines(opacity) {
         $('.joint-link').css('opacity', opacity);
     }
@@ -6105,6 +6141,14 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
         paper.on('cell:mouseover', function (cell, evt) {
             if (cell.model.elementInView) {
                 highlightedElement = cell;
+
+                // and highlight connections to/from element
+                const connectionsForElement = connections[cell.model.elementInView.id];
+                if (connectionsForElement) {
+                    connectionsForElement.forEach(function (cellView) {
+                        highlightRelationship(cellView);
+                    });
+                }
             }
 
             if (cell.model.relationshipInView) {
@@ -6113,6 +6157,8 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
                 var point = V(paper.viewport).toLocalPoint(evt.clientX, evt.clientY);
                 currentX = point.x;
                 currentY = point.y;
+
+                highlightRelationship(cell);
             }
 
             const offset = parentElement.offset();
@@ -6139,8 +6185,22 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
                 if (tooltip) {
                     tooltip.hide();
                 }
-                highlightedElement = undefined;
-                highlightedLink = undefined;
+
+                if (highlightedElement) {
+                    // and unhighlight connections to/from element
+                    const connectionsForElement = connections[cell.model.elementInView.id];
+                    if (connectionsForElement) {
+                        connectionsForElement.forEach(function (cellView) {
+                            unhighlightRelationship(cellView);
+                        });
+                    }
+                    highlightedElement = undefined;
+                }
+
+                if (highlightedLink) {
+                    unhighlightRelationship(cell);
+                    highlightedLink = undefined;
+                }
             }
         });
 
