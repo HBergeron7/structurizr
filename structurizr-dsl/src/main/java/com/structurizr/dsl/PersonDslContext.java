@@ -34,7 +34,9 @@ final class PersonDslContext extends GroupableElementDslContext {
                 StructurizrDslTokens.URL_TOKEN,
                 StructurizrDslTokens.PROPERTIES_TOKEN,
                 StructurizrDslTokens.PERSPECTIVES_TOKEN,
-                StructurizrDslTokens.RELATIONSHIP_TOKEN
+                StructurizrDslTokens.RELATIONSHIP_TOKEN,
+                StructurizrDslTokens.CONSUMES_TOKEN,
+                StructurizrDslTokens.PROVIDES_TOKEN
         };
     }
 

@@ -1231,32 +1231,53 @@ public final class StructurizrDslParser extends StructurizrDslTokens {
                         new UserRoleParser().parse(getContext(), tokens);
 
                     } else if (PROVIDES_TOKEN.equalsIgnoreCase(firstToken) && inContext(SoftwareSystemDslContext.class)) {
-                        throw new RuntimeException(firstToken + " is not yet supported for " + SoftwareSystemDslContext.class);
-
+                        ProvidesParser parser = new ProvidesParser();
+                        var provides = parser.parse(getContext(SoftwareSystemDslContext.class), tokens);
+                        var list = providers.getOrDefault(provides.getElement().getId(), new ArrayList<>());
+                        list.add(provides);
+                        providers.putIfAbsent(provides.getElement().getId(), list);
                     } else if (PROVIDES_TOKEN.equalsIgnoreCase(firstToken) && inContext(ContainerDslContext.class)) {
                         ProvidesParser parser = new ProvidesParser();
                         var provides = parser.parse(getContext(ContainerDslContext.class), tokens);
                         var list = providers.getOrDefault(provides.getElement().getId(), new ArrayList<>());
                         list.add(provides);
                         providers.putIfAbsent(provides.getElement().getId(), list);
-
                     } else if (PROVIDES_TOKEN.equalsIgnoreCase(firstToken) && inContext(ComponentDslContext.class)) {
-                        throw new RuntimeException(firstToken + " is not yet supported for " + ComponentDslContext.class);
-
+                        ProvidesParser parser = new ProvidesParser();
+                        var provides = parser.parse(getContext(ComponentDslContext.class), tokens);
+                        var list = providers.getOrDefault(provides.getElement().getId(), new ArrayList<>());
+                        list.add(provides);
+                        providers.putIfAbsent(provides.getElement().getId(), list);
+                    } else if (PROVIDES_TOKEN.equalsIgnoreCase(firstToken) && inContext(PersonDslContext.class)) {
+                        ProvidesParser parser = new ProvidesParser();
+                        var provides = parser.parse(getContext(PersonDslContext.class), tokens);
+                        var list = providers.getOrDefault(provides.getElement().getId(), new ArrayList<>());
+                        list.add(provides);
+                        providers.putIfAbsent(provides.getElement().getId(), list);
                     } else if (CONSUMES_TOKEN.equalsIgnoreCase(firstToken) && inContext(SoftwareSystemDslContext.class)) {
-                        throw new RuntimeException(firstToken + " is not yet supported for " + SoftwareSystemDslContext.class);
-
+                        ConsumesParser parser = new ConsumesParser();
+                        var consumes = parser.parse(getContext(SoftwareSystemDslContext.class), tokens);
+                        var list = consumers.getOrDefault(consumes.getElement().getId(), new ArrayList<>());
+                        list.add(consumes);
+                        consumers.putIfAbsent(consumes.getElement().getId(), list);
                     } else if (CONSUMES_TOKEN.equalsIgnoreCase(firstToken) && inContext(ContainerDslContext.class)) {
                         ConsumesParser parser = new ConsumesParser();
                         var consumes = parser.parse(getContext(ContainerDslContext.class), tokens);
                         var list = consumers.getOrDefault(consumes.getElement().getId(), new ArrayList<>());
                         list.add(consumes);
                         consumers.putIfAbsent(consumes.getElement().getId(), list);
-                        //throw new RuntimeException(firstToken + " is not yet supported for " + ContainerDslContext.class);
-
                     } else if (CONSUMES_TOKEN.equalsIgnoreCase(firstToken) && inContext(ComponentDslContext.class)) {
-                        throw new RuntimeException(firstToken + " is not yet supported for " + ComponentDslContext.class);
-
+                        ConsumesParser parser = new ConsumesParser();
+                        var consumes = parser.parse(getContext(ComponentDslContext.class), tokens);
+                        var list = consumers.getOrDefault(consumes.getElement().getId(), new ArrayList<>());
+                        list.add(consumes);
+                        consumers.putIfAbsent(consumes.getElement().getId(), list);
+                    } else if (CONSUMES_TOKEN.equalsIgnoreCase(firstToken) && inContext(PersonDslContext.class)) {
+                        ConsumesParser parser = new ConsumesParser();
+                        var consumes = parser.parse(getContext(PersonDslContext.class), tokens);
+                        var list = consumers.getOrDefault(consumes.getElement().getId(), new ArrayList<>());
+                        list.add(consumes);
+                        consumers.putIfAbsent(consumes.getElement().getId(), list);
                     } else if (DOCS_TOKEN.equalsIgnoreCase(firstToken) && inContext(WorkspaceDslContext.class)) {
                         if (features.isEnabled(Features.DOCUMENTATION)) {
                             new DocsParser().parse(getContext(WorkspaceDslContext.class), dslFile, tokens);

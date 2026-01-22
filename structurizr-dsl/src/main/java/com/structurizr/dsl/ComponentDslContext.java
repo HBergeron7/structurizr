@@ -38,7 +38,9 @@ final class ComponentDslContext extends GroupableElementDslContext {
                 StructurizrDslTokens.PROPERTIES_TOKEN,
                 StructurizrDslTokens.PERSPECTIVES_TOKEN,
                 StructurizrDslTokens.GROUP_TOKEN,
-                StructurizrDslTokens.RELATIONSHIP_TOKEN
+                StructurizrDslTokens.RELATIONSHIP_TOKEN,
+                StructurizrDslTokens.CONSUMES_TOKEN,
+                StructurizrDslTokens.PROVIDES_TOKEN
         };
     }
 
