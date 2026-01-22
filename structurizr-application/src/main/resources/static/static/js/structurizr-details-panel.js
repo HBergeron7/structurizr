@@ -3,6 +3,7 @@ structurizr.ui.DetailsPanel = function() {
     var detailsPanel = $('#detailsPanel');
     var detailsPanelHeader = $('#detailsPanelHeader');
     var detailsPanelName = $('#detailsPanelName');
+    var detailsPanelType = $('#detailsPanelType');
     var detailsPanelParent = $('#detailsPanelParent');
     const detailsPanelHr = $('#detailsPanel hr');
     var detailsPanelDescription = $('#detailsPanelDescription');
@@ -13,12 +14,15 @@ structurizr.ui.DetailsPanel = function() {
     var detailsPanelAdditionalContent = $('#detailsPanelAdditionalContent');
 
     this.showDetailsForElement = function(element, style, perspective) {
+        console.log(element);
         if (element === undefined) {
             return;
         }
-
-        detailsPanelName.html(structurizr.util.escapeHtml(element.name));
-        detailsPanelMetadata.text(structurizr.ui.getMetadataForElement(element, true));
+    
+        //detailsPanelType.html(structurizr.util.escapeHtml(element.type));
+        detailsPanelType.html(structurizr.workspace.getTerminologyFor(element));
+        detailsPanelName.html("Name: " + structurizr.util.escapeHtml(element.name));
+        //detailsPanelMetadata.text(structurizr.ui.getMetadataForElement(element, true));
 
         if (element.parentId) {
             var parentElement = structurizr.workspace.findElementById(element.parentId);
@@ -28,8 +32,6 @@ structurizr.ui.DetailsPanel = function() {
         }
 
         detailsPanelDescription.html(element.description ? structurizr.util.escapeHtml(element.description).replaceAll('\n', '<br />') : '');
-
-        detailsPanelHeader.removeClass('hidden');
 
         if (perspective === undefined) {
             var tagsHtml = '';
@@ -146,6 +148,8 @@ structurizr.ui.DetailsPanel = function() {
     };
 
     this.showDetailsForRelationship = function(relationship, relationshipInView, style, perspective) {
+        console.log(relationship);
+        console.log(relationshipInView);
         if (relationship === undefined) {
             return;
         }
@@ -165,21 +169,18 @@ structurizr.ui.DetailsPanel = function() {
             relationshipSummary = '';
         }
 
-        detailsPanelName.text((relationshipInView.order ? relationshipInView.order + ': ' : '') + relationshipSummary);
+        detailsPanelType.html(structurizr.workspace.getTerminologyFor(relationship));
+        detailsPanelName.text("Decription: " + (relationshipInView.order ? relationshipInView.order + ': ' : '') + relationshipSummary);
         detailsPanelParent.html('');
-        detailsPanelMetadata.text('[' + structurizr.workspace.getTerminologyFor(relationship) + ']');
+        //detailsPanelMetadata.text('[' + structurizr.workspace.getTerminologyFor(relationship) + ']');
 
         var description = '';
-        description += '<p style="font-weight: bold">';
-        description += structurizr.util.escapeHtml(structurizr.workspace.findElementById(relationship.sourceId).name);
-        description += ' <span style="color: gray;">--</span> ';
-        description += structurizr.util.escapeHtml(relationshipSummary);
-        description += ' <span style="color: gray;">-&gt;</span> ';
-        description += structurizr.util.escapeHtml(structurizr.workspace.findElementById(relationship.destinationId).name);
-        description += '</p>';
+        description += structurizr.util.escapeHtml("From: " + structurizr.workspace.findElementById(relationship.sourceId).name) + "<br />";
+        description += structurizr.util.escapeHtml("To: " + structurizr.workspace.findElementById(relationship.destinationId).name) + "<br />";
+        if (relationship.detailedDescription !== undefined) {
+            description += "<br />" + relationship.detailedDescription;
+        }
         detailsPanelDescription.html(description);
-
-        detailsPanelHeader.removeClass('hidden');
 
         if (perspective === undefined) {
             var tagsHtml = '';

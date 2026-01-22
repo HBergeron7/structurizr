@@ -18,6 +18,7 @@ public final class Relationship extends ModelItem {
     private Element destination;
     private String destinationId;
     private String description;
+    private String detailedDescription;
     private String technology;
     private InteractionStyle interactionStyle;
 
@@ -32,6 +33,20 @@ public final class Relationship extends ModelItem {
         setSource(source);
         setDestination(destination);
         setDescription(description);
+        setDetailedDescription("");
+        setTechnology(technology);
+        setInteractionStyle(interactionStyle);
+
+        addTags(tags);
+    }
+
+    Relationship(Element source, Element destination, String description, String detailedDescription, String technology, InteractionStyle interactionStyle, String[] tags) {
+        this();
+
+        setSource(source);
+        setDestination(destination);
+        setDescription(description);
+        setDetailedDescription(detailedDescription);
         setTechnology(technology);
         setInteractionStyle(interactionStyle);
 
@@ -110,6 +125,14 @@ public final class Relationship extends ModelItem {
 
     void setDescription(String description) {
         this.description = description;
+    }
+
+    public String getDetailedDescription() {
+        return detailedDescription != null ? detailedDescription : "";
+    }
+
+    public void setDetailedDescription(String detailedDescription) {
+        this.detailedDescription = detailedDescription;
     }
 
     /**

@@ -6335,10 +6335,8 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
                 }
             } else {
                 if (cellView.model.elementInView) {
-                    console.log('Clicked Element: ' + cellView.model.elementInView.id);
                     showDetailsForElement(structurizr.workspace.findElementById(cellView.model.elementInView.id), cellView.model._computedStyle);
                 } else if (cellView.model.relationshipInView) {
-                    console.log('Clicked Relationship: ' + cellView.model.relationshipInView.id);
                     showDetailsForRelationship(structurizr.workspace.findRelationshipById(cellView.model.relationshipInView.id), cellView.model.relationshipInView, cellView.model._computedStyle);
                 }
             }

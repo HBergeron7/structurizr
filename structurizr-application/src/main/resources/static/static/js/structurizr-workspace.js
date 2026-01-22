@@ -21,6 +21,7 @@ structurizr.Workspace = class Workspace {
     constructor(json) {
         this.#json = json;
         this.#workspace = JSON.parse(JSON.stringify(json));
+        console.log(this.#workspace)
 
         this.#initWorkspace();
         this.id = this.#workspace.id;

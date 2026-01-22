@@ -19,7 +19,7 @@
   <url>https://docs.structurizr.com</url>
 
   <properties>
-    <app.revision>1.0.1-alpha-1</app.revision>
+    <app.revision>1.0.1-alpha-2</app.revision>
     <library.revision>6.0.0</library.revision>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven.compiler.release>21</maven.compiler.release>

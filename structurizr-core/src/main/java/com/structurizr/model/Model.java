@@ -202,7 +202,17 @@ public final class Model implements PropertyHolder {
     }
 
     @Nullable
+    Relationship addRelationship(Element source, @Nonnull Element destination, String description, String detailedDescription, String technology, InteractionStyle interactionStyle, String[] tags) {
+        return addRelationship(source, destination, description, detailedDescription, technology, interactionStyle, tags, true);
+    }
+
+    @Nullable
     Relationship addRelationship(Element source, @Nonnull Element destination, String description, String technology, InteractionStyle interactionStyle, String[] tags, boolean createImpliedRelationships) {
+        return addRelationship(source, destination, description, "", technology, interactionStyle, tags, createImpliedRelationships);
+    }
+
+    @Nullable
+    Relationship addRelationship(Element source, @Nonnull Element destination, String description, String detailedDescription, String technology, InteractionStyle interactionStyle, String[] tags, boolean createImpliedRelationships) {
         if (destination == null) {
             throw new IllegalArgumentException("The destination must be specified.");
         }
@@ -211,7 +221,7 @@ public final class Model implements PropertyHolder {
             throw new IllegalArgumentException("Relationships cannot be added between parents and children.");
         }
 
-        Relationship relationship = new Relationship(source, destination, description, technology, interactionStyle, tags);
+        Relationship relationship = new Relationship(source, destination, description, detailedDescription, technology, interactionStyle, tags);
 
         if (addRelationship(relationship)) {
 

@@ -9,6 +9,7 @@ final class RelationshipGroup {
     private String technology;
     private List<String> filters;
     private String description;
+    private String detailedDescription;
     private List<String> tags;
 
     RelationshipGroup(StaticStructureElement consumer, StaticStructureElement provider, String technology, String description, List<String> tags) {
@@ -17,6 +18,7 @@ final class RelationshipGroup {
         this.technology = technology;
         this.filters = filters;
         this.description = description;
+        this.detailedDescription = "";
         this.tags = tags;
     }
 
@@ -40,6 +42,14 @@ final class RelationshipGroup {
         if (!this.description.contains(description)) {
             this.description+="/" + description;
         }
+    }
+
+    String getDetailedDescription() {
+        return this.detailedDescription;
+    }
+
+    void appendDetailedDescription(String detailedDescription) {
+        this.detailedDescription += detailedDescription;
     }
 
     List<String> getTags() {

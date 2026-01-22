@@ -314,7 +314,13 @@ public final class StructurizrDslParser extends StructurizrDslTokens {
                                                     List<String> allTags = new ArrayList<String>(provides.getTags());
                                                     allTags.addAll(consumes.getTags());
                                                     relationshipGroup = new RelationshipGroup(consumes.getElement(), provides.getElement(), provides.getTechnology(), provides.getAction(), allTags);
+                                                    relationshipGroup.appendDetailedDescription("<dl>\n");
                                                     relationshipGroups.put(consumes.getTechnology(), relationshipGroup);
+                                                }
+
+                                                relationshipGroup.appendDetailedDescription("<dt>" + provides.getAction() + " " + provides.getIdentifier() + "</dt>\n"); 
+                                                if (provides.getDescription() != null && !provides.getDescription().isBlank()) {
+                                                    relationshipGroup.appendDetailedDescription("<dd>" + provides.getDescription() + "</dd>\n"); 
                                                 }
                                             }
                                         }
@@ -322,7 +328,8 @@ public final class StructurizrDslParser extends StructurizrDslTokens {
 
                                     // Create combined relationships at the end to ensure implied relationships are created correctly
                                     for (var rgrp : relationshipGroups.values()) {
-                                        rgrp.getConsumer().uses(rgrp.getProvider(), rgrp.getDescription(), rgrp.getTechnology(), null, rgrp.getTags().toArray(new String[0]));
+                                        rgrp.appendDetailedDescription("</dl>\n");
+                                        var relationship = rgrp.getConsumer().uses(rgrp.getProvider(), rgrp.getDescription(), rgrp.getDetailedDescription(), rgrp.getTechnology(), null, rgrp.getTags().toArray(new String[0]));
                                     }
                                 }
                             }

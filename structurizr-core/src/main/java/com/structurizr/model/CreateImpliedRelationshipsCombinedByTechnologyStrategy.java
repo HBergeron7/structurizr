@@ -18,13 +18,15 @@ public class CreateImpliedRelationshipsCombinedByTechnologyStrategy extends Abst
                     Relationship curRelationship = source.getEfferentRelationshipByTechnologyWith(destination, relationship.getTechnology());
 
                     if (curRelationship == null) {
-                        createImpliedRelationship(relationship, source, destination);
+                        curRelationship = createImpliedRelationship(relationship, source, destination);
                     } else {
                         if (!curRelationship.getDescription().contains(relationship.getDescription())) {
                             String description = curRelationship.getDescription() + "/" + relationship.getDescription();
                             curRelationship.setDescription(description);
                         }
                     }
+
+                    curRelationship.setDetailedDescription(curRelationship.getDetailedDescription() + "<br />" + relationship.getDetailedDescription()); 
                 }
 
                 destination = destination.getParent();
