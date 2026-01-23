@@ -137,19 +137,6 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
         gridSize: gridSize,
         scale: scale,
         interactive: editable,
-        // linkView: joint.dia.LinkView.extend({
-        //     pointerclick: function(evt, x, y) {
-        //         if (editable) {
-        //             if (evt.altKey) {
-        //                 // do nothing
-        //             } else {
-        //                 if (V(evt.target).hasClass('connection') || V(evt.target).hasClass('connection-wrap')) {
-        //                     self.addVertex({x: x, y: y});
-        //                 }
-        //             }
-        //         }
-        //     }
-        // }),
         defaultConnectionPoint: { name: 'bbox' },
         clickThreshold: 1,
         sorting: joint.dia.Paper.sorting.APPROX
@@ -1656,7 +1643,6 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
 
     this.decreasePageSize = function(evt) {
         currentView.paperSize = undefined;
-        $('#pageSize option#none').prop('selected', true);
         this.setPageSize(Math.max(diagramWidth - pageSizeDelta, diagramMetadataWidth), diagramHeight - pageSizeDelta);
 
         if (evt.altKey === false) {
@@ -1674,15 +1660,12 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
         contentWidth = Math.max(contentWidth, diagramMetadataWidth);
 
         this.setPageSize(contentWidth, contentHeight);
-        currentView.paperSize = undefined;
-        $('#pageSize option#none').prop('selected', true);
 
         centreDiagram();
     };
 
     this.increasePageSize = function(evt) {
         currentView.paperSize = undefined;
-        $('#pageSize option#none').prop('selected', true);
         this.setPageSize(diagramWidth + pageSizeDelta, diagramHeight + pageSizeDelta);
 
         if (evt.altKey === false) {
@@ -4024,35 +4007,28 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
     }
 
     this.setPaperSize = function(view) {
-        if (view.dimensions !== undefined) {
+        if (view.dimensions === undefined) {
+            view.dimensions = { width: 2000, height: 2000 };
+
+            // no dimensions set: use legacy paper size
             if (view.paperSize !== undefined) {
-                var dimensions = new structurizr.ui.PaperSizes().getDimensions(view.paperSize);
-                if (dimensions.width === view.dimensions.width && dimensions.height === view.dimensions.height) {
-                    this.changePaperSize(view.paperSize);
-                } else {
-                    $('#pageSize option#none').prop('selected', true);
+                const dimensions = new structurizr.ui.PaperSizes().getDimensions(view.paperSize);
+                if (dimensions) {
+                    view.dimensions.width = dimensions.width;
+                    view.dimensions.height = dimensions.height;
                 }
-            } else {
-                view.dimensions.width = Math.max(view.dimensions.width, diagramMetadataWidth);
-                $('#pageSize option#none').prop('selected', true);
             }
-
-            this.setPageSize(view.dimensions.width, view.dimensions.height);
         } else {
-            if (view.paperSize === undefined) {
-                view.paperSize = 'A5_Landscape';
+            // check dimensions are valid
+            if (view.dimensions.width < 500) {
+                view.dimensions.width = 2000;
             }
-
-            this.changePaperSize(view.paperSize);
+            if (view.dimensions.height < 500) {
+                view.dimensions.height = 2000;
+            }
         }
-    };
 
-    this.changePaperSize = function(paperSize) {
-        currentView.paperSize = paperSize;
-        $('#pageSize option#' + paperSize).prop('selected', true);
-
-        var dimensions = new structurizr.ui.PaperSizes().getDimensions(paperSize);
-        this.setPageSize(dimensions.width, dimensions.height);
+        this.setPageSize(view.dimensions.width, view.dimensions.height);
     };
 
     function reposition(parentCell) {
@@ -7813,10 +7789,6 @@ structurizr.ui.PaperSizes = function() {
     definitions['Slide_16_10'] = {
         width: 3508,
         height: 2193
-    };
-
-    this.getDimensions = function(paperSize) {
-        return definitions[paperSize];
     };
 
     this.getDimensions = function(paperSize) {
