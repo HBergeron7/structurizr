@@ -95,9 +95,6 @@
         <div class="row">
             <div class="col-2">
                 <h4 style="margin-top: 0">Client-side encryption</h4>
-                <p>
-                    <a href="https://docs.structurizr.com/server/client-side-encryption" target="_blank">Documentation</a>
-                </p>
             </div>
             <div class="col-10">
                 <c:choose>
@@ -190,13 +187,14 @@
             </div>
             <div class="col-10">
                 <p>
-                    Click the button below to unlock your workspace.
+                    This workspace was locked by ${workspace.lockedUser} using ${workspace.lockedAgent} at <fmt:formatDate value="${workspace.lockedDate}" pattern="EEE dd MMM yyyy HH:mm:ss z" timeZone="${user.timeZone}" />
                 </p>
                 <form id="unlockWorkspaceForm" class="form-inline small centered" style="display: inline-block; margin-bottom: 5px" action="/workspace/${workspace.id}/unlock" method="post">
                     <button class="btn btn-warning small" type="submit" name="action" value="remove" title="Unlock workspace"><img src="/static/bootstrap-icons/unlock.svg" class="icon-btn" /> Unlock workspace</button>
                 </form>
             </div>
         </div>
+        <hr />
         </c:if>
 
         <div class="row">
