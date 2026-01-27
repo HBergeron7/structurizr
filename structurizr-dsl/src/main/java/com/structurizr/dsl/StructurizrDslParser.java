@@ -1185,6 +1185,8 @@ public final class StructurizrDslParser extends StructurizrDslTokens {
                         if (shouldStartContext(tokens)) {
                             startContext(new DynamicViewRelationshipContext(relationshipView));
                         }
+                    } else if (MERGE_VIEW_TOKEN.equalsIgnoreCase(firstToken) && inContext(ViewsDslContext.class)) {
+                        new MergeParser().parse(getContext(), workspace.getViews(), tokens); 
 
                     } else if (URL_TOKEN.equalsIgnoreCase(firstToken) && inContext(DynamicViewRelationshipContext.class)) {
                         new DynamicViewRelationshipParser().parseUrl(getContext(DynamicViewRelationshipContext.class), tokens.withoutContextStartToken());

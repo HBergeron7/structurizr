@@ -4,9 +4,9 @@ import com.structurizr.model.*;
 import java.util.*;
 
 final class ProvidesParser extends AbstractParser {
-    private static final String GRAMMAR = "provides <identifier> <action> [technology] [properties] [description] [tags]";
+    private static final String GRAMMAR = "provides <key> <action> [technology] [properties] [description] [tags]";
 
-    private final static int IDENTIFIER_INDEX = 1;
+    private final static int KEY_INDEX = 1;
     private final static int ACTION_INDEX = 2;
     private final static int TECHNOLOGY_INDEX = 3;
     private final static int PROPERTIES_INDEX = 4;
@@ -24,10 +24,10 @@ final class ProvidesParser extends AbstractParser {
 
         element = (StaticStructureElement)context.getElement();
 
-        if (tokens.includes(IDENTIFIER_INDEX)) {
-            identifier = tokens.get(IDENTIFIER_INDEX);
+        if (tokens.includes(KEY_INDEX)) {
+            identifier = tokens.get(KEY_INDEX);
         } else {
-            throw new RuntimeException("Must provide identifier, expected: " + GRAMMAR);
+            throw new RuntimeException("Must provide key, expected: " + GRAMMAR);
         }
 
         if (tokens.includes(ACTION_INDEX)) {

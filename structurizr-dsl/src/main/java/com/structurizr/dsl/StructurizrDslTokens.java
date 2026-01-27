@@ -10,10 +10,10 @@ class StructurizrDslTokens {
     static final String CUSTOM_ELEMENT_TOKEN = "element";
     static final String PERSON_TOKEN = "person";
     static final String SOFTWARE_SYSTEM_TOKEN = "softwareSystem";
-    static final String CONSUMES_TOKEN = "consumes";
-    static final String PROVIDES_TOKEN = "provides";
     static final String RELATIONSHIP_TOKEN = "->";
     static final String NO_RELATIONSHIP_TOKEN = "-/>";
+    static final String CONSUMES_TOKEN = "consumes";
+    static final String PROVIDES_TOKEN = "provides";
     static final String CONTAINER_TOKEN = "container";
     static final String COMPONENT_TOKEN = "component";
     static final String GROUP_TOKEN = "group";
@@ -107,6 +107,7 @@ class StructurizrDslTokens {
     static final String THIS_TOKEN = "this";
 
     static final String INCLUDE_FILE_TOKEN = "!include";
+    static final String MERGE_VIEW_TOKEN = "!merge";
     static final String DOCS_TOKEN = "!docs";
     static final String ADRS_TOKEN = "!adrs";
     static final String DECISIONS_TOKEN = "!decisions";

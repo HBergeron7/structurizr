@@ -4,9 +4,9 @@ import com.structurizr.model.*;
 import java.util.*;
 
 final class ConsumesParser extends AbstractParser {
-    private static final String GRAMMAR = "consumes <identifier> [technology] [filters] [tags]";
+    private static final String GRAMMAR = "consumes <key> [technology] [filters] [tags]";
 
-    private final static int IDENTIFIER_INDEX = 1;
+    private final static int KEY_INDEX = 1;
     private final static int TECHNOLOGY_INDEX = 2;
     private final static int FILTERS_INDEX = 3;
     private final static int DESCRIPTION_INDEX = 4;
@@ -22,8 +22,8 @@ final class ConsumesParser extends AbstractParser {
 
         element = (StaticStructureElement)context.getElement();
 
-        if (tokens.includes(IDENTIFIER_INDEX)) {
-            identifier = tokens.get(IDENTIFIER_INDEX);
+        if (tokens.includes(KEY_INDEX)) {
+            identifier = tokens.get(KEY_INDEX);
         } else {
             throw new RuntimeException("Must provide identifier, expected: " + GRAMMAR);
         }

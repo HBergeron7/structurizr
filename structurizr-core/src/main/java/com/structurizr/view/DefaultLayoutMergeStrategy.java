@@ -7,8 +7,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import javax.annotation.Nonnull;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+
 
 /**
  * A default implementation of a LayoutMergeStrategy that:
@@ -25,6 +25,33 @@ import java.util.Map;
 public class DefaultLayoutMergeStrategy implements LayoutMergeStrategy {
 
     private static final Log log = LogFactory.getLog(View.class);
+    private static class Offset {
+        public int dx;
+        public int dy;
+        
+        public Offset(int dx, int dy) {
+            this.dx = dx;
+            this.dy = dy;
+        }
+        
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Offset offset = (Offset) o;
+            return dx == offset.dx && dy == offset.dy;
+        }
+        
+        @Override
+        public int hashCode() {
+            return Objects.hash(dx, dy);
+        }
+        
+        @Override
+        public String toString() {
+            return "(" + dx + ", " + dy + ")";
+        }
+    }
 
     /**
      * Attempts to copy the visual layout information (e.g. x,y coordinates) of elements and relationships
@@ -34,20 +61,36 @@ public class DefaultLayoutMergeStrategy implements LayoutMergeStrategy {
      * @param viewWithoutLayoutInformation      the destination View (e.g. the new version, created locally with code)
      */
     public void copyLayoutInformation(@Nonnull ModelView viewWithLayoutInformation, @Nonnull ModelView viewWithoutLayoutInformation) {
-        setPaperSizeIfNotSpecified(viewWithLayoutInformation, viewWithoutLayoutInformation);
-        setDimensionsIfNotSpecified(viewWithLayoutInformation, viewWithoutLayoutInformation);
-
         Map<ElementView, ElementView> elementViewMap = new HashMap<>();
         Map<Element, Element> elementMap = new HashMap<>();
+        Map<Offset, Integer> offsetCount = new HashMap<>();
+        List<ElementView> prepositionedElements = new ArrayList<>();
+
+        boolean missingElement = false;
 
         for (ElementView elementViewWithoutLayoutInformation : viewWithoutLayoutInformation.getElements()) {
             ElementView elementViewWithLayoutInformation = findElementView(viewWithLayoutInformation, elementViewWithoutLayoutInformation.getElement());
             if (elementViewWithLayoutInformation != null) {
-                elementViewMap.put(elementViewWithoutLayoutInformation, elementViewWithLayoutInformation);
-                elementMap.put(elementViewWithoutLayoutInformation.getElement(), elementViewWithLayoutInformation.getElement());
+                // Verify the ElementView does not already have layout information
+                if (elementViewWithoutLayoutInformation.getX() == 0 && elementViewWithoutLayoutInformation.getY() == 0) {
+                    elementViewMap.put(elementViewWithoutLayoutInformation, elementViewWithLayoutInformation);
+                    elementMap.put(elementViewWithoutLayoutInformation.getElement(), elementViewWithLayoutInformation.getElement());
+                } else {
+                    // Treat all pre-positioned elements as a group and find the most common offset to be applied
+                    Offset offset = new Offset(elementViewWithLayoutInformation.getX() - elementViewWithoutLayoutInformation.getX(), elementViewWithLayoutInformation.getY() - elementViewWithoutLayoutInformation.getY());
+                    offsetCount.put(offset, offsetCount.getOrDefault(offset, 0) + 1);
+                    prepositionedElements.add(elementViewWithoutLayoutInformation);
+                }
             } else {
                 log.warn("There is no layout information for the element named " + elementViewWithoutLayoutInformation.getElement().getName() + " on view " + viewWithLayoutInformation.getKey());
+                missingElement = true;
             }
+        }
+
+        if (!missingElement) {
+            //Don't copy size if not all components are represented in source view
+            setPaperSizeIfNotSpecified(viewWithLayoutInformation, viewWithoutLayoutInformation);
+            setDimensionsIfNotSpecified(viewWithLayoutInformation, viewWithoutLayoutInformation);
         }
 
         for (ElementView elementViewWithoutLayoutInformation : elementViewMap.keySet()) {
@@ -55,16 +98,29 @@ public class DefaultLayoutMergeStrategy implements LayoutMergeStrategy {
             elementViewWithoutLayoutInformation.copyLayoutInformationFrom(elementViewWithLayoutInformation);
         }
 
-        for (RelationshipView relationshipViewWithoutLayoutInformation : viewWithoutLayoutInformation.getRelationships()) {
-            RelationshipView relationshipViewWithLayoutInformation;
-            if (viewWithoutLayoutInformation instanceof DynamicView) {
-                relationshipViewWithLayoutInformation = findRelationshipView(viewWithLayoutInformation, relationshipViewWithoutLayoutInformation, elementMap);
-            } else {
-                relationshipViewWithLayoutInformation = findRelationshipView(viewWithLayoutInformation, relationshipViewWithoutLayoutInformation.getRelationship(), elementMap);
+        //Find most common offset and apply to all prepositioned elements
+        Map.Entry<Offset, Integer> mostCommon = offsetCount.entrySet().stream().max(Map.Entry.comparingByValue()).orElse(null);
+        if (mostCommon != null) {
+            Offset offset = mostCommon.getKey();
+            for (ElementView element : prepositionedElements) {
+                element.applyOffset(offset.dx,offset.dy);
             }
+        }
+        
 
-            if (relationshipViewWithLayoutInformation != null) {
-                relationshipViewWithoutLayoutInformation.copyLayoutInformationFrom(relationshipViewWithLayoutInformation);
+        for (RelationshipView relationshipViewWithoutLayoutInformation : viewWithoutLayoutInformation.getRelationships()) {
+            // Verify the RelationshipView does not have layout information
+            if (relationshipViewWithoutLayoutInformation.getVertices().size() == 0) {
+                RelationshipView relationshipViewWithLayoutInformation;
+                if (viewWithoutLayoutInformation instanceof DynamicView) {
+                    relationshipViewWithLayoutInformation = findRelationshipView(viewWithLayoutInformation, relationshipViewWithoutLayoutInformation, elementMap);
+                } else {
+                    relationshipViewWithLayoutInformation = findRelationshipView(viewWithLayoutInformation, relationshipViewWithoutLayoutInformation.getRelationship(), elementMap);
+                }
+
+                if (relationshipViewWithLayoutInformation != null) {
+                    relationshipViewWithoutLayoutInformation.copyLayoutInformationFrom(relationshipViewWithLayoutInformation);
+                }
             }
         }
     }

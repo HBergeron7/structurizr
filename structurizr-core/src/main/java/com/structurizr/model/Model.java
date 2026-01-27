@@ -534,7 +534,7 @@ public final class Model implements PropertyHolder {
     }
 
     private void checkRelationshipIsUnique(Collection<Relationship> relationships, Relationship relationship) {
-        if (relationships.stream().filter(r -> r.getDestination().equals(relationship.getDestination()) && r.getDescription().equals(relationship.getDescription()) && r.getTechnology().equals(relationship.getTechnology())).count() != 1) {
+        if (relationships.stream().filter(r -> r.getDestination().equals(relationship.getDestination()) && r.getDescription().equals(relationship.getDescription()) && Objects.equals(r.getTechnology(),relationship.getTechnology())).count() != 1) {
             throw new WorkspaceValidationException(
                     String.format(
                             "A relationship with the description \"%s\" already exists between \"%s\" and \"%s\".",
