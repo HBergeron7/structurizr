@@ -34,6 +34,20 @@ final class ModelItemParser extends AbstractParser {
         context.getElement().setDescription(description);
     }
 
+    void parseDetailedDescription(ElementDslContext context, Tokens tokens) {
+        // detailedDescription <description>
+        if (tokens.hasMoreThan(DESCRIPTION_INDEX)) {
+            throw new RuntimeException("Too many tokens, expected: detailedDescription <description>");
+        }
+
+        if (!tokens.includes(DESCRIPTION_INDEX)) {
+            throw new RuntimeException("Expected: detailedDescription <description>");
+        }
+
+        String description = tokens.get(DESCRIPTION_INDEX);
+        context.getElement().setDetailedDescription(description);
+    }
+
     void parseUrl(ModelItemDslContext context, Tokens tokens) {
         // url <url>
         if (tokens.hasMoreThan(URL_INDEX)) {

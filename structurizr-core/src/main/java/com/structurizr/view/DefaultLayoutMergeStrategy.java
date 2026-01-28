@@ -71,10 +71,10 @@ public class DefaultLayoutMergeStrategy implements LayoutMergeStrategy {
         for (ElementView elementViewWithoutLayoutInformation : viewWithoutLayoutInformation.getElements()) {
             ElementView elementViewWithLayoutInformation = findElementView(viewWithLayoutInformation, elementViewWithoutLayoutInformation.getElement());
             if (elementViewWithLayoutInformation != null) {
+                elementMap.put(elementViewWithoutLayoutInformation.getElement(), elementViewWithLayoutInformation.getElement());
                 // Verify the ElementView does not already have layout information
                 if (elementViewWithoutLayoutInformation.getX() == 0 && elementViewWithoutLayoutInformation.getY() == 0) {
                     elementViewMap.put(elementViewWithoutLayoutInformation, elementViewWithLayoutInformation);
-                    elementMap.put(elementViewWithoutLayoutInformation.getElement(), elementViewWithLayoutInformation.getElement());
                 } else {
                     // Treat all pre-positioned elements as a group and find the most common offset to be applied
                     Offset offset = new Offset(elementViewWithLayoutInformation.getX() - elementViewWithoutLayoutInformation.getX(), elementViewWithLayoutInformation.getY() - elementViewWithoutLayoutInformation.getY());
@@ -103,7 +103,7 @@ public class DefaultLayoutMergeStrategy implements LayoutMergeStrategy {
         if (mostCommon != null) {
             Offset offset = mostCommon.getKey();
             for (ElementView element : prepositionedElements) {
-                element.applyOffset(offset.dx,offset.dy);
+                element.applyOffset(offset.dx, offset.dy);
             }
         }
         
@@ -121,6 +121,9 @@ public class DefaultLayoutMergeStrategy implements LayoutMergeStrategy {
                 if (relationshipViewWithLayoutInformation != null) {
                     relationshipViewWithoutLayoutInformation.copyLayoutInformationFrom(relationshipViewWithLayoutInformation);
                 }
+            } else if (mostCommon != null) {
+                Offset offset = mostCommon.getKey();
+                relationshipViewWithoutLayoutInformation.applyOffset(offset.dx, offset.dy);
             }
         }
     }
@@ -155,15 +158,17 @@ public class DefaultLayoutMergeStrategy implements LayoutMergeStrategy {
 
         if (elementView == null) {
             // no element was found, so try finding an element of the same type with the same description if set (in this situation, the element itself may have been renamed)
+            log.warn("There is no element named " + elementWithoutLayoutInformation.getName() + " on view " + viewWithLayoutInformation.getKey() + ". Looking for matching description.");
             if (!StringUtils.isNullOrEmpty(elementWithoutLayoutInformation.getDescription())) {
                 elementView = viewWithLayoutInformation.getElements().stream().filter(ev -> elementWithoutLayoutInformation.getDescription().equals(ev.getElement().getDescription()) && ev.getElement().getClass().equals(elementWithoutLayoutInformation.getClass())).findFirst().orElse(null);
             }
         }
 
-        if (elementView == null) {
-            // no element was found, so try finding an element of the same type with the same ID (in this situation, the name and description may have changed)
-            elementView = viewWithLayoutInformation.getElements().stream().filter(ev -> ev.getElement().getId().equals(elementWithoutLayoutInformation.getId()) && ev.getElement().getClass().equals(elementWithoutLayoutInformation.getClass())).findFirst().orElse(null);
-        }
+        // TODO: Consider creating a way to ignore ID only when merging layouts from different workspaces
+        //if (elementView == null) {
+        //    // no element was found, so try finding an element of the same type with the same ID (in this situation, the name and description may have changed)
+        //    elementView = viewWithLayoutInformation.getElements().stream().filter(ev -> ev.getElement().getId().equals(elementWithoutLayoutInformation.getId()) && ev.getElement().getClass().equals(elementWithoutLayoutInformation.getClass())).findFirst().orElse(null);
+        //}
 
         return elementView;
     }

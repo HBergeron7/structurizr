@@ -207,6 +207,12 @@ public final class RelationshipView implements PropertyHolder, Comparable<Relati
         }
     }
 
+    public void applyOffset(int x, int y) {
+        for (Vertex vertex : vertices) {
+            vertex.applyOffset(x, y);
+        }
+    }
+
     /**
      * Gets the routing algorithm used when rendering this relationship.
      *

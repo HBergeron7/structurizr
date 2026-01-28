@@ -293,7 +293,7 @@ public final class StructurizrDslParser extends StructurizrDslTokens {
                         // do nothing
 
                     } else if (DslContext.CONTEXT_END_TOKEN.equals(tokens.get(0))) {
-                        // When the mode ends, evaluate all requirements in the model and create relationships
+                        // When the model ends, evaluate all requirements in the model and create relationships
                         if (inContext(ModelDslContext.class)) {
                             //TODO: Review better ways to do this. Each list should be small but this is a lot of nested loops
                             // For all elements that consume loop through provider elements and create all relationships
@@ -658,6 +658,9 @@ public final class StructurizrDslParser extends StructurizrDslTokens {
 
                     } else if ((TAGS_TOKEN.equalsIgnoreCase(firstToken) || TAG_TOKEN.equalsIgnoreCase(firstToken)) && inContext(ModelItemsDslContext.class)) {
                         new ModelItemsParser().parseTags(getContext(ModelItemsDslContext.class), tokens);
+
+                    } else if (DETAILED_DESCRIPTION_TOKEN.equalsIgnoreCase(firstToken) && inContext(ElementDslContext.class) && !isGroup(getContext())) {
+                        new ModelItemParser().parseDetailedDescription(getContext(ElementDslContext.class), tokens);
 
                     } else if (DESCRIPTION_TOKEN.equalsIgnoreCase(firstToken) && inContext(ElementDslContext.class) && !isGroup(getContext())) {
                         new ModelItemParser().parseDescription(getContext(ElementDslContext.class), tokens);

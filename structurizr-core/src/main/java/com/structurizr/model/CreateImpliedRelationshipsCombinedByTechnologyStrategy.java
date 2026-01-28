@@ -9,7 +9,7 @@ public class CreateImpliedRelationshipsCombinedByTechnologyStrategy extends Abst
     @Override
     public void createImpliedRelationships(Relationship relationship) {
         Element source = relationship.getSource();
-        Element destination = relationship.getDestination();
+        Element destination = relationship.getDestination().getParent();
 
         while (source != null) {
             while (destination != null) {
@@ -19,14 +19,15 @@ public class CreateImpliedRelationshipsCombinedByTechnologyStrategy extends Abst
 
                     if (curRelationship == null) {
                         curRelationship = createImpliedRelationship(relationship, source, destination);
+                        curRelationship.setDetailedDescription(relationship.getDetailedDescription()); 
                     } else {
                         if (!curRelationship.getDescription().contains(relationship.getDescription())) {
                             String description = curRelationship.getDescription() + "/" + relationship.getDescription();
                             curRelationship.setDescription(description);
                         }
+                        curRelationship.setDetailedDescription(curRelationship.getDetailedDescription() + relationship.getDetailedDescription()); 
                     }
 
-                    curRelationship.setDetailedDescription(curRelationship.getDetailedDescription() + "<br />" + relationship.getDetailedDescription()); 
                 }
 
                 destination = destination.getParent();

@@ -31,7 +31,10 @@ structurizr.ui.DetailsPanel = function() {
             detailsPanelParent.text('');
         }
 
-        detailsPanelDescription.html(element.description ? structurizr.util.escapeHtml(element.description).replaceAll('\n', '<br />') : '');
+        var description = '';
+        description += element.description ? structurizr.util.escapeHtml(element.description).replaceAll('\n', '<br />') + '<br />' : '';
+        description += element.detailedDescription ? element.detailedDescription : '';
+        detailsPanelDescription.html(description);
 
         if (perspective === undefined) {
             var tagsHtml = '';
@@ -163,14 +166,17 @@ structurizr.ui.DetailsPanel = function() {
 
         var relationshipSummary = relationshipInView.description;
         if (relationshipSummary === undefined) {
-            relationshipSummary = relationship.description;
+            relationshipSummary = structurizr.util.escapeHtml(relationship.description);
+            if (relationship.technology !== undefined) {
+                relationshipSummary += "<br />Technology: " + structurizr.util.escapeHtml(relationship.technology);
+            }
         }
         if (relationshipSummary === undefined || relationshipSummary.length === 0) {
             relationshipSummary = '';
         }
 
         detailsPanelType.html(structurizr.workspace.getTerminologyFor(relationship));
-        detailsPanelName.text("Decription: " + (relationshipInView.order ? relationshipInView.order + ': ' : '') + relationshipSummary);
+        detailsPanelName.html("Decription: " + (relationshipInView.order ? relationshipInView.order + ': ' : '') + relationshipSummary);
         detailsPanelParent.html('');
         //detailsPanelMetadata.text('[' + structurizr.workspace.getTerminologyFor(relationship) + ']');
 

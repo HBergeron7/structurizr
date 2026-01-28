@@ -16,6 +16,7 @@ public abstract class Element extends ModelItem {
 
     private String name;
     private String description;
+    private String detailedDescription;
 
     private Set<Relationship> relationships = new TreeSet<>();
 
@@ -69,6 +70,24 @@ public abstract class Element extends ModelItem {
      */
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    /**
+     * Gets a detailed description of this element.
+     *
+     * @return the detailed description, as a String
+     */
+    public String getDetailedDescription() {
+        return detailedDescription;
+    }
+
+    /**
+     * Sets the detailed description of this element.
+     *
+     * @param detailedDescription   the detailed description, as a String
+     */
+    public void setDetailedDescription(String detailedDescription) {
+        this.detailedDescription = detailedDescription;
     }
 
     /**

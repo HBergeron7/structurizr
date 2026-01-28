@@ -44,6 +44,11 @@ public final class Vertex {
         this.y = y;
     }
 
+    public void applyOffset(int x, int y) {
+        this.x+=x;
+        this.y+=y;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
