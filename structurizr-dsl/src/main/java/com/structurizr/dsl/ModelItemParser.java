@@ -4,6 +4,8 @@ final class ModelItemParser extends AbstractParser {
 
     private final static int DESCRIPTION_INDEX = 1;
 
+    private final static int DETAIL_INDEX = 2;
+
     private final static int TAGS_INDEX = 1;
 
     private final static int URL_INDEX = 1;
@@ -34,18 +36,19 @@ final class ModelItemParser extends AbstractParser {
         context.getElement().setDescription(description);
     }
 
-    void parseDetailedDescription(ElementDslContext context, Tokens tokens) {
+    void parseDetail(ElementDslContext context, Tokens tokens) {
         // detailedDescription <description>
-        if (tokens.hasMoreThan(DESCRIPTION_INDEX)) {
-            throw new RuntimeException("Too many tokens, expected: detailedDescription <description>");
+        if (tokens.hasMoreThan(DETAIL_INDEX)) {
+            throw new RuntimeException("Too many tokens, expected: detail <name> <detail>");
         }
 
-        if (!tokens.includes(DESCRIPTION_INDEX)) {
-            throw new RuntimeException("Expected: detailedDescription <description>");
+        if (!tokens.includes(DETAIL_INDEX)) {
+            throw new RuntimeException("Expected: detail <name> <detail>");
         }
 
-        String description = tokens.get(DESCRIPTION_INDEX);
-        context.getElement().setDetailedDescription(description);
+        String name = tokens.get(1);
+        String detail = tokens.get(2);
+        context.getElement().putDetail(name, detail);
     }
 
     void parseUrl(ModelItemDslContext context, Tokens tokens) {

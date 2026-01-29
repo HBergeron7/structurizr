@@ -40,7 +40,7 @@ final class ContainerDslContext extends GroupableElementDslContext {
                 StructurizrDslTokens.GROUP_TOKEN,
                 StructurizrDslTokens.COMPONENT_TOKEN,
                 StructurizrDslTokens.DESCRIPTION_TOKEN,
-                StructurizrDslTokens.DETAILED_DESCRIPTION_TOKEN,
+                StructurizrDslTokens.DETAIL_TOKEN,
                 StructurizrDslTokens.TECHNOLOGY_TOKEN,
                 StructurizrDslTokens.TAGS_TOKEN,
                 StructurizrDslTokens.URL_TOKEN,

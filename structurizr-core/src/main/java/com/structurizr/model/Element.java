@@ -4,8 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 
 /**
  * This is the superclass for all model elements.
@@ -16,7 +15,7 @@ public abstract class Element extends ModelItem {
 
     private String name;
     private String description;
-    private String detailedDescription;
+    private Map<String, String> details = new HashMap<>();
 
     private Set<Relationship> relationships = new TreeSet<>();
 
@@ -73,21 +72,30 @@ public abstract class Element extends ModelItem {
     }
 
     /**
-     * Gets a detailed description of this element.
+     * Gets the collection of name-value details pairs, as a Map.
      *
-     * @return the detailed description, as a String
+     * @return  a Map (String, String) (empty if there are no details)
      */
-    public String getDetailedDescription() {
-        return detailedDescription;
+    public Map<String, String> getDetails() {
+        return Collections.unmodifiableMap(details);
     }
 
     /**
-     * Sets the detailed description of this element.
+     * Puts a name-value pair detail.
      *
-     * @param detailedDescription   the detailed description, as a String
+     * @param name      the name of the detail
+     * @param value     the value of the detail
      */
-    public void setDetailedDescription(String detailedDescription) {
-        this.detailedDescription = detailedDescription;
+    public void putDetail(String name, String value) {
+        if (name == null || name.trim().length() == 0) {
+            throw new IllegalArgumentException("A detail name must be specified.");
+        }
+
+        if (value == null || value.trim().length() == 0) {
+            throw new IllegalArgumentException("A detail value must be specified.");
+        }
+
+        details.put(name, value);
     }
 
     /**

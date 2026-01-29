@@ -457,6 +457,12 @@ hr {
     border-right: solid 1px #dddddd;
 }
 
+#detailsPanelColumn {
+    background: #ffffff;
+    overflow-y: scroll;
+    border-left: solid 1px #dddddd;
+}
+
 #diagram {
     background: gray;
     margin: 0;

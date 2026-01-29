@@ -7,11 +7,13 @@ structurizr.ui.DetailsPanel = function() {
     var detailsPanelParent = $('#detailsPanelParent');
     const detailsPanelHr = $('#detailsPanel hr');
     var detailsPanelDescription = $('#detailsPanelDescription');
+    var detailsPanelDetails = $('#detailsPanelDetails');
     var detailsPanelMetadata = $('#detailsPanelMetadata');
     var detailsPanelTags = $('#detailsPanelTags');
     var detailsPanelProperties = $('#detailsPanelProperties');
     var detailsPanelUrl = $('#detailsPanelUrl');
     var detailsPanelAdditionalContent = $('#detailsPanelAdditionalContent');
+    const md = window.markdownit();
 
     this.showDetailsForElement = function(element, style, perspective) {
         console.log(element);
@@ -33,7 +35,7 @@ structurizr.ui.DetailsPanel = function() {
 
         var description = '';
         description += element.description ? structurizr.util.escapeHtml(element.description).replaceAll('\n', '<br />') + '<br />' : '';
-        description += element.detailedDescription ? element.detailedDescription : '';
+        //description += element.detailedDescription ? md.render(element.detailedDescription) : '';
         detailsPanelDescription.html(description);
 
         if (perspective === undefined) {
@@ -53,6 +55,7 @@ structurizr.ui.DetailsPanel = function() {
             tagsHtml += '</div>';
             detailsPanelTags.html(tagsHtml);
 
+            renderDetails(element.details);
             renderProperties(structurizr.workspace.getAllPropertiesForElement(element));
 
             var urlHtml = '';
@@ -187,6 +190,7 @@ structurizr.ui.DetailsPanel = function() {
             description += "<br />" + relationship.detailedDescription;
         }
         detailsPanelDescription.html(description);
+        detailsPanelDetails.html('');
 
         if (perspective === undefined) {
             var tagsHtml = '';
@@ -302,6 +306,38 @@ structurizr.ui.DetailsPanel = function() {
             detailsPanelProperties.html('<div class="smaller"><p>Properties:</p><ul>' + propertiesHtml + '</ul></div>');
         } else {
             detailsPanelProperties.html('');
+        }
+    }
+
+    function renderDetails(details) {
+        var detailsHtml = '';
+        var count = 0;
+        if (details !== undefined && Object.keys(details).length > 0) {
+            Object.keys(details).forEach(function (key) {
+                count++;
+                var value = details[key];
+                value = md.render(value);
+                //propertiesHtml += '<li>';
+                //propertiesHtml += (structurizr.util.escapeHtml(key) + ' = ' + value);
+                //propertiesHtml += '</li>';
+
+                detailsHtml += '<div class="accordion-item">';
+                detailsHtml += '<h2 class="accordion-header">';
+                detailsHtml += '<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse' + count + '" aria-expanded="false" aria-controls="flush-collapse' + count + '">';
+                detailsHtml += structurizr.util.escapeHtml(key);
+                detailsHtml += '</button>';
+                detailsHtml += '</h2>';
+                detailsHtml += '<div id="flush-collapse' + count + '" class="accordion-collapse collapse">';
+                detailsHtml += '<div class="accordion-body">' + value + '</div>'
+                detailsHtml += '</div>'
+                detailsHtml += '</div>'
+            });
+        }
+
+        if (detailsHtml.length > 0) {
+            detailsPanelDetails.html('<div class="accordion accordion-flush" id="accordionDetails">' + detailsHtml + '</div>');
+        } else {
+            detailsPanelDetails.html('');
         }
     }
 

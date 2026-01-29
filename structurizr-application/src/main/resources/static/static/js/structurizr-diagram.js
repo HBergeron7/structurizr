@@ -4473,11 +4473,13 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
                 var height = this.getPossibleViewportHeight();
                 viewport.height(height);
                 $('#diagramNavigationPanel').height(height);
+                $('#detailsPanelColumn').height(height);
             } else {
                 var diagramRatio = diagramWidth / diagramHeight;
                 var height = Math.floor(viewport.width() / diagramRatio);
                 viewport.height(height);
                 $('#diagramNavigationPanel').height(height);
+                $('#detailsPanelColumn').height(height);
             }
         }
     };

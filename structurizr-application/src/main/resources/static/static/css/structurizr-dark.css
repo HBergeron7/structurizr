@@ -161,6 +161,12 @@ hr {
     border-right: solid 1px #000000;
 }
 
+#detailsPanelColumn {
+    background: #111111;
+    overflow-y: scroll;
+    border-left: solid 1px #000000;
+}
+
 .structurizrDiagramViewport {
     background: #333333;
 }

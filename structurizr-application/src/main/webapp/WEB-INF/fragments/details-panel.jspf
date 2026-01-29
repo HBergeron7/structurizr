@@ -13,7 +13,7 @@
         font-size: 14px;
     }
     #detailsPanelParent {
-        font-size: 8px;
+        font-size: 14px;
     }
     #detailsPanelMetadata {
         font-size: 10px;
@@ -23,12 +23,16 @@
         font-weight: normal;
     }
     #detailsPanelDescription {
-        font-size: 12px;
+        font-size: 14px;
         margin-top: 10px;
     }
     #detailsPanelTags {
         margin-top: 10px;
         font-size: 10px;
+    }
+    #detailsPanelDetails {
+        margin-top: 10px;
+        font-size: 14px;
     }
     #detailsPanelProperties {
         margin-top: 15px;
@@ -47,6 +51,18 @@
         white-space: nowrap;
         display: inline-block;
     }
+    .accordion-body {
+        --bs-accordion-body-padding-y: .1rem;
+        --bs-accordion-body-padding-x: .3rem;
+    }
+    .accordion-button {
+        --bs-accordion-btn-padding-y: .4rem;
+        --bs-accordion-btn-padding-x: .4rem;
+    }
+    .accordion-header {
+        margin-top: 1px;
+        margin-bottom: 1px;
+    }
 </style>
 
 <style media="print">
@@ -62,12 +78,14 @@
         <div id="detailsPanelParent"></div>
         <div id="detailsPanelMetadata"></div>
         <div id="detailsPanelDescription"></div>
+        <div id="detailsPanelUrl"></div>
         <hr />
     </div>
+    <div id="detailsPanelDetails"></div>
     <div id="detailsPanelTags"></div>
     <div id="detailsPanelProperties"></div>
-    <div id="detailsPanelUrl"></div>
     <div id="detailsPanelAdditionalContent"></div>
 </div>
 
+<script type="text/javascript" src="<c:url value="/static/js/markdown-it-13.0.1.min.js" />"></script>
 <script type="text/javascript" src="<c:url value="/static/js/structurizr-details-panel.js" />"></script>
