@@ -1,6 +1,8 @@
 package com.structurizr.server.web.workspace.authenticated;
 
 import com.structurizr.Workspace;
+import com.structurizr.configuration.Configuration;
+import com.structurizr.configuration.Features;
 import com.structurizr.dsl.DslUtils;
 import com.structurizr.dsl.StructurizrDslParser;
 import com.structurizr.dsl.StructurizrDslParserException;
@@ -8,10 +10,7 @@ import com.structurizr.inspection.DefaultInspector;
 import com.structurizr.server.component.workspace.WorkspaceValidationUtils;
 import com.structurizr.server.domain.Permission;
 import com.structurizr.server.domain.WorkspaceMetadata;
-import com.structurizr.configuration.Configuration;
-import com.structurizr.configuration.Features;
 import com.structurizr.server.web.Views;
-import com.structurizr.util.BuiltInThemes;
 import com.structurizr.util.DslTemplate;
 import com.structurizr.util.StringUtils;
 import com.structurizr.util.WorkspaceUtils;
@@ -122,9 +121,6 @@ public class DslEditorController extends AbstractWorkspaceController {
 
         // run default inspections
         new DefaultInspector(workspace);
-
-        // inline built-in theme icons
-        BuiltInThemes.inlineIcons(workspace);
 
         // add default views if no views are explicitly defined
         if (!workspace.getModel().isEmpty() && workspace.getViews().isEmpty()) {

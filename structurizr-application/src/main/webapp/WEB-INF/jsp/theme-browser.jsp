@@ -73,6 +73,11 @@
         themesList.val(previousTheme);
     }
 
+    if (externalTheme && externalTheme.length > 0) {
+        $('#themesList option:eq(0)').text(structurizr.util.escapeHtml(externalTheme));
+        themesList.val('');
+    }
+
     loadSelectedTheme();
 
     themesList.change(function() {

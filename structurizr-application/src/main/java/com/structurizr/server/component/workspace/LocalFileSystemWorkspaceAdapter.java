@@ -118,9 +118,6 @@ abstract class LocalFileSystemWorkspaceAdapter extends AbstractFileSystemWorkspa
         // run default inspections
         new DefaultInspector(workspace);
 
-        // inline built-in theme icons
-        BuiltInThemes.inlineIcons(workspace);
-
         // add default views if no views are explicitly defined
         if (!workspace.getModel().isEmpty() && workspace.getViews().isEmpty()) {
             workspace.getViews().createDefaultViews();
@@ -256,6 +253,20 @@ abstract class LocalFileSystemWorkspaceAdapter extends AbstractFileSystemWorkspa
 
     @Override
     protected File getPathToWorkspaceImages(long workspaceId, String branch) {
+        File path = new File(getDataDirectory(workspaceId), IMAGES_DIRECTORY_NAME);
+        if (!path.exists()) {
+            try {
+                Files.createDirectories(path.toPath());
+            } catch (IOException e) {
+                log.error(e);
+            }
+        }
+
+        return path;
+    }
+
+    @Override
+    protected File getPathToWorkspaceThumbnails(long workspaceId, String branch) {
         File path = new File(new File(Configuration.getInstance().getWorkDirectory(), "" + workspaceId), IMAGES_DIRECTORY_NAME);
         if (!path.exists()) {
             try {

@@ -6,7 +6,6 @@ import com.structurizr.Workspace;
 import com.structurizr.dsl.StructurizrDslParser;
 import com.structurizr.http.HttpClient;
 import com.structurizr.inspection.DefaultInspector;
-import com.structurizr.util.BuiltInThemes;
 import com.structurizr.util.Version;
 import com.structurizr.util.WorkspaceUtils;
 import com.structurizr.validation.WorkspaceScopeValidatorFactory;
@@ -97,9 +96,6 @@ public abstract class AbstractCommand {
 
         // run default inspections
         new DefaultInspector(workspace);
-
-        // inline built-in theme icons
-        BuiltInThemes.inlineIcons(workspace);
 
         // add default views if no views are explicitly defined
         if (!workspace.getModel().isEmpty() && workspace.getViews().isEmpty()) {

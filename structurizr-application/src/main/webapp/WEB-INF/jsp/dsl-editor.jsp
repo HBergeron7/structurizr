@@ -356,7 +356,7 @@
 
     function openThemeBrowser(e) {
         e.preventDefault();
-        window.open('/theme-browser', "structurizrThemeBrowser", "top=100,left=300,width=900,height=600,location=no,menubar=no,status=no,toolbar=no");
+        window.open('/themes', "structurizrThemeBrowser", "top=100,left=300,width=900,height=600,location=no,menubar=no,status=no,toolbar=no");
     }
 
     function saveWorkspace() {
@@ -377,16 +377,18 @@
                 console.log(err);
             }
 
+            unsavedChanges = false;
             structurizr.saveWorkspace(function(response) {
                 if (response.success === true) {
                     progressMessage.hide();
 
-                    $('#saveButton').removeClass('btn-danger');
-                    $('#saveButton').addClass('btn-default');
-                    $('#saveButton img').removeClass('icon-white');
-                    $('#saveButton').prop('disabled', true);
-
-                    unsavedChanges = false;
+                    if (unsavedChanges === false) {
+                        $('#saveButton').removeClass('btn-danger');
+                        $('#saveButton').addClass('btn-default');
+                        $('#saveButton img').removeClass('icon-white');
+                        $('#saveButton').prop('disabled', true);
+                    }
+                    
                     editor.session.getUndoManager().markClean();
 
                     try {
@@ -398,6 +400,7 @@
                         console.log(err);
                     }
                 } else {
+                    unsavedChanges = true;
                     $('#saveButton').prop('disabled', false);
                     if (response.message) {
                         console.log(response.message);

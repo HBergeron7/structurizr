@@ -10,21 +10,17 @@
         opacity: 0.98;
         border: 2px #666666 solid;
         border-radius: 5px;
-        width: 33%;
         max-width: 33%;
         overflow: hidden;
     }
     #tooltipName {
-        font-size: 20px;
+        font-size: 16px;
         font-weight: normal;
     }
     #tooltipParent {
-        font-size: 8px;
-    }
-    #tooltipMetadata {
         font-size: 10px;
     }
-    #tooltipType {
+    #tooltipMetadata {
         font-size: 10px;
     }
     #tooltipDescription {
@@ -32,12 +28,15 @@
         margin-top: 10px;
     }
     #tooltipTags {
-        margin-top: 10px;
+        margin-top: 0px;
         font-size: 10px;
     }
     #tooltipProperties {
-        margin-top: 15px;
+        margin-top: 10px;
         font-size: 10px;
+    }
+    #tooltipProperties ul {
+        padding-left: 20px;
     }
     #tooltipUrl {
         margin-top: 10px;
