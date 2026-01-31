@@ -1,30 +1,31 @@
 <style>
     #detailsPanel {
         font-size: 14px;
-        color: #000000;
-        background: #eeeeee;
         padding-top: 5px;
         margin: 0px;
         border: 0px;
         width: 100%;
         max-width: 100%;
+        margin-top: 10px;
+
     }
     #detailsPanelName {
-        font-size: 14px;
-    }
-    #detailsPanelParent {
-        font-size: 14px;
+        font-size: 16px;
+        border-width: 1px;
+        border-style: solid;
+        padding: 3px 3px 3px 3px;
+        margin: 0;
+        border-radius: 4px;
+        width: 100%;
+        display: flex;
+        justify-content: center;
     }
     #detailsPanelMetadata {
-        font-size: 10px;
-    }
-    #detailsPanelType {
-        font-size: 20px;
-        font-weight: normal;
+        font-size: .76rem;
     }
     #detailsPanelDescription {
         font-size: 14px;
-        margin-top: 10px;
+        margin-top: .8rem;
     }
     #detailsPanelTags {
         margin-top: 10px;
@@ -32,7 +33,7 @@
     }
     #detailsPanelDetails {
         margin-top: 10px;
-        font-size: 14px;
+        font-size: .76rem;
     }
     #detailsPanelProperties {
         margin-top: 15px;
@@ -45,24 +46,31 @@
     #detailsPanel .tag {
         border-width: 1px;
         border-style: solid;
-        padding: 3px 3px 3px 3px;
+        padding: 0px 3px 0px 3px;
         margin: 3px 3px 3px 0;
         border-radius: 6px;
         white-space: nowrap;
         display: inline-block;
     }
-    .accordion-body {
-        --bs-accordion-body-padding-y: .1rem;
-        --bs-accordion-body-padding-x: .3rem;
-    }
-    .accordion-button {
-        --bs-accordion-btn-padding-y: .4rem;
-        --bs-accordion-btn-padding-x: .4rem;
-    }
-    .accordion-header {
+    #detailsPanel .accordion-header {
         margin-top: 1px;
         margin-bottom: 1px;
     }
+
+    #detailsPanel .accordion-body {
+        --bs-accordion-body-padding-y: .1rem;
+        --bs-accordion-body-padding-x: .3rem;
+    }
+
+    #detailsPanel .accordion-button {
+        --bs-accordion-btn-padding-y: .4rem;
+        --bs-accordion-btn-padding-x: .4rem;
+    }
+    
+    #detailsPanelColumn {
+        --bs-gutter-x: .7rem;
+    }
+
 </style>
 
 <style media="print">
@@ -73,16 +81,15 @@
 
 <div id="detailsPanel">
     <div id="detailsPanelHeader">
-        <div id="detailsPanelType"></div>
         <div id="detailsPanelName"></div>
-        <div id="detailsPanelParent"></div>
-        <div id="detailsPanelMetadata"></div>
         <div id="detailsPanelDescription"></div>
-        <div id="detailsPanelUrl"></div>
         <hr />
     </div>
-    <div id="detailsPanelDetails"></div>
+    <div id="detailsPanelMetadata"></div>
+    <div id="detailsPanelUrl"></div>
     <div id="detailsPanelTags"></div>
+    <hr />
+    <div id="detailsPanelDetails"></div>
     <div id="detailsPanelProperties"></div>
     <div id="detailsPanelAdditionalContent"></div>
 </div>

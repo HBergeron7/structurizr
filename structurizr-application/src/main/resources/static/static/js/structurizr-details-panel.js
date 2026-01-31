@@ -3,8 +3,6 @@ structurizr.ui.DetailsPanel = function() {
     var detailsPanel = $('#detailsPanel');
     var detailsPanelHeader = $('#detailsPanelHeader');
     var detailsPanelName = $('#detailsPanelName');
-    var detailsPanelType = $('#detailsPanelType');
-    var detailsPanelParent = $('#detailsPanelParent');
     const detailsPanelHr = $('#detailsPanel hr');
     var detailsPanelDescription = $('#detailsPanelDescription');
     var detailsPanelDetails = $('#detailsPanelDetails');
@@ -16,28 +14,27 @@ structurizr.ui.DetailsPanel = function() {
     const md = window.markdownit();
 
     this.showDetailsForElement = function(element, style, perspective) {
-        console.log(element);
         if (element === undefined) {
             return;
         }
     
-        //detailsPanelType.html(structurizr.util.escapeHtml(element.type));
-        detailsPanelType.html(structurizr.workspace.getTerminologyFor(element));
-        detailsPanelName.html("Name: " + structurizr.util.escapeHtml(element.name));
-        //detailsPanelMetadata.text(structurizr.ui.getMetadataForElement(element, true));
+        detailsPanelName.html(structurizr.util.escapeHtml(element.name));
 
-        if (element.parentId) {
-            var parentElement = structurizr.workspace.findElementById(element.parentId);
-            detailsPanelParent.text('from ' + parentElement.name + ' [' + structurizr.workspace.getTerminologyFor(parentElement) + ']');
-        } else {
-            detailsPanelParent.text('');
-        }
-
-        var description = '';
-        description += element.description ? structurizr.util.escapeHtml(element.description).replaceAll('\n', '<br />') + '<br />' : '';
-        //description += element.detailedDescription ? md.render(element.detailedDescription) : '';
+        var description = element.description ? structurizr.util.escapeHtml(element.description).replaceAll('\n', '<br />') + '<br />' : '';
         detailsPanelDescription.html(description);
 
+        //detailsPanelMetadata.text(structurizr.ui.getMetadataForElement(element, true));
+        var metadata = {};
+        metadata["Type"] = structurizr.workspace.getTerminologyFor(element); 
+        if (element.parentId) {
+            var parentElement = structurizr.workspace.findElementById(element.parentId);
+            metadata["Parent"] = structurizr.util.escapeHtml(parentElement.name) + ' [' + structurizr.workspace.getTerminologyFor(parentElement) + ']';
+        } else {
+            metadata["Parent"] = "None";
+        }
+        metadata["Technology"] = element.technology ? structurizr.util.escapeHtml(element.technology) : 'Unknown';
+        renderMetadata(metadata);
+        
         if (perspective === undefined) {
             var tagsHtml = '';
             var tags = structurizr.workspace.getAllTagsForElement(element);
@@ -126,36 +123,25 @@ structurizr.ui.DetailsPanel = function() {
         }
 
         if (style) {
-            detailsPanel.css("background", style.background);
-            detailsPanel.css("border-color", style.stroke);
-            detailsPanel.css("color", style.color);
+            detailsPanelName.css("background", style.background);
+            detailsPanelName.css("border-color", style.stroke);
+            detailsPanelName.css("color", style.color);
             if (style.borderStyle === 'Dashed') {
-                detailsPanel.css('border-style', 'dashed');
+                detailsPanelName.css('border-style', 'dashed');
             } else if (style.borderStyle === 'Dotted') {
-                detailsPanel.css('border-style', 'dotted');
+                detailsPanelName.css('border-style', 'dotted');
             } else {
-                detailsPanel.css('border-style', 'solid');
+                detailsPanelName.css('border-style', 'solid');
             }
-
-            $('#detailsPanel .tag').css("border-color", style.color);
-            $('#detailsPanel a').css("color", style.color);
-            $('#detailsPanel a').css("text-decoration", "underline");
-            $('#detailsPanel hr').css("border-color", style.stroke);
         } else {
             detailsPanel.css("background", '#ffffff');
             detailsPanel.css("border-color", '#000000');
             detailsPanel.css("color", '#000000');
             detailsPanel.css('border-style', 'solid');
-            $('#detailsPanel .tag').css("border-color", '#000000');
-            $('#detailsPanel a').css("color", '#000000');
-            $('#detailsPanel a').css("text-decoration", "underline");
-            $('#detailsPanel hr').css("border-color", '#000000');
         }
     };
 
     this.showDetailsForRelationship = function(relationship, relationshipInView, style, perspective) {
-        console.log(relationship);
-        console.log(relationshipInView);
         if (relationship === undefined) {
             return;
         }
@@ -164,32 +150,34 @@ structurizr.ui.DetailsPanel = function() {
             relationshipInView = {};
         }
 
-        const darkMode = structurizr.ui.isDarkMode();
-        detailsPanel.css("background", (darkMode === true ? structurizr.ui.DARK_MODE_DEFAULTS.background : structurizr.ui.LIGHT_MODE_DEFAULTS.background));
+        //const darkMode = structurizr.ui.isDarkMode();
+        //detailsPanel.css("background", (darkMode === true ? structurizr.ui.DARK_MODE_DEFAULTS.background : structurizr.ui.LIGHT_MODE_DEFAULTS.background));
 
         var relationshipSummary = relationshipInView.description;
         if (relationshipSummary === undefined) {
             relationshipSummary = structurizr.util.escapeHtml(relationship.description);
-            if (relationship.technology !== undefined) {
-                relationshipSummary += "<br />Technology: " + structurizr.util.escapeHtml(relationship.technology);
-            }
         }
         if (relationshipSummary === undefined || relationshipSummary.length === 0) {
             relationshipSummary = '';
         }
 
-        detailsPanelType.html(structurizr.workspace.getTerminologyFor(relationship));
-        detailsPanelName.html("Decription: " + (relationshipInView.order ? relationshipInView.order + ': ' : '') + relationshipSummary);
-        detailsPanelParent.html('');
-        //detailsPanelMetadata.text('[' + structurizr.workspace.getTerminologyFor(relationship) + ']');
+        var sourceName = structurizr.util.escapeHtml(structurizr.workspace.findElementById(relationship.sourceId).name); 
+        var destName = structurizr.util.escapeHtml(structurizr.workspace.findElementById(relationship.destinationId).name);
+        detailsPanelName.html(sourceName + '<img src="/static/bootstrap-icons/arrow-right-short.svg" />' + destName);
+        detailsPanelDescription.html((relationshipInView.order ? relationshipInView.order + ': ' : '') + relationshipSummary);
 
-        var description = '';
-        description += structurizr.util.escapeHtml("From: " + structurizr.workspace.findElementById(relationship.sourceId).name) + "<br />";
-        description += structurizr.util.escapeHtml("To: " + structurizr.workspace.findElementById(relationship.destinationId).name) + "<br />";
-        if (relationship.detailedDescription !== undefined) {
-            description += "<br />" + relationship.detailedDescription;
-        }
-        detailsPanelDescription.html(description);
+        var metadata = {};
+        metadata["Type"] = structurizr.workspace.getTerminologyFor(relationship); 
+        if (relationship.linkedRelationshipId) {
+            var linkedRel = structurizr.workspace.findRelationshipById(relationship.linkedRelationshipId);
+            var sourceName = structurizr.util.escapeHtml(structurizr.workspace.findElementById(linkedRel.sourceId).name); 
+            var destName = structurizr.util.escapeHtml(structurizr.workspace.findElementById(linkedRel.destinationId).name);
+
+            metadata["Implied By"] = sourceName + '<img src="/static/bootstrap-icons/arrow-right-short.svg" />' + destName;
+        } 
+        metadata["Technology"] = relationship.technology ? structurizr.util.escapeHtml(relationship.technology) : 'Unknown';
+        renderMetadata(metadata);
+
         detailsPanelDetails.html('');
 
         if (perspective === undefined) {
@@ -309,6 +297,27 @@ structurizr.ui.DetailsPanel = function() {
         }
     }
 
+    function renderMetadata(metadata) {
+        var metadataHtml = '';
+        if (metadata !== undefined && Object.keys(metadata).length > 0) {
+            Object.keys(metadata).forEach(function (key) {
+                var value = metadata[key];
+
+                //key and value should already be HTML escaped
+                metadataHtml += '<tr>'
+                metadataHtml += '<td style="width: auto; opacity: 65%;">' + key + '</td>';
+                metadataHtml += '<td style="width: 100%; padding-left: 1rem;">' + value + '</td>';
+                metadataHtml += '</tr>'
+            });
+        }
+
+        if (metadataHtml.length > 0) {
+            detailsPanelMetadata.html('<table style="width:100%;">' + metadataHtml + '</table>');
+        } else {
+            detailsPanelMetadata.html('');
+        }
+    }
+
     function renderDetails(details) {
         var detailsHtml = '';
         var count = 0;
@@ -317,9 +326,6 @@ structurizr.ui.DetailsPanel = function() {
                 count++;
                 var value = details[key];
                 value = md.render(value);
-                //propertiesHtml += '<li>';
-                //propertiesHtml += (structurizr.util.escapeHtml(key) + ' = ' + value);
-                //propertiesHtml += '</li>';
 
                 detailsHtml += '<div class="accordion-item">';
                 detailsHtml += '<h2 class="accordion-header">';
@@ -327,7 +333,7 @@ structurizr.ui.DetailsPanel = function() {
                 detailsHtml += structurizr.util.escapeHtml(key);
                 detailsHtml += '</button>';
                 detailsHtml += '</h2>';
-                detailsHtml += '<div id="flush-collapse' + count + '" class="accordion-collapse collapse">';
+                detailsHtml += '<div id="flush-collapse' + count + '" class="accordion-collapse collapse show">';
                 detailsHtml += '<div class="accordion-body">' + value + '</div>'
                 detailsHtml += '</div>'
                 detailsHtml += '</div>'

@@ -20,7 +20,6 @@ class StructurizrDslTokens {
     static final String NAME_TOKEN = "name";
     static final String METADATA_TOKEN = "metadata";
     static final String DESCRIPTION_TOKEN = "description";
-    static final String DETAILED_DESCRIPTION_TOKEN = "detailedDescription";
     static final String DETAIL_TOKEN = "detail";
     static final String TECHNOLOGY_TOKEN = "technology";
     static final String INSTANCES_TOKEN = "instances";
