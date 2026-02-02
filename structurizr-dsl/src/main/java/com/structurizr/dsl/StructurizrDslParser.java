@@ -51,8 +51,8 @@ public final class StructurizrDslParser extends StructurizrDslTokens {
     private Features features = new Features();
     private HttpClient httpClient = new HttpClient();
 
-    private Map<String, List<Provides>> providers = new HashMap<>();
-    private Map<String, List<Consumes>> consumers = new HashMap<>();
+    private Set<StaticStructureElement> providers = new HashSet<>();
+    private Set<StaticStructureElement> consumers = new HashSet<>();
 
     private Map<String,Map<String,Archetype>> archetypes = Map.of(
             StructurizrDslTokens.GROUP_TOKEN, new HashMap<>(),
@@ -297,13 +297,13 @@ public final class StructurizrDslParser extends StructurizrDslTokens {
                         if (inContext(ModelDslContext.class)) {
                             //TODO: Review better ways to do this. Each list should be small but this is a lot of nested loops
                             // For all elements that consume loop through provider elements and create all relationships
-                            for (var consumer : consumers.entrySet()) {
-                                for (var provider : providers.entrySet()) {
+                            for (var consumer : consumers) {
+                                for (var provider : providers) {
                                     //Create a relationship for each unique technology
                                     Map<String, RelationshipGroup> relationshipGroups = new HashMap<>();
 
-                                    for (var consumes : consumer.getValue()) {
-                                        for (var provides : provider.getValue()) {
+                                    for (var consumes : consumer.getConsumes()) {
+                                        for (var provides : provider.getProvides()) {
                                             if (provides.matches(consumes)) {
                                                 RelationshipGroup relationshipGroup = relationshipGroups.get(consumes.getTechnology());
                                                 if (relationshipGroup != null) {
@@ -318,7 +318,7 @@ public final class StructurizrDslParser extends StructurizrDslTokens {
                                                     relationshipGroups.put(consumes.getTechnology(), relationshipGroup);
                                                 }
 
-                                                relationshipGroup.appendDetailedDescription("<dt>" + provides.getAction() + " " + provides.getIdentifier() + "</dt>\n"); 
+                                                relationshipGroup.appendDetailedDescription("<dt>" + provides.getAction() + " " + provides.getKey() + "</dt>\n"); 
                                                 if (provides.getDescription() != null && !provides.getDescription().isBlank()) {
                                                     relationshipGroup.appendDetailedDescription("<dd>" + provides.getDescription() + "</dd>\n"); 
                                                 }
@@ -659,6 +659,12 @@ public final class StructurizrDslParser extends StructurizrDslTokens {
                     } else if ((TAGS_TOKEN.equalsIgnoreCase(firstToken) || TAG_TOKEN.equalsIgnoreCase(firstToken)) && inContext(ModelItemsDslContext.class)) {
                         new ModelItemsParser().parseTags(getContext(ModelItemsDslContext.class), tokens);
 
+                    } else if ((TAGS_TOKEN.equalsIgnoreCase(firstToken) || TAG_TOKEN.equalsIgnoreCase(firstToken)) && inContext(ProvidesDslContext.class)) {
+                        new ProvidesParser().parseTags(getContext(ProvidesDslContext.class), tokens);
+
+                    } else if ((TAGS_TOKEN.equalsIgnoreCase(firstToken) || TAG_TOKEN.equalsIgnoreCase(firstToken)) && inContext(ConsumesDslContext.class)) {
+                        new ConsumesParser().parseTags(getContext(ConsumesDslContext.class), tokens);
+
                     } else if (DETAIL_TOKEN.equalsIgnoreCase(firstToken) && inContext(ElementDslContext.class) && !isGroup(getContext())) {
                         new ModelItemParser().parseDetail(getContext(ElementDslContext.class), tokens);
 
@@ -667,6 +673,12 @@ public final class StructurizrDslParser extends StructurizrDslTokens {
 
                     } else if (DESCRIPTION_TOKEN.equalsIgnoreCase(firstToken) && inContext(ElementsDslContext.class)) {
                         new ElementsParser().parseDescription(getContext(ElementsDslContext.class), tokens);
+
+                    } else if (DESCRIPTION_TOKEN.equalsIgnoreCase(firstToken) && inContext(ProvidesDslContext.class)) {
+                        new ProvidesParser().parseDescription(getContext(ProvidesDslContext.class), tokens);
+
+                    } else if (DESCRIPTION_TOKEN.equalsIgnoreCase(firstToken) && inContext(ConsumesDslContext.class)) {
+                        new ConsumesParser().parseDescription(getContext(ConsumesDslContext.class), tokens);
 
                     } else if (TECHNOLOGY_TOKEN.equalsIgnoreCase(firstToken) && inContext(ContainerDslContext.class) && !getContext(ContainerDslContext.class).hasGroup()) {
                         new ContainerParser().parseTechnology(getContext(ContainerDslContext.class), tokens);
@@ -685,6 +697,12 @@ public final class StructurizrDslParser extends StructurizrDslTokens {
 
                     } else if (TECHNOLOGY_TOKEN.equalsIgnoreCase(firstToken) && inContext(RelationshipsDslContext.class)) {
                         new RelationshipsParser().parseTechnology(getContext(RelationshipsDslContext.class), tokens);
+
+                    } else if (TECHNOLOGY_TOKEN.equalsIgnoreCase(firstToken) && inContext(ProvidesDslContext.class)) {
+                        new ProvidesParser().parseTechnology(getContext(ProvidesDslContext.class), tokens);
+
+                    } else if (TECHNOLOGY_TOKEN.equalsIgnoreCase(firstToken) && inContext(ConsumesDslContext.class)) {
+                        new ConsumesParser().parseTechnology(getContext(ConsumesDslContext.class), tokens);
 
                     } else if (INSTANCES_TOKEN.equalsIgnoreCase(firstToken) && inContext(DeploymentNodeDslContext.class)) {
                         new DeploymentNodeParser().parseInstances(getContext(DeploymentNodeDslContext.class), tokens);
@@ -724,6 +742,12 @@ public final class StructurizrDslParser extends StructurizrDslTokens {
 
                     } else if (PROPERTIES_TOKEN.equalsIgnoreCase(firstToken) && inContext(RelationshipStyleDslContext.class)) {
                         startContext(new PropertiesDslContext(getContext((RelationshipStyleDslContext.class)).getStyle()));
+
+                    } else if (PROPERTIES_TOKEN.equalsIgnoreCase(firstToken) && inContext(ProvidesDslContext.class)) {
+                        startContext(new PropertiesDslContext(getContext((ProvidesDslContext.class)).getProvides()));
+
+                    } else if (PROPERTIES_TOKEN.equalsIgnoreCase(firstToken) && inContext(ConsumesDslContext.class)) {
+                        startContext(new PropertiesDslContext(getContext((ConsumesDslContext.class)).getConsumes()));
 
                     } else if (inContext(PropertiesDslContext.class)) {
                         new PropertyParser().parse(getContext(PropertiesDslContext.class), tokens);
@@ -1242,54 +1266,22 @@ public final class StructurizrDslParser extends StructurizrDslTokens {
                     } else if (inContext(UsersDslContext.class)) {
                         new UserRoleParser().parse(getContext(), tokens);
 
-                    } else if (PROVIDES_TOKEN.equalsIgnoreCase(firstToken) && inContext(SoftwareSystemDslContext.class)) {
-                        ProvidesParser parser = new ProvidesParser();
-                        var provides = parser.parse(getContext(SoftwareSystemDslContext.class), tokens);
-                        var list = providers.getOrDefault(provides.getElement().getId(), new ArrayList<>());
-                        list.add(provides);
-                        providers.putIfAbsent(provides.getElement().getId(), list);
-                    } else if (PROVIDES_TOKEN.equalsIgnoreCase(firstToken) && inContext(ContainerDslContext.class)) {
-                        ProvidesParser parser = new ProvidesParser();
-                        var provides = parser.parse(getContext(ContainerDslContext.class), tokens);
-                        var list = providers.getOrDefault(provides.getElement().getId(), new ArrayList<>());
-                        list.add(provides);
-                        providers.putIfAbsent(provides.getElement().getId(), list);
-                    } else if (PROVIDES_TOKEN.equalsIgnoreCase(firstToken) && inContext(ComponentDslContext.class)) {
-                        ProvidesParser parser = new ProvidesParser();
-                        var provides = parser.parse(getContext(ComponentDslContext.class), tokens);
-                        var list = providers.getOrDefault(provides.getElement().getId(), new ArrayList<>());
-                        list.add(provides);
-                        providers.putIfAbsent(provides.getElement().getId(), list);
-                    } else if (PROVIDES_TOKEN.equalsIgnoreCase(firstToken) && inContext(PersonDslContext.class)) {
-                        ProvidesParser parser = new ProvidesParser();
-                        var provides = parser.parse(getContext(PersonDslContext.class), tokens);
-                        var list = providers.getOrDefault(provides.getElement().getId(), new ArrayList<>());
-                        list.add(provides);
-                        providers.putIfAbsent(provides.getElement().getId(), list);
-                    } else if (CONSUMES_TOKEN.equalsIgnoreCase(firstToken) && inContext(SoftwareSystemDslContext.class)) {
-                        ConsumesParser parser = new ConsumesParser();
-                        var consumes = parser.parse(getContext(SoftwareSystemDslContext.class), tokens);
-                        var list = consumers.getOrDefault(consumes.getElement().getId(), new ArrayList<>());
-                        list.add(consumes);
-                        consumers.putIfAbsent(consumes.getElement().getId(), list);
-                    } else if (CONSUMES_TOKEN.equalsIgnoreCase(firstToken) && inContext(ContainerDslContext.class)) {
-                        ConsumesParser parser = new ConsumesParser();
-                        var consumes = parser.parse(getContext(ContainerDslContext.class), tokens);
-                        var list = consumers.getOrDefault(consumes.getElement().getId(), new ArrayList<>());
-                        list.add(consumes);
-                        consumers.putIfAbsent(consumes.getElement().getId(), list);
-                    } else if (CONSUMES_TOKEN.equalsIgnoreCase(firstToken) && inContext(ComponentDslContext.class)) {
-                        ConsumesParser parser = new ConsumesParser();
-                        var consumes = parser.parse(getContext(ComponentDslContext.class), tokens);
-                        var list = consumers.getOrDefault(consumes.getElement().getId(), new ArrayList<>());
-                        list.add(consumes);
-                        consumers.putIfAbsent(consumes.getElement().getId(), list);
-                    } else if (CONSUMES_TOKEN.equalsIgnoreCase(firstToken) && inContext(PersonDslContext.class)) {
-                        ConsumesParser parser = new ConsumesParser();
-                        var consumes = parser.parse(getContext(PersonDslContext.class), tokens);
-                        var list = consumers.getOrDefault(consumes.getElement().getId(), new ArrayList<>());
-                        list.add(consumes);
-                        consumers.putIfAbsent(consumes.getElement().getId(), list);
+                    } else if (PROVIDES_TOKEN.equalsIgnoreCase(firstToken) && inContext(StaticStructureElementDslContext.class)) {
+                        var provides = new ProvidesParser().parse(getContext(StaticStructureElementDslContext.class), tokens.withoutContextStartToken());
+                        providers.add(provides.getElement());
+
+                        if (shouldStartContext(tokens)) {
+                            startContext(new ProvidesDslContext(provides));
+                        }
+
+                    } else if (CONSUMES_TOKEN.equalsIgnoreCase(firstToken) && inContext(StaticStructureElementDslContext.class)) {
+                        var consumes = new ConsumesParser().parse(getContext(StaticStructureElementDslContext.class), tokens);
+                        consumers.add(consumes.getElement());
+
+                        if (shouldStartContext(tokens)) {
+                            startContext(new ConsumesDslContext(consumes));
+                        }
+
                     } else if (DOCS_TOKEN.equalsIgnoreCase(firstToken) && inContext(WorkspaceDslContext.class)) {
                         if (features.isEnabled(Features.DOCUMENTATION)) {
                             new DocsParser().parse(getContext(WorkspaceDslContext.class), dslFile, tokens);

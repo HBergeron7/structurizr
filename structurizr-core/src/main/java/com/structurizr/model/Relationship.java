@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * A relationship between two elements.
@@ -22,7 +23,8 @@ public final class Relationship extends ModelItem {
     private String technology;
     private InteractionStyle interactionStyle;
 
-    private String linkedRelationshipId;
+    private String linkedRelationshipId; // Keeping for backwards compatibility
+    private Set<String> linkedRelationshipIdList = new TreeSet<>();
 
     Relationship() {
     }
@@ -178,6 +180,20 @@ public final class Relationship extends ModelItem {
 
     void setLinkedRelationshipId(String baseRelationshipId) {
         this.linkedRelationshipId = baseRelationshipId;
+    }
+
+    void addLinkedRelationshipId(String baseRelationshipId) {
+        this.linkedRelationshipIdList.add(baseRelationshipId); 
+    }
+
+    public Set<String> getLinkedRelationshipIdList() {
+        return new TreeSet<>(this.linkedRelationshipIdList);
+    }
+
+    void setLinkedRelationshipIdList(Set<String> linkedRelationshipIdList) {
+        if (linkedRelationshipIdList != null) {
+            this.linkedRelationshipIdList = new TreeSet<>(linkedRelationshipIdList);
+        }
     }
 
     @Override

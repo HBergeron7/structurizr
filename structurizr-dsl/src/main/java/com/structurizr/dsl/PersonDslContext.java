@@ -1,10 +1,10 @@
 package com.structurizr.dsl;
 
-import com.structurizr.model.GroupableElement;
+import com.structurizr.model.StaticStructureElement;
 import com.structurizr.model.ModelItem;
 import com.structurizr.model.Person;
 
-final class PersonDslContext extends GroupableElementDslContext {
+final class PersonDslContext extends StaticStructureElementDslContext {
 
     private Person person;
 
@@ -22,7 +22,7 @@ final class PersonDslContext extends GroupableElementDslContext {
     }
 
     @Override
-    GroupableElement getElement() {
+    StaticStructureElement getElement() {
         return person;
     }
 

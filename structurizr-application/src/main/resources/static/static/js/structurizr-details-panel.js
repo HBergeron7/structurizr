@@ -9,14 +9,27 @@ structurizr.ui.DetailsPanel = function() {
     var detailsPanelMetadata = $('#detailsPanelMetadata');
     var detailsPanelTags = $('#detailsPanelTags');
     var detailsPanelProperties = $('#detailsPanelProperties');
-    var detailsPanelUrl = $('#detailsPanelUrl');
     var detailsPanelAdditionalContent = $('#detailsPanelAdditionalContent');
+    var detailsPanelInterfaces = $('#detailsPanelInterfaces');
+    var detailsPanelRelationships = $('#detailsPanelRelationships');
+    var detailsTabs = $('#detailsTabs');
+    var tabDetails = $('#tab-details');
+    var tabRelation = $('#tab-relation');
+    var tabDetailsButton = $('#details-tab-button');
+    var tabRelationButton = $('#relation-tab-button');
     const md = window.markdownit();
 
     this.showDetailsForElement = function(element, style, perspective) {
         if (element === undefined) {
             return;
         }
+        detailsTabs.removeClass('hidden');
+        tabDetails.addClass('active');
+        tabDetails.addClass('show');
+        tabRelation.removeClass('active');
+        tabRelation.removeClass('show');
+        tabDetailsButton.addClass('active');
+        tabRelationButton.removeClass('active');
     
         detailsPanelName.html(structurizr.util.escapeHtml(element.name));
 
@@ -28,11 +41,33 @@ structurizr.ui.DetailsPanel = function() {
         metadata["Type"] = structurizr.workspace.getTerminologyFor(element); 
         if (element.parentId) {
             var parentElement = structurizr.workspace.findElementById(element.parentId);
-            metadata["Parent"] = structurizr.util.escapeHtml(parentElement.name) + ' [' + structurizr.workspace.getTerminologyFor(parentElement) + ']';
+            metadata["Parent"] = structurizr.util.escapeHtml(parentElement.name);// + ' [' + structurizr.workspace.getTerminologyFor(parentElement) + ']';
         } else {
             metadata["Parent"] = "None";
         }
         metadata["Technology"] = element.technology ? structurizr.util.escapeHtml(element.technology) : 'Unknown';
+        if (element.url) { 
+            metadata["Url"] = '<a href="' + structurizr.util.escapeHtml(element.url) + '" target="_blank">' + structurizr.util.escapeHtml(element.url) + '</a>';
+        }
+
+        if (element.containers !== undefined && element.containers.length > 0) {
+            metadata["Children"] = element.containers.length + " Containers";
+            var totalProvides = [];
+            var totalConsumes = [];
+
+            element.containers.forEach(function (child) {
+                totalProvides = totalProvides.concat(child.provides ? child.provides : []);
+                totalConsumes = totalConsumes.concat(child.consumes ? child.consumes : []);
+            });
+
+            totalProvides = totalProvides.concat(element.provides ? element.provides : []);
+            totalConsumes = totalConsumes.concat(element.consumes ? element.consumes : []);
+            renderInterfaces(totalProvides, []); //totalConsumes);
+             
+        } else {
+            renderInterfaces(element.provides, element.consumes);
+        }
+
         renderMetadata(metadata);
         
         if (perspective === undefined) {
@@ -55,20 +90,9 @@ structurizr.ui.DetailsPanel = function() {
             renderDetails(element.details);
             renderProperties(structurizr.workspace.getAllPropertiesForElement(element));
 
-            var urlHtml = '';
-            var url = element.url;
-            if (url && url.trim().length > 0) {
-                urlHtml += '<div class="smaller">';
-                urlHtml += '<p>URL: ';
-                urlHtml += '<a href="' + structurizr.util.escapeHtml(url) + '" target="_blank">' + structurizr.util.escapeHtml(url) + '</a>';
-                urlHtml += '</p>';
-                urlHtml += '</div>';
-            }
-            detailsPanelUrl.html(urlHtml);
             detailsPanelAdditionalContent.html('');
         } else {
             detailsPanelTags.html('');
-            detailsPanelUrl.html('');
             detailsPanelProperties.html('');
 
             var perspectiveDetails = undefined;
@@ -146,6 +170,14 @@ structurizr.ui.DetailsPanel = function() {
             return;
         }
 
+        detailsTabs.addClass('hidden');
+        tabDetails.addClass('active');
+        tabDetails.addClass('show');
+        tabRelation.removeClass('active');
+        tabRelation.removeClass('show');
+        tabDetailsButton.addClass('active');
+        tabRelationButton.removeClass('active');
+
         if (relationshipInView === undefined) {
             relationshipInView = {};
         }
@@ -168,17 +200,26 @@ structurizr.ui.DetailsPanel = function() {
 
         var metadata = {};
         metadata["Type"] = structurizr.workspace.getTerminologyFor(relationship); 
-        if (relationship.linkedRelationshipId) {
-            var linkedRel = structurizr.workspace.findRelationshipById(relationship.linkedRelationshipId);
-            var sourceName = structurizr.util.escapeHtml(structurizr.workspace.findElementById(linkedRel.sourceId).name); 
-            var destName = structurizr.util.escapeHtml(structurizr.workspace.findElementById(linkedRel.destinationId).name);
+        if (relationship.linkedRelationshipIdList !== undefined && relationship.linkedRelationshipIdList.length > 0) {
+            var impliedHtml = "";
 
-            metadata["Implied By"] = sourceName + '<img src="/static/bootstrap-icons/arrow-right-short.svg" />' + destName;
+            relationship.linkedRelationshipIdList.forEach(function(id) {
+                var linkedRel = structurizr.workspace.findRelationshipById(id);
+                var sourceName = structurizr.util.escapeHtml(structurizr.workspace.findElementById(linkedRel.sourceId).name); 
+                var destName = structurizr.util.escapeHtml(structurizr.workspace.findElementById(linkedRel.destinationId).name);
+                impliedHtml += sourceName + '<img src="/static/bootstrap-icons/arrow-right-short.svg" />' + destName + '<br>';
+            });
+
+            metadata["Implied by"] = impliedHtml;
         } 
         metadata["Technology"] = relationship.technology ? structurizr.util.escapeHtml(relationship.technology) : 'Unknown';
+        if (relationship.url) { 
+            metadata["Url"] = '<a href="' + structurizr.util.escapeHtml(relationship.url) + '" target="_blank">' + structurizr.util.escapeHtml(relationship.url) + '</a>';
+        }
         renderMetadata(metadata);
 
-        detailsPanelDetails.html('');
+        // TODO: loop over linked relationships and cleanup 'detailedDescription'
+        detailsPanelDetails.html(relationship.detailedDescription ? relationship.detailedDescription : '');
 
         if (perspective === undefined) {
             var tagsHtml = '';
@@ -199,16 +240,6 @@ structurizr.ui.DetailsPanel = function() {
 
             renderProperties(structurizr.workspace.getAllPropertiesForRelationship(relationship));
 
-            var urlHtml = '';
-            var url = relationship.url;
-            if (url && url.trim().length > 0) {
-                urlHtml += '<div class="smaller">';
-                urlHtml += '<p>URL: ';
-                urlHtml += '<a href="' + structurizr.util.escapeHtml(url) + '" target="_blank">' + structurizr.util.escapeHtml(url) + '</a>';
-                urlHtml += '</p>';
-                urlHtml += '</div>';
-            }
-            detailsPanelUrl.html(urlHtml);
             detailsPanelAdditionalContent.html('');
         } else {
             var additionalContent = '';
@@ -304,10 +335,10 @@ structurizr.ui.DetailsPanel = function() {
                 var value = metadata[key];
 
                 //key and value should already be HTML escaped
-                metadataHtml += '<tr>'
+                metadataHtml += '<tr>';
                 metadataHtml += '<td style="width: auto; opacity: 65%;">' + key + '</td>';
                 metadataHtml += '<td style="width: 100%; padding-left: 1rem;">' + value + '</td>';
-                metadataHtml += '</tr>'
+                metadataHtml += '</tr>';
             });
         }
 
@@ -329,14 +360,14 @@ structurizr.ui.DetailsPanel = function() {
 
                 detailsHtml += '<div class="accordion-item">';
                 detailsHtml += '<h2 class="accordion-header">';
-                detailsHtml += '<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse' + count + '" aria-expanded="false" aria-controls="flush-collapse' + count + '">';
+                detailsHtml += '<button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse' + count + '" aria-expanded="false" aria-controls="flush-collapse' + count + '">';
                 detailsHtml += structurizr.util.escapeHtml(key);
                 detailsHtml += '</button>';
                 detailsHtml += '</h2>';
                 detailsHtml += '<div id="flush-collapse' + count + '" class="accordion-collapse collapse show">';
-                detailsHtml += '<div class="accordion-body">' + value + '</div>'
-                detailsHtml += '</div>'
-                detailsHtml += '</div>'
+                detailsHtml += '<div class="accordion-body">' + value + '</div>';
+                detailsHtml += '</div>';
+                detailsHtml += '</div>';
             });
         }
 
@@ -345,6 +376,104 @@ structurizr.ui.DetailsPanel = function() {
         } else {
             detailsPanelDetails.html('');
         }
+    }
+
+    function renderInterfaces(provides, consumes) {
+        var interfacesHtml = '';
+        var providesHtml = '';
+        var consumesHtml = '';
+
+        var count = 0;
+        // Add provides to interfaces
+        if (provides !== undefined) {
+            provides.forEach(function (p) {
+                count++;
+                providesHtml += '<div class="accordion-item">';
+                providesHtml += '<h2 class="accordion-header">';
+                providesHtml += '<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#provides' + count + '" aria-expanded="false" aria-controls="provides' + count + '">';
+                providesHtml += structurizr.util.escapeHtml(p.key);
+                providesHtml += '</button>';
+                providesHtml += '</h2>';
+                providesHtml += '<div id="provides' + count + '" class="accordion-collapse collapse">';
+                providesHtml += '<div class="accordion-body">' + (p.description ? structurizr.util.escapeHtml(p.description) : '');
+                providesHtml += '<table style="width:100%;">';
+                providesHtml += '<tr>';
+                providesHtml += '<td style="width: auto; opacity: 65%;">Action</td>';
+                providesHtml += '<td style="width: 100%; padding-left: 1rem;">' + structurizr.util.escapeHtml(p.action) + '</td>';
+                providesHtml += '</tr>';
+                providesHtml += '<tr>';
+                providesHtml += '<td style="width: auto; opacity: 65%;">Technology</td>';
+                providesHtml += '<td style="width: 100%; padding-left: 1rem;">' + structurizr.util.escapeHtml(p.technology) + '</td>';
+                if (p.properties !== undefined && Object.keys(p.properties).length > 0) {
+                    providesHtml += '<tr>';
+                    providesHtml += '<td style="width: auto; opacity: 65%;">Properties</td>';
+                    providesHtml += '<td style="width: 100%; padding-left: 1rem;">';
+                    Object.keys(p.properties).forEach(function (key) {
+                        var value = p.properties[key];
+                        providesHtml += key + '=' + value + '<br>';
+                    });
+                    providesHtml += '</td>';
+                    providesHtml += '</tr>';
+                }
+                providesHtml += '</tr>';
+                providesHtml += '</table>';
+                providesHtml += '</div>';
+                providesHtml += '</div>';
+                providesHtml += '</div>';
+
+                //properties
+                //tags
+            });
+            if (providesHtml.length > 0) {
+                interfacesHtml += '<div class="interface-header">Provides</div><div class="accordion accordion-flush" id="accordionProvides">' + providesHtml + '</div>';
+            }
+        }
+
+        count = 0;
+        // Add consumes to interfaces
+        if (consumes !== undefined) {
+            consumes.forEach(function (c) {
+                console.log(c);
+                count++;
+                consumesHtml += '<div class="accordion-item">';
+                consumesHtml += '<h2 class="accordion-header">';
+                consumesHtml += '<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#consumes' + count + '" aria-expanded="false" aria-controls="consumes' + count + '">';
+                consumesHtml += structurizr.util.escapeHtml(c.key);
+                consumesHtml += '</button>';
+                consumesHtml += '</h2>';
+                consumesHtml += '<div id="consumes' + count + '" class="accordion-collapse collapse">';
+                consumesHtml += '<div class="accordion-body">' + (c.description ? structurizr.util.escapeHtml(c.description) : '');
+                consumesHtml += '<table style="width:100%;">';
+                consumesHtml += '<tr>';
+                consumesHtml += '<td style="width: auto; opacity: 65%;">Technology</td>';
+                consumesHtml += '<td style="width: 100%; padding-left: 1rem;">' + (c.technology ? structurizr.util.escapeHtml(c.technology) : 'Unknown') + '</td>';
+                if (c.properties !== undefined && Object.keys(c.properties).length > 0) {
+                    consumesHtml += '<tr>';
+                    consumesHtml += '<td style="width: auto; opacity: 65%;">Properties</td>';
+                    consumesHtml += '<td style="width: 100%; padding-left: 1rem;">';
+                    Object.keys(c.properties).forEach(function (key) {
+                        var value = c.properties[key];
+                        consumesHtml += key + '=' + value + '<br>';
+                    });
+                    consumesHtml += '</td>';
+                    consumesHtml += '</tr>';
+                }
+                consumesHtml += '</tr>';
+                consumesHtml += '</table>';
+                consumesHtml += '</div>';
+                consumesHtml += '</div>';
+                consumesHtml += '</div>';
+
+                //filters
+                //tags
+            });
+
+            if (consumesHtml.length > 0) {
+                interfacesHtml += '<div class="interface-header">Consumes</div><div class="accordion accordion-flush" id="accordionConsumes">' + consumesHtml + '</div>';
+            }
+        }
+
+        detailsPanelInterfaces.html(interfacesHtml);
     }
 
     function isUrl(s) {

@@ -26,6 +26,7 @@ public class CreateImpliedRelationshipsCombinedByTechnologyStrategy extends Abst
                             curRelationship.setDescription(description);
                         }
                         curRelationship.setDetailedDescription(curRelationship.getDetailedDescription() + relationship.getDetailedDescription()); 
+                        curRelationship.addLinkedRelationshipId(relationship.getId());
                     }
 
                 }

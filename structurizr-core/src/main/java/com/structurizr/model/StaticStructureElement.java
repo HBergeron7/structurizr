@@ -2,6 +2,7 @@ package com.structurizr.model;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.*;
 
 /**
  * This is the superclass for model elements that describe the static structure
@@ -9,7 +10,44 @@ import javax.annotation.Nullable;
  */
 public abstract class StaticStructureElement extends GroupableElement {
 
+    private List<Consumes> consumes = new ArrayList<>();
+    private List<Provides> provides = new ArrayList<>();
+
     StaticStructureElement() {
+    }
+
+    public List<Consumes> getConsumes() {
+        return new ArrayList<>(consumes);
+    }
+
+    @Nonnull
+    public Consumes addConsumes(@Nonnull String key) {
+        Consumes consumes = new Consumes(this, key);
+        this.consumes.add(consumes);
+        return consumes;
+    }
+
+    void setConsumes(List<Consumes> consumes) {
+        if (consumes != null) {
+            this.consumes = new ArrayList<>(consumes);
+        }
+    }
+
+    public List<Provides> getProvides() {
+        return new ArrayList<>(provides);
+    }
+
+    @Nonnull
+    public Provides addProvides(@Nonnull String key, @Nonnull String action) {
+        Provides provides = new Provides(this, key, action);
+        this.provides.add(provides);
+        return provides;
+    }
+
+    void setProvides(List<Provides> provides) {
+        if (provides != null) {
+            this.provides = new ArrayList<>(provides);
+        }
     }
 
     /**

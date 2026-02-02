@@ -10,7 +10,7 @@
 
     }
     #detailsPanelName {
-        font-size: 16px;
+        font-size: 14px;
         border-width: 1px;
         border-style: solid;
         padding: 3px 3px 3px 3px;
@@ -39,10 +39,6 @@
         margin-top: 15px;
         font-size: 10px;
     }
-    #detailsPanelUrl {
-        margin-top: 10px;
-        font-size: 10px;
-    }
     #detailsPanel .tag {
         border-width: 1px;
         border-style: solid;
@@ -55,6 +51,17 @@
     #detailsPanel .accordion-header {
         margin-top: 1px;
         margin-bottom: 1px;
+        
+    }
+
+    .accordion-button {
+        font-size: 14px;
+        background-color: #dddddd;
+        border-radius: .375rem;
+    }
+
+    .accordion-button:not(.collapsed) {
+        background-color: #dddddd;
     }
 
     #detailsPanel .accordion-body {
@@ -63,12 +70,64 @@
     }
 
     #detailsPanel .accordion-button {
-        --bs-accordion-btn-padding-y: .4rem;
+        --bs-accordion-btn-padding-y: .2rem;
         --bs-accordion-btn-padding-x: .4rem;
     }
     
     #detailsPanelColumn {
         --bs-gutter-x: .7rem;
+    }
+
+    .nav {
+        --bs-nav-link-padding-x: 0rem;
+        --bs-nav-link-padding-y: 0rem;
+    }
+
+    .nav-pills .nav-link.active {
+        color: #000;
+        background-color: #DDD;
+    }
+
+    .nav-link {
+        height: 22px;
+        font-size: 12px;
+        color: #666666;
+    }
+
+    .nav-link:focus,
+    .nav-link:hover {
+        background-color: #f2f2f2; 
+    }
+
+    #detailsTabs {
+        border: solid 1px #999999; 
+        border-radius: 7px;
+        padding: 1px;
+    }
+
+    #detailsPanelInterfaces .accordion-button {
+        background-color: inherit;
+        box-shadow: none;
+        --bs-accordion-btn-icon-width: .8rem;
+    }
+
+    #detailsPanelInterfaces .accordion-body {
+        font-size: 12px;
+        margin-bottom: 10px;
+    }
+    
+    #detailsPanelInterfaces .interface-header {
+        display: flex;
+        justify-content: center;
+        background-color: #dfdfdf;
+    }
+
+    #detailsPanel td {
+        vertical-align: top;
+    }
+
+    #detailsPanel td:first-child {
+      text-transform: uppercase;
     }
 
 </style>
@@ -85,13 +144,29 @@
         <div id="detailsPanelDescription"></div>
         <hr />
     </div>
-    <div id="detailsPanelMetadata"></div>
-    <div id="detailsPanelUrl"></div>
-    <div id="detailsPanelTags"></div>
-    <hr />
-    <div id="detailsPanelDetails"></div>
-    <div id="detailsPanelProperties"></div>
-    <div id="detailsPanelAdditionalContent"></div>
+
+    <ul class="nav nav-pills mb-3" id="detailsTabs" role="tablist">
+        <li class="nav-item" role="presentation" style="width: 50%">
+            <button class="nav-link active" id="details-tab-button" data-bs-toggle="pill" data-bs-target="#tab-details" type="button" role="tab" aria-controls="tab-details" aria-selected="true" style="width: 100%">Details</button>
+        </li>
+        <li class="nav-item" role="presentation" style="width: 50%">
+            <button class="nav-link" id="relation-tab-button" data-bs-toggle="pill" data-bs-target="#tab-relation" type="button" role="tab" aria-controls="tab-relation" aria-selected="false" style="width: 100%">Interfaces</button>
+        </li>
+    </ul>
+    <div class="tab-content" id="detailsTabContent">
+        <div class="tab-pane show active" id="tab-details" role="tabpanel" aria-labelledby="details-tab-button">
+            <div id="detailsPanelMetadata"></div>
+            <div id="detailsPanelTags"></div>
+            <hr />
+            <div id="detailsPanelDetails"></div>
+            <div id="detailsPanelProperties"></div>
+            <div id="detailsPanelAdditionalContent"></div>
+        </div>
+        <div class="tab-pane" id="tab-relation" role="tabpanel" aria-labelledby="relation-tab-button">
+            <div id="detailsPanelInterfaces"></div>
+            <div id="detailsPanelRelationships"></div>
+        </div>
+    </div>
 </div>
 
 <script type="text/javascript" src="<c:url value="/static/js/markdown-it-13.0.1.min.js" />"></script>

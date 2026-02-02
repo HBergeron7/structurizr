@@ -42,7 +42,8 @@ public abstract class AbstractImpliedRelationshipsStrategy implements ImpliedRel
         Model model = relationship.getModel();
         Relationship impliedRelationship = model.addRelationship(source, destination, relationship.getDescription(), relationship.getTechnology(), false);
         if (impliedRelationship != null) {
-            impliedRelationship.setLinkedRelationshipId(relationship.getId());
+            impliedRelationship.setLinkedRelationshipId(relationship.getId()); //Keeping for backwards compatibility
+            impliedRelationship.addLinkedRelationshipId(relationship.getId());
         }
 
         return impliedRelationship;
