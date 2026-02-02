@@ -157,7 +157,7 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
         tags.push('Boundary:SoftwareSystem');
         tags.push('Boundary:Container');
         tags.push('Group');
-        tags.push('Workspace:Logo');
+        tags.push('Workspace:Icon');
         structurizr.workspace.views.configuration.styles.elements.forEach(function(elementStyle) {
             if (elementStyle.tag.indexOf('Group:') > -1) {
                 tags.push(elementStyle.tag);
@@ -3006,7 +3006,7 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
 
         var icon = structurizr.ui.findElementStyle( {
             type: undefined,
-            tags: 'Workspace:Logo'
+            tags: 'Workspace:Icon'
         }, darkMode).icon;
 
         if (icon) {

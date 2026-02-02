@@ -68,19 +68,38 @@ class LocalFileSystemSingleWorkspaceAdapterTests extends AbstractWorkspaceAdapte
     }
 
     @Test
-    void getWorkspaceMetadata_WhenJsonFileExists() throws Exception{
-        Workspace workspace = new Workspace("JSON", "Description");
+    void getWorkspaceMetadata_WhenJsonFileExists() throws Exception {
+        Workspace workspace = new Workspace("Name - JSON", "Description - JSON");
         WorkspaceUtils.saveWorkspaceToJson(workspace, new File(dataDirectory, "workspace.json"));
 
         workspaceAdapter = new LocalFileSystemSingleWorkspaceAdapter();
 
         WorkspaceMetadata wmd = workspaceAdapter.getWorkspaceMetadata(1);
-        assertEquals("JSON", wmd.getName());
-        assertEquals("Description", wmd.getDescription());
+        assertEquals("Name - JSON", wmd.getName());
+        assertEquals("Description - JSON", wmd.getDescription());
     }
 
     @Test
-    void getWorkspaceMetadata_WhenDslFileExists() {
+    void getWorkspaceMetadata_WhenJsonFileDoesNotExist() {
+        workspaceAdapter = new LocalFileSystemSingleWorkspaceAdapter();
+
+        WorkspaceMetadata wmd = workspaceAdapter.getWorkspaceMetadata(1);
+        assertEquals("Workspace 1", wmd.getName());
+        assertEquals("", wmd.getDescription());
+    }
+
+    @Override
+    void workspaceMetadata() {
+        // see:
+        //  - getWorkspaceMetadata_WhenJsonFileExists()
+        //  - getWorkspaceMetadata_WhenJsonFileDoesNotExist()
+    }
+
+    @Test
+    void getWorkspace_WhenDslFileExists() {
+        deleteDirectory(dataDirectory);
+        dataDirectory.mkdirs();
+
         String dsl = """
                 workspace "DSL" "Description" {
                 }""";
@@ -88,16 +107,35 @@ class LocalFileSystemSingleWorkspaceAdapterTests extends AbstractWorkspaceAdapte
 
         workspaceAdapter = new LocalFileSystemSingleWorkspaceAdapter();
 
-        WorkspaceMetadata wmd = workspaceAdapter.getWorkspaceMetadata(1);
-        assertEquals("DSL", wmd.getName());
-        assertEquals("Description", wmd.getDescription());
+        String json = workspaceAdapter.getWorkspace(1, "", "");
+        assertTrue(json.startsWith("""
+                {"configuration":{},"description":"Description","documentation":{},"id":1,"lastModifiedDate":"""));
+        assertTrue(json.endsWith("""
+                ,"model":{},"name":"DSL","properties":{"structurizr.inspection.error":"3","structurizr.dsl":"d29ya3NwYWNlICJEU0wiICJEZXNjcmlwdGlvbiIgewp9","structurizr.inspection.info":"0","structurizr.inspection.ignore":"0","structurizr.inspection.warning":"0"},"views":{"configuration":{"styles":{},"terminology":{}}}}"""));
+    }
+
+    @Test
+    void getWorkspace_WhenJsonFileExists() throws Exception {
+        Workspace workspace = new Workspace("Name", "Description");
+        workspace.setId(1L);
+
+        deleteDirectory(dataDirectory);
+        dataDirectory.mkdirs();
+        String json = WorkspaceUtils.toJson(workspace, false);
+        FileUtils.write(new File(dataDirectory, "workspace.json"), json);
+
+        workspaceAdapter = new LocalFileSystemSingleWorkspaceAdapter();
+
+        json = workspaceAdapter.getWorkspace(1, "", "");
+        assertEquals("""
+                {"configuration":{},"description":"Description","documentation":{},"id":1,"model":{},"name":"Name","views":{"configuration":{"styles":{},"terminology":{}}}}""", json);
     }
 
     @Override
-    void workspaceMetadata() {
+    void workspaceContent() throws Exception {
         // see:
-        //  - getWorkspaceMetadata_WhenJsonFileExists()
-        //  - getWorkspaceMetadata_WhenDslFileExists()
+        //  - getWorkspace_WhenJsonFileExists()
+        //  - getWorkspace_WhenDslFileExists()
     }
 
     @Override
@@ -112,12 +150,12 @@ class LocalFileSystemSingleWorkspaceAdapterTests extends AbstractWorkspaceAdapte
 
     @Override
     void deleteWorkspace() {
-        // no supported
+        // not supported
     }
 
     @Override
     void image_Branch() throws Exception {
-        // no supported
+        // not supported
     }
 
     @Override
