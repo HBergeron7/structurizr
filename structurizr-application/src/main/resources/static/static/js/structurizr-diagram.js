@@ -1435,23 +1435,27 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
     }
 
     function relationshipHasPerspective(relationship) {
-        var result = false;
+        return getPerspectiveForRelationship(relationship) !== undefined;
+    }
+
+    function getPerspectiveForRelationship(relationship) {
+        var p;
 
         if (relationship.perspectives) {
             relationship.perspectives.forEach(function(perspective) {
                 if (perspective.name === filter.perspective) {
-                    result = true;
+                    p = perspective;
                 }
             });
         }
 
-        if (result === false) {
+        if (p === false) {
             if (relationship.linkedRelationshipId) {
-                return relationshipHasPerspective(structurizr.workspace.findRelationshipById(relationship.linkedRelationshipId));
+                p = getPerspectiveForRelationship(structurizr.workspace.findRelationshipById(relationship.linkedRelationshipId));
             }
         }
 
-        return result;
+        return p;
     }
 
     this.setFilter = function(f) {
@@ -1504,6 +1508,16 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
         var itemsHidden = false;
         const hiddenOpacity = '0.1';
 
+        var elementStylesForPerspective = [];
+        var relationshipStylesForPerspective = [];
+
+        var refresh = false;
+
+        if (filter.perspective) {
+            elementStylesForPerspective = structurizr.ui.getElementStylesForPerspective(filter.perspective, darkMode);
+            relationshipStylesForPerspective = structurizr.ui.getRelationshipStylesForPerspective(filter.perspective, darkMode);
+        }
+
         const elements = [];
         Object.keys(cellsByElementId).forEach(function(elementId) {
             const cell = cellsByElementId[elementId];
@@ -1512,14 +1526,23 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
 
         elements.forEach(function(element) {
             if (elementMatchesFilter(element)) {
-                // TODO
-                // changeColourOfCell(cell, cell._computedStyle.background, cell._computedStyle.color, cell._computedStyle.stroke);
+                const cell = cellsByElementId[element.id];
+                changeColourOfCell(cell, cell._computedStyle.background, cell._computedStyle.color, cell._computedStyle.stroke);
 
                 if (filter.perspective) {
                     const perspective = getPerspectiveForElement(element);
 
                     if (perspective !== undefined) {
                         showElement(element.id);
+
+                        if (perspective.url && perspective.url.length > 0) {
+                            refresh = true;
+                            runDynamicPerspective(perspective, function() {
+                                applyElementStyleForPerspective(cell, perspective, elementStylesForPerspective);
+                            });
+                        } else {
+                            applyElementStyleForPerspective(cell, perspective, elementStylesForPerspective);
+                        }
                     } else {
                         hideElement(element.id, hiddenOpacity);
                         itemsHidden = true;
@@ -1540,9 +1563,23 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
 
         relationships.forEach(function(relationship) {
             if (relationshipMatchesFilter(relationship)) {
+                const line = linesByRelationshipId[relationship.id];
+                changeColourOfLine(line, line._computedStyle.color);
+
                 if (filter.perspective) {
-                    if (relationshipHasPerspective(relationship)) {
+                    const perspective = getPerspectiveForRelationship(relationship);
+
+                    if (perspective !== undefined) {
                         showRelationship(relationship.id);
+
+                        if (perspective.url && perspective.url.length > 0) {
+                            refresh = true;
+                            runDynamicPerspective(perspective, function() {
+                                applyRelationshipStyleForPerspective(line, perspective, relationshipStylesForPerspective);
+                            });
+                        } else {
+                            applyRelationshipStyleForPerspective(line, perspective, relationshipStylesForPerspective);
+                        }
                     } else {
                         hideRelationship(relationship.id, hiddenOpacity);
                         itemsHidden = true;
@@ -1560,6 +1597,127 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
             hideBoundaries(hiddenOpacity);
         } else {
             showBoundaries();
+        }
+
+        if (refresh) {
+            const viewOrFilter = (currentFilter !== undefined ? currentFilter : currentView);
+            const interval = getViewOrViewSetProperty(viewOrFilter, 'structurizr.perspective.interval', '60000');
+
+            setTimeout(function () {
+                runFilter();
+            }, interval);
+        }
+    }
+
+    function runDynamicPerspective(perspective, callback) {
+        const viewOrFilter = (currentFilter !== undefined ? currentFilter : currentView);
+        const timeout = getViewOrViewSetProperty(viewOrFilter, 'structurizr.perspective.timeout', '10000');
+
+        try {
+            $.ajax({
+                url: perspective.url,
+                dataType: 'text',
+                timeout: timeout
+            })
+            .done(function(data, textStatus, jqXHR) {
+                perspective.value = data;
+
+                // default to HTTP status if response body is empty
+                if (!perspective.value || perspective.value.length === 0) {
+                    perspective.value = jqXHR.status;
+                }
+            })
+            .fail(function (jqXHR, textStatus, errorThrown) {
+                console.log(perspective.url + ': ' + textStatus + ' (HTTP status code=' + jqXHR.status + ')');
+                perspective.value = '' + jqXHR.status;
+            })
+            .always(function () {
+                try {
+                    callback();
+                } catch (err) {
+                    console.log(err);
+                }
+            });
+        } catch (err) {
+            console.log(err);
+        }
+    }
+
+    function findStyleForPerspective(styles, perspective) {
+        var styleForPerspective;
+
+        // find the basic perspective style first
+        styles.forEach(function(style) {
+            if (style.tag.indexOf('[') === -1) {
+                styleForPerspective = style;
+            }
+        });
+
+        // find a style for [value==x]
+        styles.forEach(function(style) {
+            if (style.tag.indexOf('[value') > 0) {
+                const expression = style.tag.substring(style.tag.indexOf('[')+1, style.tag.length-1);
+
+                if (expression.indexOf('value==') === 0) {
+                    const testValue = expression.substring('value=='.length);
+
+                    if (perspective.value === testValue) {
+                        styleForPerspective = style;
+                    }
+                }
+            }
+        });
+
+        return styleForPerspective;
+    }
+
+    function applyElementStyleForPerspective(cell, perspective, stylesForPerspective) {
+        const style = findStyleForPerspective(stylesForPerspective, perspective);
+
+        if (style !== undefined) {
+            var background = style.background;
+            var color = style.color;
+            var stroke = style.stroke;
+
+            if (background === undefined) {
+                background = cell._computedStyle.background;
+            }
+
+            if (color === undefined) {
+                color = cell._computedStyle.color;
+            }
+
+            if (stroke === undefined) {
+                stroke = structurizr.util.shadeColor(background, darkenPercentage, darkMode);
+            }
+
+            cell._perspectiveStyle = { background: background, color: color, stroke: stroke };
+            changeColourOfCell(cell, background, color, stroke);
+        } else {
+            cell._perspectiveStyle = {
+                background: cell._computedStyle.background,
+                color: cell._computedStyle.color,
+                stroke: cell._computedStyle.stroke
+            };
+        }
+    }
+
+    function applyRelationshipStyleForPerspective(line, perspective, stylesForPerspective) {
+        const style = findStyleForPerspective(stylesForPerspective, perspective);
+
+        if (style !== undefined) {
+            var color = style.color;
+
+            if (color === undefined) {
+                color = line._computedStyle.color;
+            }
+
+            line._perspectiveStyle = { color: color };
+            changeColourOfLine(line, color);
+        } else {
+            line._perspectiveStyle = {
+                color: line._computedStyle.color
+            };
         }
     }
 
@@ -3467,8 +3625,7 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
                         rect: {
                             'class': 'structurizrMetaData',
                             fill: canvasColor,
-                            'pointer-events': 'none',
-                            class: 'structurizrMetaData'
+                            'pointer-events': 'none'
                         },
                         text: {
                             text: technology,
@@ -3515,8 +3672,6 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
                     'fill': 'none',
                     targetMarker: {
                         'type': 'path',
-                        stroke: fill,
-                        fill: fill,
                         d: triangle
                     }
                 }
@@ -5610,6 +5765,32 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
 
             selector = $('#' + domId + ' .structurizrWindowButton3');
             selector.css('fill', background);
+        } else if (type === "structurizr.terminal") {
+            var selector = $('#' + domId + ' .structurizrTerminal');
+            selector.css('fill', stroke);
+            selector.css('stroke', stroke);
+
+            selector = $('#' + domId + ' .structurizrTerminalPanel');
+            selector.css('fill', background);
+
+            selector = $('#' + domId + ' .structurizrTerminalButton1');
+            selector.css('fill', background);
+
+            selector = $('#' + domId + ' .structurizrTerminalButton2');
+            selector.css('fill', background);
+
+            selector = $('#' + domId + ' .structurizrTerminalButton3');
+            selector.css('fill', background);
+
+            selector = $('#' + domId + ' .structurizrTerminalPrompt');
+            selector.css('fill', stroke);
+        } else if (type === "structurizr.shell") {
+            var selector = $('#' + domId + ' .structurizrShell');
+            selector.css('fill', background);
+            selector.css('stroke', stroke);
+
+            selector = $('#' + domId + ' .structurizrShellPrompt');
+            selector.css('fill', stroke);
         } else if (type === "structurizr.mobileDevice") {
             var selector = $('#' + domId + ' .structurizrMobileDevice');
             selector.css('fill', stroke);
@@ -5634,6 +5815,20 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
             $('#' + domId + ' .structurizrMetaData').css('fill', color);
             $('#' + domId + ' .structurizrNavigation').css('fill', color);
         }
+    }
+
+    function changeColourOfLine(link, color) {
+        link.attr('line/stroke', color);
+        link.label(0, {
+            attrs: {
+                text: { fill: color }
+            }
+        });
+        link.label(1, {
+            attrs: {
+                text: { fill: color }
+            }
+        });
     }
 
     function hideElement(elementId, opacity) {
@@ -6177,12 +6372,12 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
     }
 
     function addPaperEventHandlers() {
-        paper.on('cell:mouseover', function (cell, evt) {
-            if (cell.model.elementInView) {
-                highlightedElement = cell;
+        paper.on('cell:mouseover', function (cellView, evt) {
+            if (cellView.model.elementInView) {
+                highlightedElement = cellView;
 
                 // and highlight connections to/from element
-                const connectionsForElement = connections[cell.model.elementInView.id];
+                const connectionsForElement = connections[cellView.model.elementInView.id];
                 if (connectionsForElement) {
                     connectionsForElement.forEach(function (cellView) {
                         highlightRelationship(cellView);
@@ -6190,14 +6385,14 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
                 }
             }
 
-            if (cell.model.relationshipInView) {
-                highlightedLink = cell;
+            if (cellView.model.relationshipInView) {
+                highlightedLink = cellView;
 
                 var point = V(paper.viewport).toLocalPoint(evt.clientX, evt.clientY);
                 currentX = point.x;
                 currentY = point.y;
 
-                highlightRelationship(cell);
+                highlightRelationship(cellView);
             }
 
             const x = evt.clientX;
@@ -6207,10 +6402,10 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
                 // do nothing ... sticky tooltip mode
             } else {
                 if (tooltip && tooltip.isEnabled()) {
-                    if (cell.model.elementInView) {
-                        showTooltipForElement(structurizr.workspace.findElementById(cell.model.elementInView.id), cell.model._computedStyle, x, y);
-                    } else if (cell.model.relationshipInView) {
-                        showTooltipForRelationship(structurizr.workspace.findRelationshipById(cell.model.relationshipInView.id), cell.model.relationshipInView, cell.model._computedStyle, x, y);
+                    if (cellView.model.elementInView) {
+                        showTooltipForElement(cellView, x, y);
+                    } else if (cellView.model.relationshipInView) {
+                        showTooltipForRelationship(cellView, x, y);
                     }
                 }
             }
@@ -6599,7 +6794,10 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
         return undoStack.isEmpty();
     };
 
-    function showTooltipForElement(element, style, x, y) {
+    function showTooltipForElement(cellView, x, y) {
+        const element = structurizr.workspace.findElementById(cellView.model.elementInView.id);
+        var style = cellView.model._computedStyle;
+
         if (filter.perspective !== undefined && elementHasPerspective(element) === false) {
             return;
         }
@@ -6608,10 +6806,18 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
             return;
         }
 
+        if (filter.perspective) {
+            style = cellView.model._perspectiveStyle;
+        }
+
         tooltip.showTooltipForElement(element, style, x, y, false, filter.perspective);
     }
 
-    function showTooltipForRelationship(relationship, relationshipInView, style, x, y) {
+    function showTooltipForRelationship(cellView, x, y) {
+        const relationship = structurizr.workspace.findRelationshipById(cellView.model.relationshipInView.id);
+        const relationshipInView = cellView.model.relationshipInView;
+        var style = cellView.model._computedStyle;
+
         if (filter.perspective !== undefined && relationshipHasPerspective(relationship) === false) {
             return;
         }
@@ -6619,6 +6825,11 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
         if (tooltip === undefined) {
             return;
         }
+
+        if (filter.perspective) {
+            style = cellView.model._perspectiveStyle;
+        }
+
 
         tooltip.showTooltipForRelationship(relationship, relationshipInView, style, x, y, false, filter.perspective);
     }
@@ -7584,7 +7795,7 @@ structurizr.shapes.Window = joint.dia.Element.extend({
 structurizr.shapes.Terminal = joint.dia.Element.extend({
     markup: '<g class="structurizrElement"><rect class="structurizrTerminal structurizrHighlightableElement"/><rect class="structurizrTerminalPanel"/><text class="structurizrTerminalPrompt"/><ellipse class="structurizrTerminalButton1"/><ellipse class="structurizrTerminalButton2"/><ellipse class="structurizrTerminalButton3"/><text class="structurizrName"/><text class="structurizrMetaData"/><text class="structurizrDescription"/><g class="structurizrNavigation"><g class="structurizrZoom" /><g class="structurizrDocumentation" /><g class="structurizrDecisions" /><g class="structurizrLink" /></g><image class="structurizrIcon" /></g>',
     defaults: joint.util.deepSupplement({
-        type: 'structurizr.window',
+        type: 'structurizr.terminal',
         attrs: {
             rect: {
                 rx: 1,

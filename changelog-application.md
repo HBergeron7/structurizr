@@ -1,5 +1,11 @@
 # Changelog
 
+## unreleased
+
+- Fixes https://github.com/structurizr/structurizr/issues/22 (Diagram-as-text plugin rendering (Mermaid) for Markdown docs not compatible for Windows line endings).
+- Adds perspective specific styles for elements and relationships.
+- Adds support for dynamic perspectives.
+
 ## 2026.02.01
 
 - Adds `com.structurizr.dsl.plugin.documentation.PlantUML` plugin.
