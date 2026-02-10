@@ -18,6 +18,7 @@ final class ProvidesDslContext extends DslContext {
     @Override
     protected String[] getPermittedTokens() {
         return new String[] {
+                StructurizrDslTokens.ACTION_TOKEN,
                 StructurizrDslTokens.DESCRIPTION_TOKEN,
                 StructurizrDslTokens.TECHNOLOGY_TOKEN,
                 StructurizrDslTokens.TAGS_TOKEN,

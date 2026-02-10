@@ -14,6 +14,7 @@ class StructurizrDslTokens {
     static final String NO_RELATIONSHIP_TOKEN = "-/>";
     static final String CONSUMES_TOKEN = "consumes";
     static final String PROVIDES_TOKEN = "provides";
+    static final String ACTION_TOKEN = "action";
     static final String CONTAINER_TOKEN = "container";
     static final String COMPONENT_TOKEN = "component";
     static final String GROUP_TOKEN = "group";

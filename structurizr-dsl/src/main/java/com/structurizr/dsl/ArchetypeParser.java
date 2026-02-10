@@ -73,4 +73,18 @@ final class ArchetypeParser extends AbstractParser {
         context.getArchetype().setTechnology(technology);
     }
 
+    void parseAction(ArchetypeDslContext context, Tokens tokens) {
+        // action <action>
+        if (tokens.hasMoreThan(VALUE_INDEX)) {
+            throw new RuntimeException("Too many tokens, expected: action <action>");
+        }
+
+        if (!tokens.includes(NAME_INDEX)) {
+            throw new RuntimeException("Expected: action <action>");
+        }
+
+        String action = tokens.get(VALUE_INDEX);
+        context.getArchetype().setAction(action);
+    }
+
 }

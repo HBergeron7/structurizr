@@ -185,7 +185,8 @@ public class DefaultLayoutMergeStrategy implements LayoutMergeStrategy {
             if (
                 rv.getRelationship().getSource().equals(sourceElementWithLayoutInformation) &&
                 rv.getRelationship().getDestination().equals(destinationElementWithLayoutInformation) &&
-                rv.getRelationship().getDescription().equals(relationshipWithoutLayoutInformation.getDescription())
+                rv.getRelationship().getDescription().equals(relationshipWithoutLayoutInformation.getDescription()) &&
+                rv.getRelationship().getTechnology().equals(relationshipWithoutLayoutInformation.getTechnology())
             ) {
                 return rv;
             }

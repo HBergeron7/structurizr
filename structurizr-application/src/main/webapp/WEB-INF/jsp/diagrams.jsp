@@ -140,7 +140,7 @@
             </div>
         </div>
     </div>
-    <div class="col-2 collapse show" id="detailsPanelColumn">
+    <div id="detailsPanelColumn" class="col-2 collapse show hidden-xs hidden-sm <c:if test="${embed eq true || workspace.editable}">hidden</c:if>">
         <%@ include file="/WEB-INF/fragments/details-panel.jspf" %>
     </div>
 </div>

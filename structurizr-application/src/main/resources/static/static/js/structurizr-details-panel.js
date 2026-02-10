@@ -146,6 +146,9 @@ structurizr.ui.DetailsPanel = function() {
             detailsPanelAdditionalContent.html(additionalContent);
         }
 
+        const darkMode = structurizr.ui.isDarkMode();
+        var colorMode = darkMode === true ? structurizr.ui.DARK_MODE_DEFAULTS : structurizr.ui.LIGHT_MODE_DEFAULTS;
+
         if (style) {
             detailsPanelName.css("background", style.background);
             detailsPanelName.css("border-color", style.stroke);
@@ -158,9 +161,9 @@ structurizr.ui.DetailsPanel = function() {
                 detailsPanelName.css('border-style', 'solid');
             }
         } else {
-            detailsPanel.css("background", '#ffffff');
-            detailsPanel.css("border-color", '#000000');
-            detailsPanel.css("color", '#000000');
+            detailsPanel.css("background", colorMode.background);
+            detailsPanel.css("border-color", colorMode.color);
+            detailsPanel.css("color", colorMode.color);
             detailsPanel.css('border-style', 'solid');
         }
     };
@@ -286,19 +289,20 @@ structurizr.ui.DetailsPanel = function() {
             detailsPanelAdditionalContent.html(additionalContent);
         }
 
-        var color = style.color;
-        if (color === undefined) {
-            color = (darkMode === true ? structurizr.ui.DARK_MODE_DEFAULTS.color : structurizr.io.LIGHT_MODE_DEFAULTS.color);
+        const darkMode = structurizr.ui.isDarkMode();
+        var colorMode = darkMode === true ? structurizr.ui.DARK_MODE_DEFAULTS : structurizr.ui.LIGHT_MODE_DEFAULTS;
+
+        if (style) {
+            detailsPanelName.css("background", colorMode.background);
+            detailsPanelName.css("border-color", style.color ? style.color : colorMode.color);
+            detailsPanelName.css("color", colorMode.color);
+            detailsPanelName.css('border-style', style.lineStyle);
+        } else {
+            detailsPanel.css("background", colorMode.background);
+            detailsPanel.css("border-color", colorMode.color);
+            detailsPanel.css("color", colorMode.color);
+            detailsPanel.css('border-style', 'solid');
         }
-
-        detailsPanel.css("border-color", color);
-        detailsPanel.css("color", color);
-        $('#detailsPanel .tag').css("border-color", color);
-        $('#detailsPanel a').css("color", color);
-        $('#detailsPanel a').css("text-decoration", "underline");
-        $('#detailsPanel hr').css("border-color", color);
-
-        detailsPanel.css('border-style', style.lineStyle);
     }
 
     function renderProperties(properties) {

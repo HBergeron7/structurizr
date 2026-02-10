@@ -12,12 +12,13 @@ final class ProvidesParser extends AbstractParser {
     private final static int DESCRIPTION_INDEX = 4;
     private final static int TAGS_INDEX = 5;
 
-    private final static int STANDALONE_ASSIGNMENT_INDEX = 1;
+    private final static int VALUE_INDEX = 1;
+    private final static int NAME_INDEX = 1;
 
-    Provides parse(StaticStructureElementDslContext context, Tokens tokens) {
+    Provides parse(StaticStructureElementDslContext context, Tokens tokens, Archetype archetype) {
         StaticStructureElement element;
         String key;
-        String action;
+        String action = archetype.getAction();
 
         if (tokens.hasMoreThan(TAGS_INDEX)) {
             throw new RuntimeException("Too many tokens, expected: " + GRAMMAR);
@@ -33,34 +34,40 @@ final class ProvidesParser extends AbstractParser {
 
         if (tokens.includes(ACTION_INDEX)) {
             action = tokens.get(ACTION_INDEX);
-        } else {
+        } else if (action == null || action.isEmpty()) {
             throw new RuntimeException("Must provide action, expected: " + GRAMMAR);
         }
 
         Provides provides = element.addProvides(key, action);
 
+        String technology = archetype.getTechnology();
         if (tokens.includes(TECHNOLOGY_INDEX)) {
-            provides.setTechnology(tokens.get(TECHNOLOGY_INDEX));
+            technology = tokens.get(TECHNOLOGY_INDEX);
         }
+        provides.setTechnology(technology);
 
+        String description = archetype.getDescription();
         if (tokens.includes(DESCRIPTION_INDEX)) {
-            provides.setDescription(tokens.get(DESCRIPTION_INDEX));
+            description = tokens.get(DESCRIPTION_INDEX);
         }
+        provides.setDescription(description);
 
+        List<String> tags = new ArrayList<>(archetype.getTags());
         if (tokens.includes(TAGS_INDEX)) {
-            provides.setTags(Arrays.asList(tokens.get(TAGS_INDEX).split(",")));
+            tags.addAll(Arrays.asList(tokens.get(TAGS_INDEX).split(",")));
         }
+        provides.addTags(tags);
 
         return provides; 
     }
 
     void parseTags(ProvidesDslContext context, Tokens tokens) {
         // tags <tags> [tags]
-        if (!tokens.includes(STANDALONE_ASSIGNMENT_INDEX)) {
+        if (!tokens.includes(NAME_INDEX)) {
             throw new RuntimeException("Expected: tags <tags> [tags]");
         }
 
-        for (int i = STANDALONE_ASSIGNMENT_INDEX; i < tokens.size(); i++) {
+        for (int i = NAME_INDEX; i < tokens.size(); i++) {
             String tags = tokens.get(i);
             context.getProvides().addTags(Arrays.asList(tags.split(",")));
         }
@@ -68,29 +75,43 @@ final class ProvidesParser extends AbstractParser {
 
     void parseDescription(ProvidesDslContext context, Tokens tokens) {
         // description <description>
-        if (tokens.hasMoreThan(STANDALONE_ASSIGNMENT_INDEX)) {
+        if (tokens.hasMoreThan(VALUE_INDEX)) {
             throw new RuntimeException("Too many tokens, expected: description <description>");
         }
 
-        if (!tokens.includes(STANDALONE_ASSIGNMENT_INDEX)) {
+        if (!tokens.includes(NAME_INDEX)) {
             throw new RuntimeException("Expected: description <description>");
         }
 
-        String description = tokens.get(STANDALONE_ASSIGNMENT_INDEX);
+        String description = tokens.get(VALUE_INDEX);
         context.getProvides().setDescription(description);
     }
 
     void parseTechnology(ProvidesDslContext context, Tokens tokens) {
         // technology <technology>
-        if (tokens.hasMoreThan(STANDALONE_ASSIGNMENT_INDEX)) {
+        if (tokens.hasMoreThan(VALUE_INDEX)) {
             throw new RuntimeException("Too many tokens, expected: technology <technology>");
         }
 
-        if (!tokens.includes(STANDALONE_ASSIGNMENT_INDEX)) {
+        if (!tokens.includes(NAME_INDEX)) {
             throw new RuntimeException("Expected: technology <technology>");
         }
 
-        String technology = tokens.get(STANDALONE_ASSIGNMENT_INDEX);
+        String technology = tokens.get(VALUE_INDEX);
         context.getProvides().setTechnology(technology);
+    }
+
+    void parseAction(ProvidesDslContext context, Tokens tokens) {
+        // action <action>
+        if (tokens.hasMoreThan(VALUE_INDEX)) {
+            throw new RuntimeException("Too many tokens, expected: action <action>");
+        }
+
+        if (!tokens.includes(NAME_INDEX)) {
+            throw new RuntimeException("Expected: action <action>");
+        }
+
+        String action = tokens.get(VALUE_INDEX);
+        context.getProvides().setAction(action);
     }
 }

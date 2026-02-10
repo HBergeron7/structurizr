@@ -54,16 +54,18 @@ public final class StructurizrDslParser extends StructurizrDslTokens {
     private Set<StaticStructureElement> providers = new HashSet<>();
     private Set<StaticStructureElement> consumers = new HashSet<>();
 
-    private Map<String,Map<String,Archetype>> archetypes = Map.of(
-            StructurizrDslTokens.GROUP_TOKEN, new HashMap<>(),
-            StructurizrDslTokens.CUSTOM_ELEMENT_TOKEN, new HashMap<>(),
-            StructurizrDslTokens.PERSON_TOKEN, new HashMap<>(),
-            StructurizrDslTokens.SOFTWARE_SYSTEM_TOKEN, new HashMap<>(),
-            StructurizrDslTokens.CONTAINER_TOKEN, new HashMap<>(),
-            StructurizrDslTokens.COMPONENT_TOKEN, new HashMap<>(),
-            StructurizrDslTokens.DEPLOYMENT_NODE_TOKEN, new HashMap<>(),
-            StructurizrDslTokens.INFRASTRUCTURE_NODE_TOKEN, new HashMap<>(),
-            StructurizrDslTokens.RELATIONSHIP_TOKEN, new HashMap<>()
+    private Map<String,Map<String,Archetype>> archetypes = Map.ofEntries(
+            Map.entry(StructurizrDslTokens.GROUP_TOKEN, new HashMap<>()),
+            Map.entry(StructurizrDslTokens.CUSTOM_ELEMENT_TOKEN, new HashMap<>()),
+            Map.entry(StructurizrDslTokens.PERSON_TOKEN, new HashMap<>()),
+            Map.entry(StructurizrDslTokens.SOFTWARE_SYSTEM_TOKEN, new HashMap<>()),
+            Map.entry(StructurizrDslTokens.CONTAINER_TOKEN, new HashMap<>()),
+            Map.entry(StructurizrDslTokens.COMPONENT_TOKEN, new HashMap<>()),
+            Map.entry(StructurizrDslTokens.DEPLOYMENT_NODE_TOKEN, new HashMap<>()),
+            Map.entry(StructurizrDslTokens.INFRASTRUCTURE_NODE_TOKEN, new HashMap<>()),
+            Map.entry(StructurizrDslTokens.CONSUMES_TOKEN, new HashMap<>()),
+            Map.entry(StructurizrDslTokens.PROVIDES_TOKEN, new HashMap<>()),
+            Map.entry(StructurizrDslTokens.RELATIONSHIP_TOKEN, new HashMap<>())
     );
 
     private boolean dslPortable = true;
@@ -321,10 +323,11 @@ public final class StructurizrDslParser extends StructurizrDslTokens {
                                                 relationshipGroup.addLinkedConsumes(consumes);
                                                 relationshipGroup.addLinkedProvides(provides); 
 
-                                                //relationshipGroup.appendDetailedDescription("<dt>" + provides.getAction() + " " + provides.getKey() + "</dt>\n"); 
-                                                //if (provides.getDescription() != null && !provides.getDescription().isBlank()) {
-                                                //    relationshipGroup.appendDetailedDescription("<dd>" + provides.getDescription() + "</dd>\n"); 
-                                                //}
+                                                // TODO: Remove this and instead use consumes/provides linkedRelationshipIds
+                                                relationshipGroup.appendDetailedDescription("<dt>" + provides.getAction() + " " + provides.getKey() + "</dt>\n"); 
+                                                if (provides.getDescription() != null && !provides.getDescription().isBlank()) {
+                                                    relationshipGroup.appendDetailedDescription("<dd>" + provides.getDescription() + "</dd>\n"); 
+                                                }
                                             }
                                         }
                                     }
@@ -708,6 +711,9 @@ public final class StructurizrDslParser extends StructurizrDslTokens {
                     } else if (TECHNOLOGY_TOKEN.equalsIgnoreCase(firstToken) && inContext(ConsumesDslContext.class)) {
                         new ConsumesParser().parseTechnology(getContext(ConsumesDslContext.class), tokens);
 
+                    } else if (ACTION_TOKEN.equalsIgnoreCase(firstToken) && inContext(ProvidesDslContext.class)) {
+                        new ProvidesParser().parseAction(getContext(ProvidesDslContext.class), tokens);
+
                     } else if (INSTANCES_TOKEN.equalsIgnoreCase(firstToken) && inContext(DeploymentNodeDslContext.class)) {
                         new DeploymentNodeParser().parseInstances(getContext(DeploymentNodeDslContext.class), tokens);
 
@@ -868,6 +874,24 @@ public final class StructurizrDslParser extends StructurizrDslTokens {
                             startContext(new ComponentArchetypeDslContext(archetype));
                         }
 
+                    } else if (isElementKeywordOrArchetype(firstToken, CONSUMES_TOKEN) && inContext(ArchetypesDslContext.class)) {
+                        Archetype archetype = new Archetype(identifier, CONSUMES_TOKEN);
+                        extendArchetype(archetype, firstToken);
+                        addArchetype(archetype);
+
+                        if (shouldStartContext(tokens)) {
+                            startContext(new ConsumesArchetypeDslContext(archetype));
+                        }
+
+                    } else if (isElementKeywordOrArchetype(firstToken, PROVIDES_TOKEN) && inContext(ArchetypesDslContext.class)) {
+                        Archetype archetype = new Archetype(identifier, PROVIDES_TOKEN);
+                        extendArchetype(archetype, firstToken);
+                        addArchetype(archetype);
+
+                        if (shouldStartContext(tokens)) {
+                            startContext(new ProvidesArchetypeDslContext(archetype));
+                        }
+
                     } else if (isElementKeywordOrArchetype(firstToken, DEPLOYMENT_NODE_TOKEN) && inContext(ArchetypesDslContext.class)) {
                         Archetype archetype = new Archetype(identifier, DEPLOYMENT_NODE_TOKEN);
                         extendArchetype(archetype, firstToken);
@@ -901,7 +925,7 @@ public final class StructurizrDslParser extends StructurizrDslTokens {
                     } else if (DESCRIPTION_TOKEN.equalsIgnoreCase(firstToken) && inContext(ArchetypeDslContext.class)) {
                         new ArchetypeParser().parseDescription(getContext(ArchetypeDslContext.class), tokens);
 
-                    } else if (TECHNOLOGY_TOKEN.equalsIgnoreCase(firstToken) && (inContext(ContainerArchetypeDslContext.class) || inContext(ComponentArchetypeDslContext.class) || inContext(DeploymentNodeArchetypeDslContext.class) || inContext(InfrastructureNodeArchetypeDslContext.class) || inContext(RelationshipArchetypeDslContext.class))) {
+                    } else if (TECHNOLOGY_TOKEN.equalsIgnoreCase(firstToken) && (inContext(ContainerArchetypeDslContext.class) || inContext(ComponentArchetypeDslContext.class) || inContext(DeploymentNodeArchetypeDslContext.class) || inContext(InfrastructureNodeArchetypeDslContext.class) || inContext(RelationshipArchetypeDslContext.class) || inContext(ConsumesArchetypeDslContext.class) || inContext(ProvidesArchetypeDslContext.class))) {
                         new ArchetypeParser().parseTechnology(getContext(ArchetypeDslContext.class), tokens);
 
                     } else if (TAG_TOKEN.equalsIgnoreCase(firstToken) && inContext(ArchetypeDslContext.class)) {
@@ -917,6 +941,9 @@ public final class StructurizrDslParser extends StructurizrDslTokens {
                     } else if (PERSPECTIVES_TOKEN.equalsIgnoreCase(firstToken) && inContext(ArchetypeDslContext.class)) {
                         Archetype archetype = getContext(ArchetypeDslContext.class).getArchetype();
                         startContext(new PerspectivesDslContext(archetype));
+
+                    } else if (ACTION_TOKEN.equalsIgnoreCase(firstToken) && inContext(ArchetypeDslContext.class)) {
+                        new ArchetypeParser().parseAction(getContext(ArchetypeDslContext.class), tokens);
 
                     } else if (VIEWS_TOKEN.equalsIgnoreCase(firstToken) && inContext(WorkspaceDslContext.class)) {
                         if (parsedTokens.contains(VIEWS_TOKEN)) {
@@ -1283,16 +1310,18 @@ public final class StructurizrDslParser extends StructurizrDslTokens {
                     } else if (inContext(UsersDslContext.class)) {
                         new UserRoleParser().parse(getContext(), tokens);
 
-                    } else if (PROVIDES_TOKEN.equalsIgnoreCase(firstToken) && inContext(StaticStructureElementDslContext.class)) {
-                        var provides = new ProvidesParser().parse(getContext(StaticStructureElementDslContext.class), tokens.withoutContextStartToken());
+                    } else if (isElementKeywordOrArchetype(firstToken, PROVIDES_TOKEN) && inContext(StaticStructureElementDslContext.class)) {
+                        Archetype archetype = getArchetype(PROVIDES_TOKEN, firstToken);
+                        var provides = new ProvidesParser().parse(getContext(StaticStructureElementDslContext.class), tokens.withoutContextStartToken(), archetype);
                         providers.add(provides.getElement());
 
                         if (shouldStartContext(tokens)) {
                             startContext(new ProvidesDslContext(provides));
                         }
 
-                    } else if (CONSUMES_TOKEN.equalsIgnoreCase(firstToken) && inContext(StaticStructureElementDslContext.class)) {
-                        var consumes = new ConsumesParser().parse(getContext(StaticStructureElementDslContext.class), tokens);
+                    } else if (isElementKeywordOrArchetype(firstToken, CONSUMES_TOKEN) && inContext(StaticStructureElementDslContext.class)) {
+                        Archetype archetype = getArchetype(CONSUMES_TOKEN, firstToken);
+                        var consumes = new ConsumesParser().parse(getContext(StaticStructureElementDslContext.class), tokens.withoutContextStartToken(), archetype);
                         consumers.add(consumes.getElement());
 
                         if (shouldStartContext(tokens)) {

@@ -94,7 +94,7 @@ public class Provides implements PropertyHolder {
         return action;
     }
 
-    void setAction(String action) {
+    public void setAction(String action) {
         this.action = action;
     }
 

@@ -11,6 +11,7 @@ final class Archetype implements PropertyHolder, PerspectivesHolder {
 
     private final String name;
     private final String type;
+    private String action;
     private String metadata = "";
     private String description = "";
     private String technology = "";
@@ -58,6 +59,14 @@ final class Archetype implements PropertyHolder, PerspectivesHolder {
 
     void setTechnology(String technology) {
         this.technology = technology;
+    }
+
+    String getAction() {
+        return action;
+    }
+
+    void setAction(String action) {
+        this.action = action;
     }
 
     void addTags(String... tags) {
