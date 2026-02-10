@@ -12,6 +12,7 @@ public class Consumes implements PropertyHolder {
     private String description;
     private Map<String, String> properties = new HashMap<>();
     private List<String> tags = new ArrayList<>();
+    private Set<String> linkedRelationshipIdList = new TreeSet<>();
 
     Consumes(){
     }
@@ -116,5 +117,19 @@ public class Consumes implements PropertyHolder {
 
     public void addTags(List<String> tags) {
         this.tags.addAll(tags);
+    }
+
+    public void addLinkedRelationshipId(String relationshipId) {
+        this.linkedRelationshipIdList.add(relationshipId); 
+    }
+
+    public Set<String> getLinkedRelationshipIdList() {
+        return new TreeSet<>(this.linkedRelationshipIdList);
+    }
+
+    void setLinkedRelationshipIdList(Set<String> linkedRelationshipIdList) {
+        if (linkedRelationshipIdList != null) {
+            this.linkedRelationshipIdList = new TreeSet<>(linkedRelationshipIdList);
+        }
     }
 }

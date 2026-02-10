@@ -11,6 +11,8 @@ final class RelationshipGroup {
     private String description;
     private String detailedDescription;
     private List<String> tags;
+    private List<Consumes> linkedConsumes = new ArrayList<>();
+    private List<Provides> linkedProvides = new ArrayList<>();
 
     RelationshipGroup(StaticStructureElement consumer, StaticStructureElement provider, String technology, String description, List<String> tags) {
         this.consumer = consumer;
@@ -58,6 +60,24 @@ final class RelationshipGroup {
 
     void addTags(List<String> tags) {
         this.tags.addAll(tags);
+    }
+
+    void addLinkedConsumes(Consumes consumes) {
+        this.linkedConsumes.add(consumes);
+    }
+
+    void addLinkedProvides(Provides provides) {
+        this.linkedProvides.add(provides);
+    }
+
+    void addLinkedRelationshipId(String relationshipId) {
+        for (Consumes con : this.linkedConsumes) {
+            con.addLinkedRelationshipId(relationshipId);
+        }
+
+        for (Provides pro : this.linkedProvides) {
+            pro.addLinkedRelationshipId(relationshipId);
+        }
     }
 }
 

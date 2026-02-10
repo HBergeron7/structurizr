@@ -328,7 +328,16 @@ public class Configuration {
         parser.getFeatures().configure(com.structurizr.dsl.Features.DECISIONS, false);
 
         for (String name : properties.stringPropertyNames()) {
-            if (name.startsWith("structurizr.feature.dsl.")) {
+            if (name.startsWith("structurizr.feature.dsl.constants")) {
+                for (String constantAssignment : getProperty(name).split(",")) {
+                    String[] constant = constantAssignment.split("=");
+                    if (constant.length == 2) {
+                        parser.addConstant(constant[0], constant[1]);
+                    } else {
+                        log.warn("Invalid constant: " + constantAssignment);
+                    }
+                }
+            } else if (name.startsWith("structurizr.feature.dsl.")) {
                 parser.getFeatures().configure(name, Boolean.parseBoolean(getProperty(name)));
             }
         }

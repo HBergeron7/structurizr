@@ -313,15 +313,18 @@ public final class StructurizrDslParser extends StructurizrDslTokens {
                                                 {
                                                     List<String> allTags = new ArrayList<String>(provides.getTags());
                                                     allTags.addAll(consumes.getTags());
-                                                    relationshipGroup = new RelationshipGroup(consumes.getElement(), provides.getElement(), provides.getTechnology(), provides.getAction(), allTags);
+                                                    relationshipGroup = new RelationshipGroup(consumer, provider, provides.getTechnology(), provides.getAction(), allTags);
                                                     relationshipGroup.appendDetailedDescription("<dl>\n");
                                                     relationshipGroups.put(consumes.getTechnology(), relationshipGroup);
                                                 }
 
-                                                relationshipGroup.appendDetailedDescription("<dt>" + provides.getAction() + " " + provides.getKey() + "</dt>\n"); 
-                                                if (provides.getDescription() != null && !provides.getDescription().isBlank()) {
-                                                    relationshipGroup.appendDetailedDescription("<dd>" + provides.getDescription() + "</dd>\n"); 
-                                                }
+                                                relationshipGroup.addLinkedConsumes(consumes);
+                                                relationshipGroup.addLinkedProvides(provides); 
+
+                                                //relationshipGroup.appendDetailedDescription("<dt>" + provides.getAction() + " " + provides.getKey() + "</dt>\n"); 
+                                                //if (provides.getDescription() != null && !provides.getDescription().isBlank()) {
+                                                //    relationshipGroup.appendDetailedDescription("<dd>" + provides.getDescription() + "</dd>\n"); 
+                                                //}
                                             }
                                         }
                                     }
@@ -330,6 +333,7 @@ public final class StructurizrDslParser extends StructurizrDslTokens {
                                     for (var rgrp : relationshipGroups.values()) {
                                         rgrp.appendDetailedDescription("</dl>\n");
                                         var relationship = rgrp.getConsumer().uses(rgrp.getProvider(), rgrp.getDescription(), rgrp.getDetailedDescription(), rgrp.getTechnology(), null, rgrp.getTags().toArray(new String[0]));
+                                        rgrp.addLinkedRelationshipId(relationship.getId());
                                     }
                                 }
                             }
@@ -1664,7 +1668,9 @@ public final class StructurizrDslParser extends StructurizrDslTokens {
             throw new IllegalArgumentException("A constant name must be specified");
         }
 
-        addConstant(new NameValuePair(name, value));
+        NameValuePair nvp = new NameValuePair(name, value);
+        nvp.setType(NameValueType.Constant);
+        addConstant(nvp);
     }
 
     private void addConstant(NameValuePair nameValuePair) {

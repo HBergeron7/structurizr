@@ -74,6 +74,10 @@ public class DefaultInspector extends Inspector {
                 add(new EmbeddedViewWithGeneratedKeyInspection(this).run((Component)element));
             }
 
+            if (element instanceof StaticStructureElement) {
+                add(new StaticStructureElementConsumesInspection(this).run(element));
+            }
+
             if (element instanceof DeploymentNode) {
                 add(new DeploymentNodeDescriptionInspection(this).run(element));
                 add(new DeploymentNodeTechnologyInspection(this).run(element));
