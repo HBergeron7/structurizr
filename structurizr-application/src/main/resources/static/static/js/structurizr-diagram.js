@@ -1624,7 +1624,7 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
 
                 // default to HTTP status if response body is empty
                 if (!perspective.value || perspective.value.length === 0) {
-                    perspective.value = jqXHR.status;
+                    perspective.value = '' + jqXHR.status;
                 }
             })
             .fail(function (jqXHR, textStatus, errorThrown) {
@@ -5819,16 +5819,19 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
 
     function changeColourOfLine(link, color) {
         link.attr('line/stroke', color);
+
         link.label(0, {
             attrs: {
                 text: { fill: color }
             }
         });
-        link.label(1, {
-            attrs: {
-                text: { fill: color }
-            }
-        });
+        if (link.labels().length === 3) {
+            link.label(1, {
+                attrs: {
+                    text: { fill: color }
+                }
+            });
+        }
     }
 
     function hideElement(elementId, opacity) {
@@ -6754,7 +6757,7 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
 
             lines.forEach(function(line) {
                 const labels = line.get('labels');
-                if (labels !== undefined && labels.length > 1) {
+                if (labels !== undefined && labels.length > 0 && labels[0].position) {
                     labels[0].position.offset = labels[0].position.calculatedOffset;
                     labels[1].position.distance = labels[0].position.distance;
                 }
