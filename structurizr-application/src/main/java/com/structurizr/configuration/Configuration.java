@@ -337,6 +337,8 @@ public class Configuration {
                         log.warn("Invalid constant: " + constantAssignment);
                     }
                 }
+            } else if (name.startsWith("structurizr.feature.dsl.properties.")) {
+                parser.addProperty(name.replaceFirst("structurizr.feature.dsl.properties.",""), getProperty(name));
             } else if (name.startsWith("structurizr.feature.dsl.")) {
                 parser.getFeatures().configure(name, Boolean.parseBoolean(getProperty(name)));
             }

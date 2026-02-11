@@ -48,6 +48,7 @@ public final class StructurizrDslParser extends StructurizrDslTokens {
     private final Set<String> parsedTokens = new HashSet<>();
     private final IdentifiersRegister identifiersRegister;
     private Map<String, NameValuePair> constantsAndVariables;
+    private Map<String, String> properties = new HashMap<>();
     private Features features = new Features();
     private HttpClient httpClient = new HttpClient();
 
@@ -798,6 +799,11 @@ public final class StructurizrDslParser extends StructurizrDslTokens {
 
                         workspace = new WorkspaceParser().parse(dslParserContext, tokens.withoutContextStartToken());
                         extendingWorkspace = !workspace.getModel().isEmpty();
+                        for (var property : this.properties.entrySet()) {
+                            if (property.getKey().startsWith("workspace.")) {
+                                workspace.addProperty(property.getKey().replaceFirst("workspace.",""), property.getValue());
+                            }
+                        }
                         WorkspaceDslContext context = new WorkspaceDslContext(dslFile);
                         context.setDslPortable(dslParserContext.isDslPortable());
                         startContext(context);
@@ -1683,6 +1689,10 @@ public final class StructurizrDslParser extends StructurizrDslTokens {
         if (!StringUtils.isNullOrEmpty(identifier)) {
             relationship.addProperty(STRUCTURIZR_DSL_IDENTIFIER_PROPERTY_NAME, identifiersRegister.findIdentifier(relationship));
         }
+    }
+
+    public void addProperty(String name, String value) {
+        properties.put(name, value);
     }
 
     /**
