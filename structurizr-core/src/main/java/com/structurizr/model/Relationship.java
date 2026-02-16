@@ -4,8 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.util.Collections;
 import java.util.LinkedHashSet;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 
 /**
  * A relationship between two elements.
@@ -18,8 +17,7 @@ public final class Relationship extends ModelItem {
     private String sourceId;
     private Element destination;
     private String destinationId;
-    private String description;
-    private String detailedDescription;
+    private Set<String> description = new LinkedHashSet<>();
     private String technology;
     private InteractionStyle interactionStyle;
 
@@ -35,20 +33,6 @@ public final class Relationship extends ModelItem {
         setSource(source);
         setDestination(destination);
         setDescription(description);
-        setDetailedDescription("");
-        setTechnology(technology);
-        setInteractionStyle(interactionStyle);
-
-        addTags(tags);
-    }
-
-    Relationship(Element source, Element destination, String description, String detailedDescription, String technology, InteractionStyle interactionStyle, String[] tags) {
-        this();
-
-        setSource(source);
-        setDestination(destination);
-        setDescription(description);
-        setDetailedDescription(detailedDescription);
         setTechnology(technology);
         setInteractionStyle(interactionStyle);
 
@@ -122,19 +106,16 @@ public final class Relationship extends ModelItem {
     }
 
     public String getDescription() {
-        return description != null ? description : "";
+        return this.description.isEmpty() ? "" : String.join("/", this.description);
+    }
+
+    void addDescription(String description) {
+        this.description.add(description);
     }
 
     void setDescription(String description) {
-        this.description = description;
-    }
-
-    public String getDetailedDescription() {
-        return detailedDescription != null ? detailedDescription : "";
-    }
-
-    public void setDetailedDescription(String detailedDescription) {
-        this.detailedDescription = detailedDescription;
+        this.description = new LinkedHashSet<String>();
+        this.description.add(description);
     }
 
     /**

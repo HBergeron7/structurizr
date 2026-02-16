@@ -19,16 +19,10 @@ public class CreateImpliedRelationshipsCombinedByTechnologyStrategy extends Abst
 
                     if (curRelationship == null) {
                         curRelationship = createImpliedRelationship(relationship, source, destination);
-                        curRelationship.setDetailedDescription(relationship.getDetailedDescription()); 
                     } else {
-                        if (!curRelationship.getDescription().contains(relationship.getDescription())) {
-                            String description = curRelationship.getDescription() + "/" + relationship.getDescription();
-                            curRelationship.setDescription(description);
-                        }
-                        curRelationship.setDetailedDescription(curRelationship.getDetailedDescription() + relationship.getDetailedDescription()); 
+                        curRelationship.addDescription(relationship.getDescription());
                         curRelationship.addLinkedRelationshipId(relationship.getId());
                     }
-
                 }
 
                 destination = destination.getParent();

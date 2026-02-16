@@ -52,8 +52,8 @@ public final class StructurizrDslParser extends StructurizrDslTokens {
     private Features features = new Features();
     private HttpClient httpClient = new HttpClient();
 
-    private Set<StaticStructureElement> providers = new HashSet<>();
-    private Set<StaticStructureElement> consumers = new HashSet<>();
+    private Set<StaticStructureElement> providers = new LinkedHashSet<>();
+    private Set<StaticStructureElement> consumers = new LinkedHashSet<>();
 
     private Map<String,Map<String,Archetype>> archetypes = Map.ofEntries(
             Map.entry(StructurizrDslTokens.GROUP_TOKEN, new HashMap<>()),
@@ -303,41 +303,19 @@ public final class StructurizrDslParser extends StructurizrDslTokens {
                             for (var consumer : consumers) {
                                 for (var provider : providers) {
                                     //Create a relationship for each unique technology
-                                    Map<String, RelationshipGroup> relationshipGroups = new HashMap<>();
-
                                     for (var consumes : consumer.getConsumes()) {
                                         for (var provides : provider.getProvides()) {
                                             if (provides.matches(consumes)) {
-                                                RelationshipGroup relationshipGroup = relationshipGroups.get(consumes.getTechnology());
-                                                if (relationshipGroup != null) {
-                                                    relationshipGroup.addTags(provides.getTags());
-                                                    relationshipGroup.appendDescription(provides.getAction());
-                                                } else
-                                                {
-                                                    List<String> allTags = new ArrayList<String>(provides.getTags());
-                                                    allTags.addAll(consumes.getTags());
-                                                    relationshipGroup = new RelationshipGroup(consumer, provider, provides.getTechnology(), provides.getAction(), allTags);
-                                                    relationshipGroup.appendDetailedDescription("<dl>\n");
-                                                    relationshipGroups.put(consumes.getTechnology(), relationshipGroup);
-                                                }
-
-                                                relationshipGroup.addLinkedConsumes(consumes);
-                                                relationshipGroup.addLinkedProvides(provides); 
-
-                                                // TODO: Remove this and instead use consumes/provides linkedRelationshipIds
-                                                relationshipGroup.appendDetailedDescription("<dt>" + provides.getAction() + " " + provides.getKey() + "</dt>\n"); 
-                                                if (provides.getDescription() != null && !provides.getDescription().isBlank()) {
-                                                    relationshipGroup.appendDetailedDescription("<dd>" + provides.getDescription() + "</dd>\n"); 
+                                                Relationship relationship = consumer.uses(provider, provides.getAction(), provides.getTechnology(), null, provides.getTags().toArray(new String[0]));
+                                                if (relationship != null) {
+                                                    consumes.addLinkedRelationshipId(relationship.getId());
+                                                    provides.addLinkedRelationshipId(relationship.getId());
+                                                } else {
+                                                    // This should not happen
+                                                    throw new RuntimeException("Could not create relationship between " + consumer.getName() + " and " + provider.getName());
                                                 }
                                             }
                                         }
-                                    }
-
-                                    // Create combined relationships at the end to ensure implied relationships are created correctly
-                                    for (var rgrp : relationshipGroups.values()) {
-                                        rgrp.appendDetailedDescription("</dl>\n");
-                                        var relationship = rgrp.getConsumer().uses(rgrp.getProvider(), rgrp.getDescription(), rgrp.getDetailedDescription(), rgrp.getTechnology(), null, rgrp.getTags().toArray(new String[0]));
-                                        rgrp.addLinkedRelationshipId(relationship.getId());
                                     }
                                 }
                             }

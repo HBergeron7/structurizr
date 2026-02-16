@@ -202,17 +202,7 @@ public final class Model implements PropertyHolder {
     }
 
     @Nullable
-    Relationship addRelationship(Element source, @Nonnull Element destination, String description, String detailedDescription, String technology, InteractionStyle interactionStyle, String[] tags) {
-        return addRelationship(source, destination, description, detailedDescription, technology, interactionStyle, tags, true);
-    }
-
-    @Nullable
     Relationship addRelationship(Element source, @Nonnull Element destination, String description, String technology, InteractionStyle interactionStyle, String[] tags, boolean createImpliedRelationships) {
-        return addRelationship(source, destination, description, "", technology, interactionStyle, tags, createImpliedRelationships);
-    }
-
-    @Nullable
-    Relationship addRelationship(Element source, @Nonnull Element destination, String description, String detailedDescription, String technology, InteractionStyle interactionStyle, String[] tags, boolean createImpliedRelationships) {
         if (destination == null) {
             throw new IllegalArgumentException("The destination must be specified.");
         }
@@ -221,24 +211,31 @@ public final class Model implements PropertyHolder {
             throw new IllegalArgumentException("Relationships cannot be added between parents and children.");
         }
 
-        Relationship relationship = new Relationship(source, destination, description, detailedDescription, technology, interactionStyle, tags);
+        Relationship relationship = source.getEfferentRelationshipByTechnologyWith(destination, technology);
+        if (relationship == null) {
+            relationship = new Relationship(source, destination, description, technology, interactionStyle, tags);
 
-        if (addRelationship(relationship)) {
-
-            if (createImpliedRelationships) {
-                if
-                (
-                    (source instanceof CustomElement || source instanceof Person || source instanceof SoftwareSystem || source instanceof Container || source instanceof Component) &&
-                    (destination instanceof CustomElement || destination instanceof Person || destination instanceof SoftwareSystem || destination instanceof Container || destination instanceof Component)
-                ) {
-                    impliedRelationshipsStrategy.createImpliedRelationships(relationship);
-                }
+            if (!addRelationship(relationship)) {
+                // If adding relationship failed return null
+                relationship = null;
             }
-
-            return relationship;
+        } else {
+            relationship.addDescription(description);
+            relationship.addTags(tags);
         }
 
-        return null;
+        if (relationship != null && createImpliedRelationships) {
+            if
+            (
+                (source instanceof CustomElement || source instanceof Person || source instanceof SoftwareSystem || source instanceof Container || source instanceof Component) &&
+                (destination instanceof CustomElement || destination instanceof Person || destination instanceof SoftwareSystem || destination instanceof Container || destination instanceof Component)
+            ) {
+                // Create new implied relationship or update existing ones
+                impliedRelationshipsStrategy.createImpliedRelationships(relationship);
+            }
+        }
+
+        return relationship;
     }
 
     private boolean isChildOf(Element e1, Element e2) {
