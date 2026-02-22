@@ -5,6 +5,40 @@
 - Fixes https://github.com/structurizr/structurizr/issues/22 (Diagram-as-text plugin rendering (Mermaid) for Markdown docs not compatible for Windows line endings).
 - Adds perspective specific styles for elements and relationships.
 - Adds support for dynamic perspectives.
+- Adds a way to install themes when using `push`, `validate`, etc commands - see [Installing themes](https://docs.structurizr.com/server/diagrams/themes#installing-themes).
+- Removes `-themes` from the `export` command in favour of the above.
+
+### server
+
+- Changes the output from the `GET /api/workspace/<id>/branches` endpoint.
+- Fixes https://github.com/structurizr/structurizr/issues/34 (JSON endpoint produces text/plain instead of application/json).
+
+### branches
+
+- Adds a `-json` flag to enable JSON output.
+
+### create
+
+- Adds a `create` command to create a workspace on a Structurizr server.
+
+### delete
+
+- Adds the ability to delete a workspace (admin API key is required).
+- Confirmation prompt added.
+- Adds a `-force` flag to force deletion (non-interactive/quiet mode).
+
+### pull
+
+- Removes support for `-id *` in favour of making `-id` optional.
+- Adds a `-json` flag to enable JSON output (works only when pulling a single workspace).
+
+### inspect
+
+- Uses stdout rather than `log.info()`.
+
+### list
+
+- Uses stdout rather than `log.info()`.
 
 ## 2026.02.01
 

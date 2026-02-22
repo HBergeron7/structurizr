@@ -88,6 +88,7 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
     var currentFilter;
 
     var filter = {
+        id: 0,
         active: false,
         tags: [],
         perspective: undefined
@@ -977,7 +978,8 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
             self.zoomToWidthOrHeight();
         }
 
-        runFilter();
+        filter.id++;
+        runFilter(filter.id);
 
         // adjust any overlapping vertices, and bring all relationships to the front
         lines.forEach(function(line) {
@@ -1378,7 +1380,8 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
 
     this.showPerspective = function(perspective) {
         filter.perspective = perspective;
-        runFilter();
+        filter.id++;
+        runFilter(filter.id);
     };
 
     this.hasPerspective = function() {
@@ -1391,7 +1394,8 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
 
     this.clearPerspective = function() {
         filter.perspective = undefined;
-        runFilter();
+        filter.id++;
+        runFilter(filter.id);
     };
 
     function elementHasPerspective(element) {
@@ -1460,7 +1464,8 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
 
     this.setFilter = function(f) {
         filter = f;
-        runFilter();
+        filter.id++;
+        runFilter(filter.id);
     }
 
     this.getFilter = function() {
@@ -1469,7 +1474,8 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
 
     this.filterOff = function() {
         filter.active = false;
-        runFilter();
+        filter.id++;
+        runFilter(filter.id);
     }
 
     function elementMatchesFilter(element) {
@@ -1504,7 +1510,11 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
         }
     }
 
-    function runFilter() {
+    function runFilter(filterId) {
+        if (filterId !== filter.id) {
+            return;
+        }
+
         var itemsHidden = false;
         const hiddenOpacity = '0.1';
 
@@ -1599,12 +1609,12 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
             showBoundaries();
         }
 
-        if (refresh) {
+        if (refresh && filterId === filter.id) {
             const viewOrFilter = (currentFilter !== undefined ? currentFilter : currentView);
             const interval = getViewOrViewSetProperty(viewOrFilter, 'structurizr.perspective.interval', '60000');
 
             setTimeout(function () {
-                runFilter();
+                runFilter(filterId);
             }, interval);
         }
     }
@@ -5865,7 +5875,7 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
         hideAllLines('1.0');
         hideAllElements('1.0');
         unfadeAllElements();
-        runFilter();
+        runFilter(filter.id);
 
         if (this.currentViewIsDynamic()) {
             linesToAnimate = undefined;
