@@ -1,20 +1,18 @@
 package com.structurizr.command;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.structurizr.api.WorkspaceApiClient;
-import com.structurizr.api.WorkspaceBranches;
+import com.structurizr.api.AdminApiClient;
+import com.structurizr.api.WorkspaceMetadata;
 import org.apache.commons.cli.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import java.util.List;
+public class CreateCommand extends AbstractCommand {
 
-public class BranchesCommand extends AbstractCommand {
+    private static final Log log = LogFactory.getLog(CreateCommand.class);
 
-    private static final Log log = LogFactory.getLog(BranchesCommand.class);
-
-    public BranchesCommand() {
-        super("branches");
+    public CreateCommand() {
+        super("create");
     }
 
     public void run(String... args) throws Exception {
@@ -24,11 +22,7 @@ public class BranchesCommand extends AbstractCommand {
         option.setRequired(true);
         options.addOption(option);
 
-        option = new Option("id", "workspaceId", true, "Workspace ID");
-        option.setRequired(true);
-        options.addOption(option);
-
-        option = new Option("key", "apiKey", true, "Workspace API key");
+        option = new Option("key", "apiKey", true, "Admin API key");
         option.setRequired(false);
         options.addOption(option);
 
@@ -39,7 +33,6 @@ public class BranchesCommand extends AbstractCommand {
         CommandLineParser commandLineParser = new DefaultParser();
 
         String apiUrl = "";
-        long workspaceId = 1;
         String apiKey = "";
         boolean json = false;
 
@@ -47,7 +40,6 @@ public class BranchesCommand extends AbstractCommand {
             CommandLine cmd = commandLineParser.parse(options, args);
 
             apiUrl = cmd.getOptionValue("apiUrl");
-            workspaceId = Long.parseLong(cmd.getOptionValue("workspaceId"));
             apiKey = cmd.getOptionValue("apiKey");
             json = cmd.hasOption("json");
         } catch (ParseException e) {
@@ -56,19 +48,26 @@ public class BranchesCommand extends AbstractCommand {
             System.exit(1);
         }
 
-        WorkspaceApiClient client = new WorkspaceApiClient(apiUrl, workspaceId, apiKey);
+        log.debug("Creating workspace at " + apiUrl);
+
+        AdminApiClient client = new AdminApiClient(apiUrl, apiKey);
         client.setAgent(getAgent());
-        WorkspaceBranches branches = client.getBranches();
+
+        WorkspaceMetadata workspace = client.createWorkspace();
 
         if (json) {
             ObjectMapper mapper = new ObjectMapper();
-            System.out.println(mapper.writeValueAsString(branches));
+            System.out.println(mapper.writeValueAsString(workspace));
         } else {
-            log.info("Getting branches for workspace " + workspaceId + " at " + apiUrl);
-            for (String branch : branches.getBranches()) {
-                log.info(" - " + branch);
-            }
+            log.info("Workspace created:");
+            log.info(" - ID: " + workspace.getId());
+            log.info(" - Name: " + workspace.getName());
+            log.info(" - Description: " + workspace.getDescription());
+            log.info(" - API key: " + workspace.getApiKey());
+            log.info(" - URL: " + apiUrl.substring(0, apiUrl.indexOf("/api")) + workspace.getPrivateUrl());
         }
+
+        System.exit(workspace != null ? 0 : 1);
     }
 
 }
