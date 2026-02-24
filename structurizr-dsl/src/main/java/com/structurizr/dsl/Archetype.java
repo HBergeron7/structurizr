@@ -11,7 +11,7 @@ final class Archetype implements PropertyHolder, PerspectivesHolder {
 
     private final String name;
     private final String type;
-    private String action;
+    private String action = "";
     private String metadata = "";
     private String description = "";
     private String technology = "";

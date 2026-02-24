@@ -17,6 +17,7 @@ final class ConsumesParser extends AbstractParser {
     Consumes parse(StaticStructureElementDslContext context, Tokens tokens, Archetype archetype) {
         StaticStructureElement element;
         String key;
+        int curIndex = KEY_INDEX;
 
         if (tokens.hasMoreThan(TAGS_INDEX)) {
             throw new RuntimeException("Too many tokens, expected: " + GRAMMAR);
@@ -24,8 +25,9 @@ final class ConsumesParser extends AbstractParser {
 
         element = context.getElement();
 
-        if (tokens.includes(KEY_INDEX)) {
-            key = tokens.get(KEY_INDEX);
+        if (tokens.includes(curIndex)) {
+            key = tokens.get(curIndex);
+            curIndex++;
         } else {
             throw new RuntimeException("Must provide key, expected: " + GRAMMAR);
         }
@@ -33,20 +35,23 @@ final class ConsumesParser extends AbstractParser {
         Consumes consumes = element.addConsumes(key);
 
         String technology = archetype.getTechnology();
-        if (tokens.includes(TECHNOLOGY_INDEX)) {
-            technology = tokens.get(TECHNOLOGY_INDEX);
+        if (technology.isEmpty() && tokens.includes(curIndex)) {
+            technology = tokens.get(curIndex);
+            curIndex++;
         }
         consumes.setTechnology(technology);
 
         String description = archetype.getDescription();
-        if (tokens.includes(DESCRIPTION_INDEX)) {
-            description = tokens.get(DESCRIPTION_INDEX);
+        if (description.isEmpty() && tokens.includes(curIndex)) {
+            description = tokens.get(curIndex);
+            curIndex++;
         }
         consumes.setDescription(description);
 
         List<String> tags = new ArrayList<>(archetype.getTags());
-        if (tokens.includes(TAGS_INDEX)) {
-            tags.addAll(Arrays.asList(tokens.get(TAGS_INDEX).split(",")));
+        if (tags.isEmpty() && tokens.includes(curIndex)) {
+            tags.addAll(Arrays.asList(tokens.get(curIndex).split(",")));
+            curIndex++;
         }
         consumes.addTags(tags);
 
