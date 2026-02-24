@@ -20,6 +20,11 @@ define(
                 "start" : [
                     {
                         token: 'structurizr_brace',
+                        regex: '({)$',
+                        next: 'start'
+                    },
+                    {
+                        token: 'structurizr_brace',
                         regex: '(})$',
                         next: 'start'
                     },

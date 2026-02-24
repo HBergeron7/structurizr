@@ -1,7 +1,7 @@
 <%@ include file="/WEB-INF/fragments/workspace/javascript.jspf" %>
 
 <script type="text/javascript" src="<c:url value="/static/js/structurizr-embed.js" />"></script>
-<script type="text/javascript" src="/static/js/ace-1.5.0.min.js" charset="utf-8"></script>
+<script type="text/javascript" src="/static/js/ace-1.43.6.min.js" charset="utf-8"></script>
 
 <%@ include file="/WEB-INF/fragments/tooltip.jspf" %>
 <%@ include file="/WEB-INF/fragments/progress-message.jspf" %>
