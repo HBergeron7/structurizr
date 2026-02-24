@@ -62,10 +62,10 @@ structurizr.ui.DetailsPanel = function() {
 
             totalProvides = totalProvides.concat(element.provides ? element.provides : []);
             totalConsumes = totalConsumes.concat(element.consumes ? element.consumes : []);
-            renderInterfaces(totalProvides, []); //totalConsumes);
+            detailsPanelInterfaces.html(generateInterfaces(totalProvides, []));
              
         } else {
-            renderInterfaces(element.provides, element.consumes);
+            detailsPanelInterfaces.html(generateInterfaces(element.provides, element.consumes));
         }
 
         renderMetadata(metadata);
@@ -198,7 +198,7 @@ structurizr.ui.DetailsPanel = function() {
 
         var sourceName = structurizr.util.escapeHtml(structurizr.workspace.findElementById(relationship.sourceId).name); 
         var destName = structurizr.util.escapeHtml(structurizr.workspace.findElementById(relationship.destinationId).name);
-        detailsPanelName.html(sourceName + '<img src="/static/bootstrap-icons/arrow-right-short.svg" />' + destName);
+        detailsPanelName.html('<div style="text-align: center;">' + sourceName + '</div><img src="/static/bootstrap-icons/arrow-right-short.svg" /><div style="text-align: center;">' + destName + '</div>');
         detailsPanelDescription.html((relationshipInView.order ? relationshipInView.order + ': ' : '') + relationshipSummary);
 
         var metadata = {};
@@ -213,7 +213,7 @@ structurizr.ui.DetailsPanel = function() {
                 impliedHtml += sourceName + '<img src="/static/bootstrap-icons/arrow-right-short.svg" />' + destName + '<br>';
             });
 
-            metadata["Implied by"] = impliedHtml;
+            //metadata["Implied by"] = impliedHtml;
         } 
         metadata["Technology"] = relationship.technology ? structurizr.util.escapeHtml(relationship.technology) : 'Unknown';
         if (relationship.url) { 
@@ -222,7 +222,12 @@ structurizr.ui.DetailsPanel = function() {
         renderMetadata(metadata);
 
         // TODO: loop over linked relationships and cleanup 'detailedDescription'
-        detailsPanelDetails.html(relationship.detailedDescription ? relationship.detailedDescription : '');
+        //detailsPanelDetails.html(relationship.detailedDescription ? relationship.detailedDescription : '');
+        var relationHtml = generateRelationshipDetails(relationship);
+        if (relationHtml.length > 0) {
+            relationHtml = '<div class="accordion accordion-flush" id="accordionDetails">' + relationHtml + '</div>';
+        }
+        detailsPanelDetails.html(relationHtml);
 
         if (perspective === undefined) {
             var tagsHtml = '';
@@ -382,7 +387,85 @@ structurizr.ui.DetailsPanel = function() {
         }
     }
 
-    function renderInterfaces(provides, consumes) {
+    //function renderRelationshipDetails(relationship) {
+    //    var detailsHtml = '';
+    //    var count = 0;
+    //    
+    //    if (relationship !== undefined) {
+    //        count++;
+    //        var value = details[key];
+    //        value = md.render(value);
+
+    //        detailsHtml += '<div class="accordion-item">';
+    //        detailsHtml += '<h2 class="accordion-header">';
+    //        detailsHtml += '<button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse' + count + '" aria-expanded="false" aria-controls="flush-collapse' + count + '">';
+    //        detailsHtml += structurizr.util.escapeHtml(key);
+    //        detailsHtml += '</button>';
+    //        detailsHtml += '</h2>';
+    //        detailsHtml += '<div id="flush-collapse' + count + '" class="accordion-collapse collapse show">';
+    //        detailsHtml += '<div class="accordion-body">' + value + '</div>';
+    //        detailsHtml += '</div>';
+    //        detailsHtml += '</div>';
+    //    }
+
+    //    if (detailsHtml.length > 0) {
+    //        detailsPanelDetails.html('<div class="accordion accordion-flush" id="accordionDetails">' + detailsHtml + '</div>');
+    //    } else {
+    //        detailsPanelDetails.html('');
+    //    }
+
+    //}
+
+    function generateRelationshipDetails(relationship) {
+        var detailsHtml = '';
+       
+        var source = structurizr.workspace.findElementById(relationship.sourceId);
+        var destination = structurizr.workspace.findElementById(relationship.destinationId);
+
+        var provides = [];
+        var consumes = [];
+
+        if (destination.provides !== undefined) {
+            destination.provides.forEach(function (p) {
+                if (p.linkedRelationshipIdList !== undefined && p.linkedRelationshipIdList.includes(relationship.id)) {
+                    provides.push(p);
+                }
+            });
+        }
+
+        if (source.consumes !== undefined) {
+            source.consumes.forEach(function (c) {
+                if (c.linkedRelationshipIdList !== undefined && c.linkedRelationshipIdList.includes(relationship.id)) {
+                    consumes.push(c);
+                }
+            });
+        }
+        detailsHtml = generateInterfaces(provides, consumes);
+        relationHtml = '';
+
+        if (detailsHtml.length > 0) {
+            relationHtml += '<div class="accordion-item">';
+            relationHtml += '<h2 class="accordion-header">';
+            relationHtml += '<button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#rel-collapse' + relationship.id + '" aria-expanded="false" aria-controls="rel-collapse' + relationship.id + '">';
+            relationHtml += structurizr.util.escapeHtml(source.name) + ' > ' + structurizr.util.escapeHtml(destination.name);
+            relationHtml += '</button>';
+            relationHtml += '</h2>';
+            relationHtml += '<div id="rel-collapse' + relationship.id + '" class="accordion-collapse collapse show">';
+            relationHtml += '<div class="accordion-body relationship-details-body">' + detailsHtml + '</div>';
+            relationHtml += '</div>';
+            relationHtml += '</div>';
+        }
+
+        if (relationship.linkedRelationshipIdList !== undefined) {
+            relationship.linkedRelationshipIdList.forEach(function (id) {
+               relationHtml += generateRelationshipDetails(structurizr.workspace.findRelationshipById(id));
+            });
+        }
+
+        return relationHtml;
+    }
+
+    function generateInterfaces(provides, consumes) {
         var interfacesHtml = '';
         var providesHtml = '';
         var consumesHtml = '';
@@ -395,12 +478,16 @@ structurizr.ui.DetailsPanel = function() {
                 providesHtml += '<div class="accordion-item">';
                 providesHtml += '<h2 class="accordion-header">';
                 providesHtml += '<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#provides' + count + '" aria-expanded="false" aria-controls="provides' + count + '">';
-                providesHtml += structurizr.util.escapeHtml(p.key);
+                providesHtml += (p.description ? structurizr.util.escapeHtml(p.description) : structurizr.util.escapeHtml(p.key));
                 providesHtml += '</button>';
                 providesHtml += '</h2>';
                 providesHtml += '<div id="provides' + count + '" class="accordion-collapse collapse">';
-                providesHtml += '<div class="accordion-body">' + (p.description ? structurizr.util.escapeHtml(p.description) : '');
+                providesHtml += '<div class="accordion-body">';
                 providesHtml += '<table style="width:100%;">';
+                providesHtml += '<tr>';
+                providesHtml += '<td style="width: auto; opacity: 65%;">Key</td>';
+                providesHtml += '<td style="width: 100%; padding-left: 1rem;">' + structurizr.util.escapeHtml(p.key) + '</td>';
+                providesHtml += '</tr>';
                 providesHtml += '<tr>';
                 providesHtml += '<td style="width: auto; opacity: 65%;">Action</td>';
                 providesHtml += '<td style="width: 100%; padding-left: 1rem;">' + structurizr.util.escapeHtml(p.action) + '</td>';
@@ -408,6 +495,7 @@ structurizr.ui.DetailsPanel = function() {
                 providesHtml += '<tr>';
                 providesHtml += '<td style="width: auto; opacity: 65%;">Technology</td>';
                 providesHtml += '<td style="width: 100%; padding-left: 1rem;">' + structurizr.util.escapeHtml(p.technology) + '</td>';
+                providesHtml += '</tr>';
                 if (p.properties !== undefined && Object.keys(p.properties).length > 0) {
                     providesHtml += '<tr>';
                     providesHtml += '<td style="width: auto; opacity: 65%;">Properties</td>';
@@ -419,7 +507,6 @@ structurizr.ui.DetailsPanel = function() {
                     providesHtml += '</td>';
                     providesHtml += '</tr>';
                 }
-                providesHtml += '</tr>';
                 providesHtml += '</table>';
                 providesHtml += '</div>';
                 providesHtml += '</div>';
@@ -437,20 +524,24 @@ structurizr.ui.DetailsPanel = function() {
         // Add consumes to interfaces
         if (consumes !== undefined) {
             consumes.forEach(function (c) {
-                console.log(c);
                 count++;
                 consumesHtml += '<div class="accordion-item">';
                 consumesHtml += '<h2 class="accordion-header">';
                 consumesHtml += '<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#consumes' + count + '" aria-expanded="false" aria-controls="consumes' + count + '">';
-                consumesHtml += structurizr.util.escapeHtml(c.key);
+                consumesHtml += (c.description ? structurizr.util.escapeHtml(c.description) : structurizr.util.escapeHtml(c.key));
                 consumesHtml += '</button>';
                 consumesHtml += '</h2>';
                 consumesHtml += '<div id="consumes' + count + '" class="accordion-collapse collapse">';
-                consumesHtml += '<div class="accordion-body">' + (c.description ? structurizr.util.escapeHtml(c.description) : '');
+                consumesHtml += '<div class="accordion-body">';
                 consumesHtml += '<table style="width:100%;">';
+                consumesHtml += '<tr>';
+                consumesHtml += '<td style="width: auto; opacity: 65%;">Key</td>';
+                consumesHtml += '<td style="width: 100%; padding-left: 1rem;">' + structurizr.util.escapeHtml(c.key) + '</td>';
+                consumesHtml += '</tr>';
                 consumesHtml += '<tr>';
                 consumesHtml += '<td style="width: auto; opacity: 65%;">Technology</td>';
                 consumesHtml += '<td style="width: 100%; padding-left: 1rem;">' + (c.technology ? structurizr.util.escapeHtml(c.technology) : 'Unknown') + '</td>';
+                consumesHtml += '</tr>';
                 if (c.properties !== undefined && Object.keys(c.properties).length > 0) {
                     consumesHtml += '<tr>';
                     consumesHtml += '<td style="width: auto; opacity: 65%;">Properties</td>';
@@ -462,7 +553,6 @@ structurizr.ui.DetailsPanel = function() {
                     consumesHtml += '</td>';
                     consumesHtml += '</tr>';
                 }
-                consumesHtml += '</tr>';
                 consumesHtml += '</table>';
                 consumesHtml += '</div>';
                 consumesHtml += '</div>';
@@ -477,7 +567,7 @@ structurizr.ui.DetailsPanel = function() {
             }
         }
 
-        detailsPanelInterfaces.html(interfacesHtml);
+        return interfacesHtml;
     }
 
     function isUrl(s) {
