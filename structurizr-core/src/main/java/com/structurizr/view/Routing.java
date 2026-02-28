@@ -4,6 +4,7 @@ public enum Routing {
 
     Direct,
     Curved,
-    Orthogonal
+    Orthogonal,
+    Metro
 
 }

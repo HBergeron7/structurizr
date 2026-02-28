@@ -139,6 +139,7 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
         scale: scale,
         interactive: editable,
         defaultConnectionPoint: { name: 'bbox' },
+        defaultAnchor: { name: 'perpendicular' },
         clickThreshold: 1,
         sorting: joint.dia.Paper.sorting.APPROX
     });
@@ -3748,13 +3749,19 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
     function setRouting(link, routing) {
         if (routing === undefined || routing === 'Direct') {
             link.unset('router');
-            link.connector('rounded');
+            link.connector('straight', {
+                cornerType: 'cubic',
+                cornerRadius: 20
+            });
         } else if (routing === 'Orthogonal') {
             link.set('router', { name: 'orthogonal' });
             link.connector('rounded');
         } else if (routing === 'Curved') {
             link.unset('router');
             link.connector('smooth');
+        } else if (routing === 'Metro') {
+            link.router('metro', {padding: 50});
+            link.connector('straight');
         }
     }
 
@@ -5974,11 +5981,14 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
             setRouting(highlightedLink.model, 'Curved');
 
         } else if (highlightedLink.model.relationshipInView.routing === 'Curved') {
-            highlightedLink.model.set('vertices', []);
             highlightedLink.model.relationshipInView.routing = 'Orthogonal';
             setRouting(highlightedLink.model, 'Orthogonal');
 
         } else if (highlightedLink.model.relationshipInView.routing === 'Orthogonal') {
+            highlightedLink.model.relationshipInView.routing = 'Metro';
+            setRouting(highlightedLink.model, 'Metro');
+
+        } else if (highlightedLink.model.relationshipInView.routing === 'Metro') {
             var relationship = structurizr.workspace.findRelationshipById(highlightedLink.model.relationshipInView.id);
             if (relationship) {
                 const configuration = structurizr.ui.findRelationshipStyle(relationship, darkMode);
