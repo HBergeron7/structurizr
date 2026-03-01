@@ -10,6 +10,7 @@ import com.structurizr.io.json.EncryptedJsonWriter;
 import com.structurizr.io.json.JsonReader;
 import com.structurizr.io.json.JsonWriter;
 import com.structurizr.model.IdGenerator;
+import com.structurizr.util.ImageUtils;
 import com.structurizr.util.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -20,8 +21,6 @@ import org.apache.hc.client5.http.classic.methods.HttpUriRequestBase;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
 import org.apache.hc.core5.http.ContentType;
-import org.apache.hc.core5.http.Header;
-import org.apache.hc.core5.http.HttpResponse;
 import org.apache.hc.core5.http.HttpStatus;
 import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.apache.hc.core5.http.io.entity.StringEntity;
@@ -31,7 +30,6 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.List;
 
 /**
  * A client for the Structurizr workspace API that allows you to get and put Structurizr workspaces in a JSON format.
@@ -457,6 +455,66 @@ public class WorkspaceApiClient extends AbstractApiClient {
             if (result.isSuccess()) {
                 return apiResponse.isSuccess();
             } else {
+                throw new StructurizrClientException(apiResponse.getMessage());
+            }
+        } catch (Exception e) {
+            log.error(e);
+            throw new StructurizrClientException(e);
+        }
+    }
+
+    /**
+     * Uploads an image to a workspace.
+     *
+     * @param image     an image, as a File
+     * @throws StructurizrClientException   if there are problems related to the network, authorization, etc
+     */
+    public void putImage(File image) throws StructurizrClientException {
+        if (image == null) {
+            throw new IllegalArgumentException("An image must be provided");
+        }
+
+        if (!image.exists()) {
+            throw new IllegalArgumentException("Image does not exist at " + image.getAbsolutePath());
+        }
+
+        String filename = image.getName();
+        String base64DataUri;
+
+        try {
+            base64DataUri = ImageUtils.getImageAsDataUri(image);
+        } catch (IOException e) {
+            throw new StructurizrClientException(e);
+        }
+
+        if (!ImageUtils.isSupportedDataUri(base64DataUri)) {
+            throw new IllegalArgumentException(filename + " is not a supported image format");
+        }
+
+        try (CloseableHttpClient httpClient = HttpClients.createSystem()) {
+            HttpPut httpPut;
+            if (StringUtils.isNullOrEmpty(branch) || branch.equalsIgnoreCase(MAIN_BRANCH)) {
+                httpPut = new HttpPut(url + WORKSPACE_PATH + "/" + workspaceId + "/images/" + filename);
+            } else {
+                httpPut = new HttpPut(url + WORKSPACE_PATH + "/" + workspaceId + "/branch/" + branch + "/images/" + filename);
+            }
+
+            StringEntity stringEntity = new StringEntity(base64DataUri, ContentType.TEXT_PLAIN);
+            httpPut.setEntity(stringEntity);
+            addHeaders(httpPut, ContentType.TEXT_PLAIN.toString());
+
+            debugRequest(httpPut, EntityUtils.toString(stringEntity));
+
+            log.debug("Putting image to workspace with ID " + workspaceId);
+            HttpClientResult result = httpClient.execute(httpPut, response -> {
+                String json = EntityUtils.toString(response.getEntity());
+                debugResponse(response, json);
+
+                return new HttpClientResult(response.getCode() == HttpStatus.SC_OK, json);
+            });
+
+            if (!result.isSuccess()) {
+                ApiResponse apiResponse = ApiResponse.parse(result.getContent());
                 throw new StructurizrClientException(apiResponse.getMessage());
             }
         } catch (Exception e) {

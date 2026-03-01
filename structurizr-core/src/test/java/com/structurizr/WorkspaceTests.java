@@ -3,6 +3,8 @@ package com.structurizr;
 import com.structurizr.documentation.Decision;
 import com.structurizr.documentation.Format;
 import com.structurizr.model.*;
+import com.structurizr.view.RelationshipView;
+import com.structurizr.view.SystemContextView;
 import com.structurizr.view.SystemLandscapeView;
 import org.junit.jupiter.api.Test;
 
@@ -165,6 +167,22 @@ public class WorkspaceTests {
     }
 
     @Test
+    void remove_WhenAnInfrastructureNodeIsUsedInAView() {
+        Workspace workspace = new Workspace("Name", "Description");
+
+        DeploymentNode deploymentNode = workspace.getModel().addDeploymentNode("Deployment Node");
+        InfrastructureNode infrastructureNode = deploymentNode.addInfrastructureNode("Infrastructure Node");
+        workspace.getViews().createDeploymentView("key", "Description").add(infrastructureNode);
+        assertEquals(2, workspace.getModel().getElements().size());
+
+        workspace.remove(infrastructureNode);
+        assertEquals(2, workspace.getModel().getElements().size());
+
+        workspace.remove(deploymentNode);
+        assertEquals(2, workspace.getModel().getElements().size());
+    }
+
+    @Test
     void remove_WhenAnElementIsTheScopeOfAContainerView() {
         Workspace workspace = new Workspace("Name", "Description");
 
@@ -228,7 +246,7 @@ public class WorkspaceTests {
     @Test
     void trim_WhenAllElementsAreUnused() {
         Workspace workspace = new Workspace("Name", "Description");
-        workspace.getModel().setImpliedRelationshipsStrategy(new CreateImpliedRelationshipsUnlessSameRelationshipExistsStrategy());
+        workspace.getModel().setImpliedRelationshipsStrategy(new CreateImpliedRelationshipsUnlessAnyRelationshipExistsStrategy());
 
         CustomElement element = workspace.getModel().addCustomElement("Custom Element");
         Person user = workspace.getModel().addPerson("User");
@@ -237,19 +255,22 @@ public class WorkspaceTests {
         Container database = softwareSystem.addContainer("Database");
         Component component = webapp.addComponent("Component");
         user.uses(component, "uses");
-        webapp.uses(database, "uses");
+        component.uses(database, "uses");
 
         DeploymentNode live = workspace.getModel().addDeploymentNode("Live");
         DeploymentNode server1 = live.addDeploymentNode("Server 1");
         DeploymentNode server2 = live.addDeploymentNode("Server 2");
         ContainerInstance webappInstance = server1.add(webapp);
         ContainerInstance databaseInstance = server2.add(database);
+        InfrastructureNode firewall = live.addInfrastructureNode("Firewall");
+        webappInstance.uses(firewall, "", "");
+        firewall.uses(databaseInstance, "", "");
 
         DeploymentNode dev = workspace.getModel().addDeploymentNode("Dev");
         SoftwareSystemInstance softwareSystemInstance = dev.add(softwareSystem);
 
-        assertEquals(13, workspace.getModel().getElements().size());
-        assertEquals(5, workspace.getModel().getRelationships().size());
+        assertEquals(14, workspace.getModel().getElements().size());
+        assertEquals(8, workspace.getModel().getRelationships().size());
 
         workspace.trim();
         assertEquals(0, workspace.getModel().getElements().size());
@@ -298,6 +319,31 @@ public class WorkspaceTests {
         workspace.trim();
 
         assertEquals(0, a.getRelationships().size());
+        assertTrue(workspace.getModel().contains(a));
+        assertFalse(workspace.getModel().contains(b));
+    }
+
+    @Test
+    void trim_WhenAnImpliedRelationshipIsUsedInAView() {
+        Workspace workspace = new Workspace("Name");
+        Person user = workspace.getModel().addPerson("User");
+        SoftwareSystem softwareSystem = workspace.getModel().addSoftwareSystem("Software System");
+        Container container = softwareSystem.addContainer("Container");
+
+        workspace.getModel().setImpliedRelationshipsStrategy(new CreateImpliedRelationshipsUnlessAnyRelationshipExistsStrategy());
+        user.uses(container, "uses");
+        assertTrue(user.hasEfferentRelationshipWith(softwareSystem));
+
+        SystemContextView view = workspace.getViews().createSystemContextView(softwareSystem, "key");
+        view.addDefaultElements();
+
+        workspace.trim();
+
+        assertTrue(user.hasEfferentRelationshipWith(softwareSystem));
+        assertTrue(user.hasEfferentRelationshipWith(container));
+        assertTrue(workspace.getModel().contains(user));
+        assertTrue(workspace.getModel().contains(softwareSystem));
+        assertTrue(workspace.getModel().contains(container));
     }
 
     @Test
@@ -312,7 +358,7 @@ public class WorkspaceTests {
     }
 
     @Test
-    void removeRelationship() {
+    void removeRelationship_DoesNotRemoveTheRelationshipWhenItIsUsedInAView() {
         Workspace workspace = new Workspace("Name", "Description");
         SoftwareSystem a = workspace.getModel().addSoftwareSystem("A");
         SoftwareSystem b = workspace.getModel().addSoftwareSystem("B");
@@ -321,11 +367,55 @@ public class WorkspaceTests {
         SystemLandscapeView view = workspace.getViews().createSystemLandscapeView("key", "Description");
         view.addDefaultElements();
 
-        workspace.remove(relationship);
+        boolean result = workspace.remove(relationship);
 
+        assertFalse(result);
+        assertEquals(1, a.getRelationships().size());
+        assertTrue(a.hasEfferentRelationshipWith(b));
+        assertTrue(view.isRelationshipInView(relationship));
+    }
+
+    @Test
+    void removeRelationship_RemovesTheRelationshipWhenItIsNotUsedInAView() {
+        Workspace workspace = new Workspace("Name", "Description");
+        SoftwareSystem a = workspace.getModel().addSoftwareSystem("A");
+        SoftwareSystem b = workspace.getModel().addSoftwareSystem("B");
+        Relationship relationship = a.uses(b, "Uses");
+
+        SystemLandscapeView view = workspace.getViews().createSystemLandscapeView("key");
+        view.add(a);
+        view.add(b);
+        view.remove(relationship);
+
+        boolean result = workspace.remove(relationship);
+
+        assertTrue(result);
         assertEquals(0, a.getRelationships().size());
         assertFalse(a.hasEfferentRelationshipWith(b));
-        assertFalse(view.isRelationshipInView(relationship));
+    }
+
+    @Test
+    void removeRelationship_WhenALinkedRelationshipExistsAndIsUsedInAView() {
+        Workspace workspace = new Workspace("Name", "Description");
+        Person user = workspace.getModel().addPerson("User");
+        SoftwareSystem softwareSystem = workspace.getModel().addSoftwareSystem("Software System");
+        Container container = softwareSystem.addContainer("Container");
+
+        workspace.getModel().setImpliedRelationshipsStrategy(new CreateImpliedRelationshipsUnlessAnyRelationshipExistsStrategy());
+        Relationship relationship = user.uses(container, "Uses");
+
+        SystemLandscapeView view = workspace.getViews().createSystemLandscapeView("key", "Description");
+        view.addDefaultElements();
+
+        boolean result = workspace.remove(relationship);
+
+        assertFalse(result);
+        assertEquals(2, user.getRelationships().size());
+        assertTrue(user.hasEfferentRelationshipWith(softwareSystem));
+        assertTrue(user.hasEfferentRelationshipWith(container));
+
+        RelationshipView rv = view.getRelationships().iterator().next();
+        assertEquals(rv.getRelationship().getLinkedRelationshipId(), relationship.getId());
     }
 
 }

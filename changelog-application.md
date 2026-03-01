@@ -2,9 +2,8 @@
 
 ## unreleased
 
-- Fixes https://github.com/structurizr/structurizr/issues/22 (Diagram-as-text plugin rendering (Mermaid) for Markdown docs not compatible for Windows line endings).
-- Adds perspective specific styles for elements and relationships.
-- Adds support for dynamic perspectives.
+- Adds [perspective specific styles](https://docs.structurizr.com/dsl/cookbook/perspectives-static/) for elements and relationships.
+- Adds support for [dynamic perspectives](https://docs.structurizr.com/dsl/cookbook/perspectives-dynamic/).
 - Adds a way to install themes when using `push`, `validate`, etc commands - see [Installing themes](https://docs.structurizr.com/server/diagrams/themes#installing-themes).
 - Removes `-themes` from the `export` command in favour of the above.
 
@@ -12,6 +11,23 @@
 
 - Changes the output from the `GET /api/workspace/<id>/branches` endpoint.
 - Fixes https://github.com/structurizr/structurizr/issues/34 (JSON endpoint produces text/plain instead of application/json).
+- Adds a workspace size limit of 1MB (configurable via `structurizr.workspace.maxsize`).
+- Renames configuration property `structurizr.maxworkspaceversions` to `structurizr.workspace.maxversions`.
+- Documentation search results now link to subsections (https://github.com/structurizr/structurizr/issues/2).
+- Adds API endpoints to upload images to a workspace - `/api/workspace/{workspaceId}/images/{filename}` and `/api/workspace/{workspaceId}/branch/{branch}/images/{filename}`.
+
+### local
+
+- Adds a workspace size limit of 1MB (configurable via `structurizr.workspace.maxsize`).
+- Documentation search results now link to subsections (https://github.com/structurizr/structurizr/issues/2).
+
+### playground
+
+- Adds a workspace size limit of 1MB (configurable via `structurizr.workspace.maxsize`).
+
+### export
+
+- Diagrams can be bookmarked in static site exports by copying the URL (including the hash).
 
 ### branches
 
@@ -31,6 +47,11 @@
 
 - Removes support for `-id *` in favour of making `-id` optional.
 - Adds a `-json` flag to enable JSON output (works only when pulling a single workspace).
+
+### push
+
+- Adds a `-trim <true|false>` parameter to run `Workspace.trim()` before pushing the workspace.
+- Adds a `-image <file>` parameter to upload an image to a workspace.
 
 ### inspect
 

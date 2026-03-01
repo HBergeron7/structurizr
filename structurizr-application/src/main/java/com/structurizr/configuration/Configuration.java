@@ -242,13 +242,14 @@ public class Configuration {
         setDefault(DEBUG, FALSE);
         setDefault(NETWORK_TIMEOUT, DEFAULT_NETWORK_TIMEOUT_OF_SIXTY_SECONDS);
         setDefault(THEMES, getDataDirectory().getAbsolutePath() + File.separator + DEFAULT_THEMES_PATH + File.separator);
+        setDefault(MAX_WORKSPACE_SIZE, DEFAULT_MAX_WORKSPACE_SIZE);
 
         if (profile != Profile.Playground) {
             setDefault(AUTHENTICATION_IMPLEMENTATION, AUTHENTICATION_VARIANT_NONE);
             setDefault(DATA_STORAGE_IMPLEMENTATION, DATA_STORAGE_VARIANT_FILE);
             setDefault(SEARCH_IMPLEMENTATION, SEARCH_VARIANT_LUCENE);
             setDefault(CACHE_IMPLEMENTATION, CACHE_VARIANT_NONE);
-            setDefault(WORKSPACE_THREADS, DEFAULT_NUMBER_OF_THREADS);
+            setDefault(WORKSPACE_THREADS, DEFAULT_WORKSPACE_THREADS);
         }
 
         if (profile == Profile.Local) {

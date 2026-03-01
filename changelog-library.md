@@ -4,9 +4,17 @@
 
 ## structurizr-core
 
-- Normalises line endings when importing Markdown/AsciiDoc content (documentation and decisions).
-- Adds support for dynamic perspectives.
+- Normalises line endings when importing Markdown/AsciiDoc documentation and decisions (https://github.com/structurizr/structurizr/issues/22).
+- Adds validation that `structurizr.groupSeparator is a single character (https://github.com/structurizr/structurizr/issues/35).
+- Adds support for [dynamic perspectives](https://docs.structurizr.com/dsl/cookbook/perspectives-dynamic/).
 - Deprecates health checks in favour of dynamic perspectives.
+- Fixes https://github.com/structurizr/structurizr/issues/36 (Workspace.trim() removes infrastructureNode when only element in deploymentNode).
+- Fixes https://github.com/structurizr/structurizr/issues/37 (Workspace.trim() removes the origin of linked relationships).
+
+## structurizr-client
+
+- Removes deprecated Apache HttpClient usage (https://github.com/structurizr/structurizr/issues/31).
+- Adds `WorkspaceApiClient.putImage()` methods to upload an image to a workspace.
 
 ## structurizr-dsl
 
