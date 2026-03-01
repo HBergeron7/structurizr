@@ -30,6 +30,9 @@ public final class RelationshipView implements PropertyHolder, Comparable<Relati
     private Routing routing;
 
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
+    private Anchor anchor;
+
+    @JsonInclude(value = JsonInclude.Include.NON_NULL)
     private Boolean jump;
 
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
@@ -229,6 +232,24 @@ public final class RelationshipView implements PropertyHolder, Comparable<Relati
      */
     public void setRouting(Routing routing) {
         this.routing = routing;
+    }
+
+    /**
+     * Gets the anchor used when rendering this relationship.
+     *
+     * @return  a Anchor instance, or null if not explicitly set
+     */
+    public Anchor getAnchor() {
+        return anchor;
+    }
+
+    /**
+     * Sets the anchor used when rendering this relationship.
+     *
+     * @param anchor       a Anchor instance, or null to not explicitly set this property
+     */
+    public void setAnchor(Anchor anchor) {
+        this.anchor = anchor;
     }
 
     /**

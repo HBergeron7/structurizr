@@ -138,8 +138,8 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
         gridSize: gridSize,
         scale: scale,
         interactive: editable,
-        defaultConnectionPoint: { name: 'bbox' },
-        defaultAnchor: { name: 'perpendicular' },
+        defaultConnectionPoint: { name: 'boundary' },
+        //defaultAnchor: { name: 'perpendicular' },
         clickThreshold: 1,
         sorting: joint.dia.Paper.sorting.APPROX
     });
@@ -3576,6 +3576,11 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
                 routing = relationshipInView.routing;
             }
 
+            var anchor = 'Center';
+            if (relationshipInView.anchor !== undefined) {
+                anchor = relationshipInView.anchor;
+            }
+
             var jump = configuration.jump;
             if (relationshipInView.jump !== undefined) {
                 jump = relationshipInView.jump;
@@ -3688,7 +3693,17 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
                 }
             });
 
+            if (sourceBox.id == destinationBox.id) {
+                if (relationshipInView.routing === undefined) {
+                    routing = 'Orthogonal';
+                }
+                if (relationshipInView.anchor === undefined) {
+                    anchor = "Perpendicular"; 
+                }
+            }
+
             setRouting(link, routing);
+            setAnchor(link, anchor);
             setJump(link, jump, configuration.thickness);
 
             link.relationshipInView = relationshipInView;
@@ -3747,6 +3762,8 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
     }
 
     function setRouting(link, routing) {
+        console.log("Set Routing: " + routing);
+        console.log(link);
         if (routing === undefined || routing === 'Direct') {
             link.unset('router');
             link.connector('straight', {
@@ -3754,14 +3771,34 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
                 cornerRadius: 20
             });
         } else if (routing === 'Orthogonal') {
-            link.set('router', { name: 'orthogonal' });
+            link.router('orthogonal', {padding: 50});
             link.connector('rounded');
         } else if (routing === 'Curved') {
             link.unset('router');
             link.connector('smooth');
         } else if (routing === 'Metro') {
-            link.router('metro', {padding: 50});
+            link.router('metro', {padding: 100});
             link.connector('straight');
+        }
+    }
+
+    function setAnchor(link, anchor) {
+
+        console.log("SetAnchor: " + anchor);
+        console.log(link);
+
+        if (anchor === undefined || anchor === 'Center') {
+            link.source({id:link.source().id, anchor: {name: 'center'}});
+            link.target({id:link.target().id, anchor: {name: 'center'}});
+        } else if (anchor === 'ModelCenter') {
+            link.source({id:link.source().id, anchor: {name: 'modelCenter'}});
+            link.target({id:link.target().id, anchor: {name: 'modelCenter'}});
+        } else if (anchor === 'Perpendicular') { 
+            link.source({id:link.source().id, anchor: {name: 'perpendicular'}});
+            link.target({id:link.target().id, anchor: {name: 'perpendicular'}});
+        } else if (anchor === 'MidSide') {
+            link.source({id:link.source().id, anchor: {name: 'midSide'}});
+            link.target({id:link.target().id, anchor: {name: 'midSide'}});
         }
     }
 
@@ -6000,6 +6037,32 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
         fireWorkspaceChangedEvent();
     };
 
+    this.toggleAnchorOfHighlightedLink = function() {
+        
+        if (highlightedLink.model.relationshipInView.anchor === undefined) {
+            highlightedLink.model.relationshipInView.anchor = 'Center';
+            setAnchor(highlightedLink.model, 'Center');
+
+        } else if (highlightedLink.model.relationshipInView.anchor === 'Center') {
+            highlightedLink.model.relationshipInView.anchor = 'ModelCenter';
+            setAnchor(highlightedLink.model, 'ModelCenter');
+
+        } else if (highlightedLink.model.relationshipInView.anchor === 'ModelCenter') {
+            highlightedLink.model.relationshipInView.anchor = 'Perpendicular';
+            setAnchor(highlightedLink.model, 'Perpendicular');
+
+        } else if (highlightedLink.model.relationshipInView.anchor === 'Perpendicular') {
+            highlightedLink.model.relationshipInView.anchor = 'MidSide';
+            setAnchor(highlightedLink.model, 'MidSide');
+
+        } else if (highlightedLink.model.relationshipInView.anchor === 'MidSide') {
+            highlightedLink.model.relationshipInView.anchor = 'Center';
+            setAnchor(highlightedLink.model, 'Center');
+        }
+
+        fireWorkspaceChangedEvent();
+    };
+
     this.toggleJumpOfHighlightedLink = function() {
         var relationship = structurizr.workspace.findRelationshipById(highlightedLink.model.relationshipInView.id);
         if (relationship) {
@@ -7066,6 +7129,7 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
             var u = 117;
             var v = 118;
             var w = 119;
+            var x = 120;
 
             // if we got this far, now run the provided handler
             if (onKeyPressEventHandler) {

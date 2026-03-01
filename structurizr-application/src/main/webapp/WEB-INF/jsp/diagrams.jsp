@@ -761,6 +761,7 @@
             const u = 117;
             const v = 118;
             const w = 119;
+            const x = 120;
 
             if (e.which === comma) {
                 if (structurizr.diagram.currentViewIsDynamic() || structurizr.diagram.currentViewHasAnimation()) {
@@ -834,6 +835,12 @@
             } else if (e.which === r) {
                 if (structurizr.diagram.hasLinkHighlighted() && structurizr.diagram.isEditable()) {
                     structurizr.diagram.toggleRoutingOfHighlightedLink();
+                    e.preventDefault();
+                    return;
+                }
+            } else if (e.which === x) {
+                if (structurizr.diagram.hasLinkHighlighted() && structurizr.diagram.isEditable()) {
+                    structurizr.diagram.toggleAnchorOfHighlightedLink();
                     e.preventDefault();
                     return;
                 }

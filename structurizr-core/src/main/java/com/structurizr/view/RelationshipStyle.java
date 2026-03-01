@@ -36,6 +36,10 @@ public final class RelationshipStyle extends AbstractStyle {
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
     private Routing routing;
 
+    /** the anchor used when rendering lines */
+    @JsonInclude(value = JsonInclude.Include.NON_NULL)
+    private Anchor anchor;
+
     /** whether the line should jump over others */
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
     private Boolean jump;
@@ -137,6 +141,19 @@ public final class RelationshipStyle extends AbstractStyle {
 
     public RelationshipStyle routing(Routing routing) {
         setRouting(routing);
+        return this;
+    }
+
+    public Anchor getAnchor() {
+        return anchor;
+    }
+
+    public void setAnchor(Anchor anchor) {
+        this.anchor = anchor;
+    }
+
+    public RelationshipStyle anchor(Anchor anchor) {
+        setAnchor(anchor);
         return this;
     }
 

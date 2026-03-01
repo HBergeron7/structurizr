@@ -218,7 +218,7 @@ final class RelationshipStyleParser extends AbstractParser {
         RelationshipStyle style = context.getStyle();
 
         if (tokens.hasMoreThan(FIRST_PROPERTY_INDEX)) {
-            throw new RuntimeException("Too many tokens, expected: routing <direct|orthogonal|curved>");
+            throw new RuntimeException("Too many tokens, expected: routing <" + String.join("|", routings.keySet()) + ">");
         }
 
         if (tokens.includes(FIRST_PROPERTY_INDEX)) {
