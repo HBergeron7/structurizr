@@ -70,6 +70,7 @@ public final class StructurizrDslParser extends StructurizrDslTokens {
     );
 
     private Map<String, List<String>> patterns = new HashMap<>();
+    private Map<String, String> patternVariables = new HashMap<>();
     private String currentPatternIdentifier;
     private int patternContextCount = 0;
 
@@ -335,7 +336,13 @@ public final class StructurizrDslParser extends StructurizrDslTokens {
 
                     } else if (patterns.keySet().contains(tokens.get(0))) {
                         List<String> patternLines = patterns.get(tokens.get(0));
+
+                        patternVariables.clear();
+                        for (int iter = 1; iter < tokens.size(); iter++) {
+                            patternVariables.put("PVAR_" + iter, tokens.get(iter));
+                        }
                         parse(patternLines, new File("."), true, false);
+                        patternVariables.clear();
 
                     } else if (DslContext.CONTEXT_END_TOKEN.equals(tokens.get(0))) {
                         // When the model ends, evaluate all requirements in the model and create relationships
@@ -1560,6 +1567,10 @@ public final class StructurizrDslParser extends StructurizrDslTokens {
                 } else {
                     after = nameValuePair.getValue();
                 }
+            } else if (patternVariables.containsKey(name)) {
+
+                String value = patternVariables.get(name);
+                after = value;
             } else {
                 if (getFeatures().isEnabled(Features.ENVIRONMENT)) {
                     String environmentVariable = System.getenv().get(name);
