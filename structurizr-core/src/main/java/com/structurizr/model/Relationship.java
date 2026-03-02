@@ -115,7 +115,7 @@ public final class Relationship extends ModelItem {
 
     void setDescription(String description) {
         this.description = new LinkedHashSet<String>();
-        this.description.add(description);
+        this.description.addAll(Arrays.asList(description.split("/")));
     }
 
     /**
@@ -125,7 +125,7 @@ public final class Relationship extends ModelItem {
      *          or null if a technology is not specified
      */
     public String getTechnology() {
-        return technology;
+        return this.technology == null ? "" : this.technology;
     }
 
     public void setTechnology(String technology) {
