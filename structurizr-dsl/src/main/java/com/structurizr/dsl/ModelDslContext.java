@@ -25,6 +25,7 @@ final class ModelDslContext extends DslContext implements GroupableDslContext {
     protected String[] getPermittedTokens() {
         return new String[] {
                 StructurizrDslTokens.ARCHETYPES_TOKEN,
+                StructurizrDslTokens.PATTERNS_TOKEN,
                 StructurizrDslTokens.IDENTIFIERS_TOKEN,
                 StructurizrDslTokens.GROUP_TOKEN,
                 StructurizrDslTokens.PERSON_TOKEN,

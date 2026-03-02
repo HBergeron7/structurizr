@@ -69,6 +69,10 @@ public final class StructurizrDslParser extends StructurizrDslTokens {
             Map.entry(StructurizrDslTokens.RELATIONSHIP_TOKEN, new HashMap<>())
     );
 
+    private Map<String, List<String>> patterns = new HashMap<>();
+    private String currentPatternIdentifier;
+    private int patternContextCount = 0;
+
     private boolean dslPortable = true;
     private final List<String> dslSourceLines = new ArrayList<>();
     private Workspace workspace;
@@ -294,6 +298,44 @@ public final class StructurizrDslParser extends StructurizrDslTokens {
 
                     } else if (inContext(CommentDslContext.class)) {
                         // do nothing
+
+                    } else if (inContext(PatternsDslContext.class)) {
+                        // Store pattern tokens for later use
+                        if (shouldStartContext(tokens)) {
+                            patternContextCount++;
+                        } else if (DslContext.CONTEXT_END_TOKEN.equals(tokens.get(0))) {
+                            patternContextCount--;
+
+                            if (patternContextCount < 0)  {
+                                // no more patterns, close PatternsDslContext
+                                endContext();
+                            }
+                        }
+
+                        if (inContext(PatternsDslContext.class)) {
+                            if (currentPatternIdentifier == null) {
+                                if (identifier != null) {
+                                    currentPatternIdentifier = identifier;
+                                    List<String> patternStrList = new ArrayList<String>();
+                                    patternStrList.add(line.substring(line.indexOf(ASSIGNMENT_OPERATOR_TOKEN)+1));
+                                    patterns.put(identifier, patternStrList);
+                                } else {
+                                    throw new RuntimeException("Must provide identifier for pattern.");
+                                }
+                            } else {
+                                List<String> patternStrList = patterns.get(currentPatternIdentifier);
+                                patternStrList.add(line);
+                            }
+
+                            // End of current pattern
+                            if (patternContextCount == 0) {
+                                currentPatternIdentifier = null;
+                            }
+                        }
+
+                    } else if (patterns.keySet().contains(tokens.get(0))) {
+                        List<String> patternLines = patterns.get(tokens.get(0));
+                        parse(patternLines, new File("."), true, false);
 
                     } else if (DslContext.CONTEXT_END_TOKEN.equals(tokens.get(0))) {
                         // When the model ends, evaluate all requirements in the model and create relationships
@@ -807,6 +849,9 @@ public final class StructurizrDslParser extends StructurizrDslTokens {
                     } else if (ARCHETYPES_TOKEN.equalsIgnoreCase(firstToken) && inContext(ModelDslContext.class)) {
                         startContext(new ArchetypesDslContext());
 
+                    } else if (PATTERNS_TOKEN.equalsIgnoreCase(firstToken) && inContext(ModelDslContext.class)) {
+                        startContext(new PatternsDslContext());
+
                     } else if (isElementKeywordOrArchetype(firstToken, GROUP_TOKEN) && inContext(ArchetypesDslContext.class)) {
                         Archetype archetype = new Archetype(identifier, GROUP_TOKEN);
                         extendArchetype(archetype, firstToken);
@@ -825,7 +870,6 @@ public final class StructurizrDslParser extends StructurizrDslTokens {
                         Archetype archetype = new Archetype(identifier, PERSON_TOKEN);
                         extendArchetype(archetype, firstToken);
                         addArchetype(archetype);
-
 
                         if (shouldStartContext(tokens)) {
                             startContext(new PersonArchetypeDslContext(archetype));
@@ -1241,7 +1285,7 @@ public final class StructurizrDslParser extends StructurizrDslTokens {
                             startContext(new DynamicViewRelationshipContext(relationshipView));
                         }
                     } else if (MERGE_VIEW_TOKEN.equalsIgnoreCase(firstToken) && inContext(ViewsDslContext.class)) {
-                        new MergeParser().parse(getContext(), workspace.getViews(), tokens); 
+                        new MergeParser().parse(getContext(), workspace.getViews(), tokens);
 
                     } else if (URL_TOKEN.equalsIgnoreCase(firstToken) && inContext(DynamicViewRelationshipContext.class)) {
                         new DynamicViewRelationshipParser().parseUrl(getContext(DynamicViewRelationshipContext.class), tokens.withoutContextStartToken());
