@@ -301,6 +301,7 @@ public final class RelationshipView implements PropertyHolder, Comparable<Relati
             setVertices(source.getVertices());
             setPosition(source.getPosition());
             setRouting(source.getRouting());
+            setAnchor(source.getAnchor());
             setJump(source.getJump());
         }
     }

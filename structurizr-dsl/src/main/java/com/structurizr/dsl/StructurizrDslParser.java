@@ -302,37 +302,29 @@ public final class StructurizrDslParser extends StructurizrDslTokens {
 
                     } else if (inContext(PatternsDslContext.class)) {
                         // Store pattern tokens for later use
-                        if (shouldStartContext(tokens)) {
-                            patternContextCount++;
-                        } else if (DslContext.CONTEXT_END_TOKEN.equals(tokens.get(0))) {
+                        if (DslContext.CONTEXT_END_TOKEN.equals(tokens.get(0))) {
                             patternContextCount--;
-
-                            if (patternContextCount < 0)  {
+                            // End of current pattern
+                            if (patternContextCount == 0) {
+                                currentPatternIdentifier = null;
+                            } else if (patternContextCount < 0) {
                                 // no more patterns, close PatternsDslContext
                                 endContext();
                             }
                         }
 
-                        if (inContext(PatternsDslContext.class)) {
-                            if (currentPatternIdentifier == null) {
-                                if (identifier != null) {
-                                    currentPatternIdentifier = identifier;
-                                    List<String> patternStrList = new ArrayList<String>();
-                                    patternStrList.add(line.substring(line.indexOf(ASSIGNMENT_OPERATOR_TOKEN)+1));
-                                    patterns.put(identifier, patternStrList);
-                                } else {
-                                    throw new RuntimeException("Must provide identifier for pattern.");
-                                }
-                            } else {
-                                List<String> patternStrList = patterns.get(currentPatternIdentifier);
-                                patternStrList.add(line);
-                            }
+                        if (currentPatternIdentifier != null) {
+                            patterns.get(currentPatternIdentifier).add(line);
+                        }
 
-                            // End of current pattern
-                            if (patternContextCount == 0) {
-                                currentPatternIdentifier = null;
+                        if (shouldStartContext(tokens)) {
+                            patternContextCount++;
+                            if (currentPatternIdentifier == null) {
+                                currentPatternIdentifier = tokens.withoutContextStartToken().get(0);
+                                patterns.put(currentPatternIdentifier, new ArrayList<String>());
                             }
                         }
+
 
                     } else if (patterns.keySet().contains(tokens.get(0))) {
                         List<String> patternLines = patterns.get(tokens.get(0));
