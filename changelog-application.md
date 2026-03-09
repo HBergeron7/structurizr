@@ -1,11 +1,11 @@
 # Changelog
 
-## unreleased
+## 2026.03.06
 
 - Adds [perspective specific styles](https://docs.structurizr.com/dsl/cookbook/perspectives-static/) for elements and relationships.
 - Adds support for [dynamic perspectives](https://docs.structurizr.com/dsl/cookbook/perspectives-dynamic/).
 - Adds a way to install themes when using `push`, `validate`, etc commands - see [Installing themes](https://docs.structurizr.com/server/diagrams/themes#installing-themes).
-- Removes `-themes` from the `export` command in favour of the above.
+- Removes `-themes` parameter from the `export` command in favour of the above.
 
 ### server
 
@@ -15,11 +15,13 @@
 - Renames configuration property `structurizr.maxworkspaceversions` to `structurizr.workspace.maxversions`.
 - Documentation search results now link to subsections (https://github.com/structurizr/structurizr/issues/2).
 - Adds API endpoints to upload images to a workspace - `/api/workspace/{workspaceId}/images/{filename}` and `/api/workspace/{workspaceId}/branch/{branch}/images/{filename}`.
+- Fixes https://github.com/structurizr/structurizr/issues/40 (Diagram thumbnails rendered very small when using structurizr local with Firefox).
 
 ### local
 
 - Adds a workspace size limit of 1MB (configurable via `structurizr.workspace.maxsize`).
 - Documentation search results now link to subsections (https://github.com/structurizr/structurizr/issues/2).
+- Fixes https://github.com/structurizr/structurizr/issues/40 (Diagram thumbnails rendered very small when using structurizr local with Firefox). 
 
 ### playground
 
