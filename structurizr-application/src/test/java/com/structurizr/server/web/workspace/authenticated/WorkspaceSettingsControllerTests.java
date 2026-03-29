@@ -3,7 +3,7 @@ package com.structurizr.server.web.workspace.authenticated;
 import com.structurizr.configuration.StructurizrProperties;
 import com.structurizr.server.component.workspace.WorkspaceComponentException;
 import com.structurizr.server.domain.WorkspaceMetadata;
-import com.structurizr.server.web.ControllerTestsBase;
+import com.structurizr.server.web.AbstractTestsBase;
 import com.structurizr.server.web.MockWorkspaceComponent;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -13,7 +13,7 @@ import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class WorkspaceSettingsControllerTests extends ControllerTestsBase {
+public class WorkspaceSettingsControllerTests extends AbstractTestsBase {
 
     private WorkspaceSettingsController controller;
     private ModelMap model;
@@ -26,7 +26,7 @@ public class WorkspaceSettingsControllerTests extends ControllerTestsBase {
 
     @Test
     void showAuthenticatedWorkspaceSettings_ReturnsThe404Page_WhenTheWorkspaceDoesNotExist()  {
-        disableAuthentication();
+        configureAsServerWithAuthenticationDisabled();
 
         controller.setWorkspaceComponent(new MockWorkspaceComponent() {
             @Override
@@ -41,7 +41,7 @@ public class WorkspaceSettingsControllerTests extends ControllerTestsBase {
 
     @Test
     void showAuthenticatedWorkspaceSettings_ReturnsTheWorkspaceSettingsPage_WhenAuthenticationIsDisabled()  {
-        disableAuthentication();
+        configureAsServerWithAuthenticationDisabled();
 
         final WorkspaceMetadata workspaceMetaData = new WorkspaceMetadata(1);
         controller.setWorkspaceComponent(new MockWorkspaceComponent() {
@@ -67,7 +67,7 @@ public class WorkspaceSettingsControllerTests extends ControllerTestsBase {
 
     @Test
     void showAuthenticatedWorkspaceSettings_ReturnsTheWorkspaceSettingsPage_WhenAuthenticationIsEnabled_AdminPermission()  {
-        enableAuthentication();
+        configureAsServerWithAuthenticationEnabled();
         setUser("write@example.com");
 
         final WorkspaceMetadata workspaceMetaData = new WorkspaceMetadata(1);
@@ -98,7 +98,7 @@ public class WorkspaceSettingsControllerTests extends ControllerTestsBase {
     void showAuthenticatedWorkspaceSettings_ReturnsTheWorkspaceSettingsPage_WhenAuthenticationIsEnabled_WritePermission()  {
         Properties properties = new Properties();
         properties.setProperty(StructurizrProperties.ADMIN_USERS_AND_ROLES, "admin@example.com");
-        enableAuthentication(properties);
+        configureAsServerWithAuthenticationEnabled(properties);
         setUser("write@example.com");
 
         final WorkspaceMetadata workspaceMetaData = new WorkspaceMetadata(1);
@@ -127,7 +127,7 @@ public class WorkspaceSettingsControllerTests extends ControllerTestsBase {
 
     @Test
     void showAuthenticatedWorkspaceSettings_ReturnsThe404Page_WhenAuthenticationIsEnabled_ReadPermission()  {
-        enableAuthentication();
+        configureAsServerWithAuthenticationEnabled();
         setUser("read@example.com");
 
         final WorkspaceMetadata workspaceMetaData = new WorkspaceMetadata(1);

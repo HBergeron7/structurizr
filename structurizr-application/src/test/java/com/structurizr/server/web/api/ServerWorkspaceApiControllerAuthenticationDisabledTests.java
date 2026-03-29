@@ -7,7 +7,7 @@ import com.structurizr.server.component.workspace.WorkspaceBranch;
 import com.structurizr.server.component.workspace.WorkspaceComponentException;
 import com.structurizr.server.component.workspace.WorkspaceVersion;
 import com.structurizr.server.domain.WorkspaceMetadata;
-import com.structurizr.server.web.ControllerTestsBase;
+import com.structurizr.server.web.AbstractTestsBase;
 import com.structurizr.server.web.MockHttpServletRequest;
 import com.structurizr.server.web.MockWorkspaceComponent;
 import com.structurizr.util.DateUtils;
@@ -21,7 +21,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class ServerWorkspaceApiControllerAuthenticationDisabledTests extends ControllerTestsBase {
+public class ServerWorkspaceApiControllerAuthenticationDisabledTests extends AbstractTestsBase {
 
     private ServerWorkspaceApiController controller;
     private final MockHttpServletRequest request = new MockHttpServletRequest();
@@ -31,7 +31,7 @@ public class ServerWorkspaceApiControllerAuthenticationDisabledTests extends Con
         controller = new ServerWorkspaceApiController();
         controller.setWorkspaceComponent(new MockWorkspaceComponent() {});
 
-        disableAuthentication();
+        configureAsServerWithAuthenticationDisabled();
     }
 
     @Test
@@ -256,7 +256,7 @@ public class ServerWorkspaceApiControllerAuthenticationDisabledTests extends Con
 
         ApiResponse apiResponse = controller.unlockWorkspace(1, "user2@example.com", "agent", "");
 
-        assertEquals("Could not unlock workspace", apiResponse.getMessage());
+        assertEquals("Workspace is not locked by user2@example.com", apiResponse.getMessage());
         assertTrue(workspaceMetaData.isLockedBy("user1@example.com", "agent"));
     }
 

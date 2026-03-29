@@ -1,5 +1,30 @@
 # Changelog
 
+## unreleased
+
+### local
+
+- Fixes https://github.com/structurizr/structurizr/issues/51 (window.location.hash not scrolled to on refresh).
+- Adds support for Markdown footnotes (https://github.com/structurizr/structurizr/issues/38).
+
+### server
+
+- Fixes https://github.com/structurizr/structurizr/issues/51 (window.location.hash not scrolled to on refresh).
+- Adds support for Markdown footnotes (https://github.com/structurizr/structurizr/issues/38).
+
+### pull
+
+- Don't create archive versions of workspace.
+
+### export
+
+- Adds support for `export -format png|svg -url <url>` - see https://docs.structurizr.com/export
+- Adds support for `export -format png|svg -workspace <file>` - see https://docs.structurizr.com/export
+
+### generate
+
+- Adds a `generate system-landscape` command - see https://docs.structurizr.com/generate.
+
 ## 2026.03.06
 
 - Adds [perspective specific styles](https://docs.structurizr.com/dsl/cookbook/perspectives-static/) for elements and relationships.

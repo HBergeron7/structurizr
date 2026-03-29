@@ -2,7 +2,7 @@ package com.structurizr.server.web.workspace.authenticated;
 
 import com.structurizr.server.component.workspace.WorkspaceComponentException;
 import com.structurizr.server.domain.WorkspaceMetadata;
-import com.structurizr.server.web.ControllerTestsBase;
+import com.structurizr.server.web.AbstractTestsBase;
 import com.structurizr.server.web.MockWorkspaceComponent;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -13,7 +13,7 @@ import java.util.Base64;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 
-public class DecisionsControllerTests extends ControllerTestsBase {
+public class DecisionsControllerTests extends AbstractTestsBase {
 
     private DecisionsController controller;
     private ModelMap model;
@@ -26,7 +26,7 @@ public class DecisionsControllerTests extends ControllerTestsBase {
 
     @Test
     void showAuthenticatedDecisions_ReturnsTheDecisionsPageForSoftwareSystem()  {
-        disableAuthentication();
+        configureAsServerWithAuthenticationDisabled();
 
         final WorkspaceMetadata workspaceMetaData = new WorkspaceMetadata(1);
 
@@ -53,7 +53,7 @@ public class DecisionsControllerTests extends ControllerTestsBase {
 
     @Test
     void showAuthenticatedDecisions_ReturnsTheDecisionsPageForContainer()  {
-        disableAuthentication();
+        configureAsServerWithAuthenticationDisabled();
 
         final WorkspaceMetadata workspaceMetaData = new WorkspaceMetadata(1);
 
@@ -80,7 +80,7 @@ public class DecisionsControllerTests extends ControllerTestsBase {
 
     @Test
     void showAuthenticatedDecisions_ReturnsTheDecisionsPageForComponent()  {
-        disableAuthentication();
+        configureAsServerWithAuthenticationDisabled();
 
         final WorkspaceMetadata workspaceMetaData = new WorkspaceMetadata(1);
 

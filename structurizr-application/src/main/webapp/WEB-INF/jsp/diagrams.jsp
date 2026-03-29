@@ -243,6 +243,7 @@
         structurizr.diagram.onViewChanged(viewChanged);
         structurizr.diagram.onAnimationStarted(animationStarted);
         structurizr.diagram.onAnimationStopped(animationStopped);
+
         structurizr.scripting = new function() {
 
             this.isDiagramRendered = function() {
@@ -250,6 +251,7 @@
             };
 
             this.exportCurrentDiagramToPNG = function(options, callback) {
+                console.log("Deprecated - use structurizr.scripting.exportViews() instead");
                 if (options === undefined) {
                     options = {};
                 }
@@ -266,10 +268,12 @@
             };
 
             this.exportCurrentDiagramKeyToPNG = function(callback) {
+                console.log("Deprecated - use structurizr.scripting.exportViews() instead");
                 return structurizr.diagram.exportCurrentDiagramKeyToPNG(callback);
             };
 
             this.exportCurrentDiagramToSVG = function(options) {
+                console.log("Deprecated - use structurizr.scripting.exportViews() instead");
                 if (options === undefined) {
                     options = {};
                 }
@@ -282,7 +286,12 @@
             };
 
             this.exportCurrentDiagramKeyToSVG = function() {
+                console.log("Deprecated - use structurizr.scripting.exportViews() instead");
                 return structurizr.diagram.exportCurrentDiagramKeyToSVG();
+            };
+
+            this.exportViews = function(views, options, viewCallback, finishedCallback) {
+                structurizr.diagram.exportViews(views, options, viewCallback, finishedCallback);
             };
 
             this.getViews = function() {
@@ -310,12 +319,22 @@
                 return structurizr.diagram.getCurrentViewOrFilter();
             }
 
-            this.changeView = function(viewKey) {
+            this.changeView = function(viewKey, callback) {
                 const view = structurizr.workspace.findViewByKey(viewKey);
                 if (view) {
-                    changeView(view);
+                    changeView(view, callback);
                 } else {
                     throw 'A view with the key "' + viewKey + '" could not be found.';
+                }
+            };
+
+            this.setDarkMode = function(bool) {
+                if (bool) {
+                    structurizr.ui.setRenderingMode(structurizr.ui.RENDERING_MODE_DARK);
+                    structurizr.diagram.setDarkMode(true);
+                } else {
+                    structurizr.ui.setRenderingMode(structurizr.ui.RENDERING_MODE_LIGHT);
+                    structurizr.diagram.setDarkMode(false);
                 }
             };
 

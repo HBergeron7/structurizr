@@ -8,7 +8,7 @@ import com.structurizr.server.component.workspace.WorkspaceBranch;
 import com.structurizr.server.component.workspace.WorkspaceComponentException;
 import com.structurizr.server.component.workspace.WorkspaceVersion;
 import com.structurizr.server.domain.WorkspaceMetadata;
-import com.structurizr.server.web.ControllerTestsBase;
+import com.structurizr.server.web.AbstractTestsBase;
 import com.structurizr.server.web.MockWorkspaceComponent;
 import com.structurizr.util.DateUtils;
 import com.structurizr.util.ImageUtils;
@@ -26,7 +26,7 @@ import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class ServerWorkspaceApiControllerAuthenticationEnabledTests extends ControllerTestsBase {
+public class ServerWorkspaceApiControllerAuthenticationEnabledTests extends AbstractTestsBase {
 
     private ServerWorkspaceApiController controller;
     private WorkspaceMetadata workspaceMetadata;
@@ -48,7 +48,7 @@ public class ServerWorkspaceApiControllerAuthenticationEnabledTests extends Cont
             }
         });
 
-        enableAuthentication();
+        configureAsServerWithAuthenticationEnabled();
         clearUser();
     }
 
@@ -156,7 +156,7 @@ public class ServerWorkspaceApiControllerAuthenticationEnabledTests extends Cont
     void getWorkspace_ReturnsTheWorkspace_WhenTheApiKeyIsCorrectAndTheAdminApiKeyIsUsed() {
         Properties properties = new Properties();
         properties.setProperty(StructurizrProperties.API_KEY, new BCryptPasswordEncoder().encode("admin-1234567890"));
-        enableAuthentication(properties);
+        configureAsServerWithAuthenticationEnabled(properties);
 
         controller.setWorkspaceComponent(new MockWorkspaceComponent() {
             @Override
@@ -248,7 +248,7 @@ public class ServerWorkspaceApiControllerAuthenticationEnabledTests extends Cont
     void putWorkspace_PutsTheWorkspace_WhenTheApiKeyIsCorrectAndTheAdminApiKeyIsUsed() throws Exception {
         Properties properties = new Properties();
         properties.setProperty(StructurizrProperties.API_KEY, new BCryptPasswordEncoder().encode("admin-1234567890"));
-        enableAuthentication(properties);
+        configureAsServerWithAuthenticationEnabled(properties);
 
         Workspace workspace = new Workspace("Name", "Description");
         String json = WorkspaceUtils.toJson(workspace, false);

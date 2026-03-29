@@ -1,14 +1,13 @@
 package com.structurizr.command;
 
 import com.structurizr.Workspace;
-import com.structurizr.documentation.Documentable;
 import com.structurizr.export.*;
 import com.structurizr.export.mermaid.MermaidDiagramExporter;
 import com.structurizr.export.plantuml.C4PlantUMLExporter;
 import com.structurizr.export.plantuml.StructurizrPlantUMLExporter;
 import com.structurizr.export.websequencediagrams.WebSequenceDiagramsExporter;
 import com.structurizr.http.HttpClient;
-import com.structurizr.util.WorkspaceUtils;
+import com.structurizr.util.StringUtils;
 import com.structurizr.view.ColorScheme;
 import com.structurizr.view.ThemeUtils;
 import org.apache.commons.cli.*;
@@ -17,12 +16,8 @@ import org.apache.commons.logging.LogFactory;
 
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
-import java.util.Base64;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -41,6 +36,8 @@ public class ExportCommand extends AbstractCommand {
     private static final String WEBSEQUENCEDIAGRAMS_FORMAT = "websequencediagrams";
     private static final String MERMAID_FORMAT = "mermaid";
     private static final String STATIC_FORMAT = "static";
+    private static final String PNG_FORMAT = "png";
+    private static final String SVG_FORMAT = "svg";
     private static final String CUSTOM_FORMAT = "fqcn";
 
     private static final Map<String,Exporter> EXPORTERS = new HashMap<>();
@@ -74,7 +71,7 @@ public class ExportCommand extends AbstractCommand {
         Options options = new Options();
 
         Option option = new Option("w", "workspace", true, "Path or URL to the workspace JSON file/DSL file(s)");
-        option.setRequired(true);
+        option.setRequired(false);
         options.addOption(option);
 
         option = new Option("f", "format", true, String.format("Export format: %s[/%s|%s]|%s|%s|%s|%s|%s|%s", PLANTUML_FORMAT, PLANTUML_STRUCTURIZR_SUBFORMAT, PLANTUML_C4PLANTUML_SUBFORMAT, WEBSEQUENCEDIAGRAMS_FORMAT, MERMAID_FORMAT, JSON_FORMAT, THEME_FORMAT, STATIC_FORMAT, CUSTOM_FORMAT));
@@ -89,24 +86,112 @@ public class ExportCommand extends AbstractCommand {
         option.setRequired(false);
         options.addOption(option);
 
+        option = new Option("url", "url", true, "Structurizr diagram page URL (for PNG/SVG exports)");
+        option.setRequired(false);
+        options.addOption(option);
+
+        option = new Option("animation", "animation", true, "Animation: true|false");
+        option.setRequired(false);
+        options.addOption(option);
+
+        option = new Option("mode", "mode", true, "Rendering mode: light|dark (for PNG/SVG exports)");
+        option.setRequired(false);
+        options.addOption(option);
+
         CommandLineParser commandLineParser = new DefaultParser();
 
         String workspacePathAsString = null;
         File workspacePath = null;
         long workspaceId = 1;
         String format = "";
+        String mode = "";
+        String url = null;
+        boolean animation = false;
         String outputPath = null;
 
         try {
             CommandLine cmd = commandLineParser.parse(options, args);
 
             workspacePathAsString = cmd.getOptionValue("workspace");
-            format = cmd.getOptionValue("format");
+            format = cmd.getOptionValue("format").toLowerCase();
+            mode = cmd.getOptionValue("mode", "light").toLowerCase();
+            url = cmd.getOptionValue("url");
+            animation = Boolean.parseBoolean(cmd.getOptionValue("animation"));
             outputPath = cmd.getOptionValue("output");
-
         } catch (ParseException e) {
             log.error(e.getMessage());
             showHelp(options);
+            System.exit(1);
+        }
+
+        if (PNG_FORMAT.equals(format) || SVG_FORMAT.equals(format)) {
+            // check the build includes the Playwright exporter
+            PlaywrightExporter playwrightExporter = null;
+            try {
+                Class<?> clazz = Class.forName(PlaywrightExporter.class.getName() + "Impl");
+                playwrightExporter = (PlaywrightExporter)clazz.getDeclaredConstructor().newInstance();
+            } catch (ClassNotFoundException e) {
+                log.fatal("Exporting to PNG/SVG is not supported in this build");
+                System.exit(1);
+            }
+
+            if (StringUtils.isNullOrEmpty(workspacePathAsString) && StringUtils.isNullOrEmpty(url)) {
+                log.fatal("One of url or workspace must be provided");
+                System.exit(1);
+            }
+
+            ColorScheme colorScheme = null;
+            if (ColorScheme.Light.toString().equalsIgnoreCase(mode)) {
+                colorScheme = ColorScheme.Light;
+            } else if (ColorScheme.Dark.toString().equalsIgnoreCase(mode)) {
+                colorScheme = ColorScheme.Dark;
+            } else {
+                log.fatal("Invalid mode " + mode + " - expected light or dark");
+                System.exit(1);
+            }
+
+            if (!StringUtils.isNullOrEmpty(workspacePathAsString)) {
+                try {
+                    Workspace workspace = loadWorkspace(workspacePathAsString);
+                    File tempDir = Files.createTempDirectory("structurizr").toFile();
+                    tempDir.deleteOnExit();
+
+                    if (workspacePathAsString.startsWith("http://") || workspacePathAsString.startsWith("https://")) {
+                        workspacePath = new File(".");
+                    } else {
+                        workspacePath = new File(workspacePathAsString);
+                    }
+
+                    if (outputPath == null) {
+                        outputPath = new File(workspacePath.getCanonicalPath()).getParent();
+                    }
+
+                    File outputDir = new File(outputPath);
+                    outputDir.mkdirs();
+
+                    new StaticSiteExporter().run(workspace, tempDir);
+
+                    playwrightExporter.run("file://" + new File(tempDir, "index.html").getAbsolutePath(), format, colorScheme, animation, outputDir);
+                    return;
+                } catch (Exception e) {
+                    log.error(e.getMessage());
+                    System.exit(1);
+                }
+            } else {
+                if (outputPath == null) {
+                    outputPath = ".";
+                }
+
+                File outputDir = new File(outputPath);
+                outputDir.mkdirs();
+
+                playwrightExporter.run(url, format, colorScheme, animation, outputDir);
+                return;
+            }
+        }
+
+        if (StringUtils.isNullOrEmpty(workspacePathAsString)) {
+            log.fatal("The workspace path parameter must not be null or empty");
             System.exit(1);
         }
 
@@ -120,23 +205,23 @@ public class ExportCommand extends AbstractCommand {
             workspacePath = new File(workspacePathAsString);
         }
 
-        workspaceId = workspace.getId();
-
         if (outputPath == null) {
             outputPath = new File(workspacePath.getCanonicalPath()).getParent();
         }
-        
+
         File outputDir = new File(outputPath);
         outputDir.mkdirs();
 
+        workspaceId = workspace.getId();
+
         if (STATIC_FORMAT.equals(format)) {
-            generateStaticSite(workspace, outputDir);
+            new StaticSiteExporter().run(workspace, outputDir);
         } else {
             Exporter exporter = findExporter(format, workspacePath);
             if (exporter == null) {
-                log.info(" - unknown export format: " + format);
+                log.info("Unknown export format: " + format);
             } else {
-                log.info(" - exporting with " + exporter.getClass().getSimpleName());
+                log.info("Exporting with " + exporter.getClass().getSimpleName());
 
                 if (exporter instanceof DiagramExporter) {
                     HttpClient httpClient = new HttpClient();
@@ -145,10 +230,10 @@ public class ExportCommand extends AbstractCommand {
                     // load the themes so that the styles can be applied to the diagram exports
                     ThemeUtils.loadThemes(workspace, httpClient);
 
-                    DiagramExporter diagramExporter = (DiagramExporter) exporter;
+                    DiagramExporter diagramExporter = (DiagramExporter)exporter;
 
                     if (workspace.getViews().isEmpty()) {
-                        log.info(" - the workspace contains no views");
+                        log.error("The workspace contains no views");
                     } else {
                         Collection<Diagram> diagrams = diagramExporter.export(workspace);
 
@@ -189,68 +274,9 @@ public class ExportCommand extends AbstractCommand {
             }
         }
 
-        log.info(" - finished");
+        log.info("Finished");
     }
 
-    private void generateStaticSite(Workspace workspace, File outputDir) throws Exception {
-        ThemeUtils.inlineStylesUsedFromInstalledThemes(workspace);
-
-        log.info(" - writing static site to " + outputDir.getAbsolutePath());
-        writeStaticFile("static.html", outputDir, "index.html");
-
-        writeStaticFile("js/jquery-3.7.1.min.js", outputDir);
-        writeStaticFile("js/bootstrap-5.3.7.min.js", outputDir);
-        writeStaticFile("js/jointjs-Core-4.1.3.js", outputDir);
-        writeStaticFile("js/jointjs-DirectedGraph-4.1.3.min.js", outputDir);
-        writeStaticFile("js/dagre-1.1.8.js", outputDir);
-        writeStaticFile("js/graphlib-2.2.4.min.js", outputDir);
-        writeStaticFile("js/jointjs-DirectedGraph-4.1.3.min.js", outputDir);
-        writeStaticFile("js/structurizr.js", outputDir);
-        writeStaticFile("js/structurizr-util.js", outputDir);
-        writeStaticFile("js/structurizr-ui.js", outputDir);
-        writeStaticFile("js/structurizr-workspace.js", outputDir);
-        writeStaticFile("js/structurizr-diagram.js", outputDir);
-        writeStaticFile("js/structurizr-quick-navigation.js", outputDir);
-        writeStaticFile("js/structurizr-navigation.js", outputDir);
-        writeStaticFile("js/structurizr-tooltip.js", outputDir);
-        writeStaticFile("js/structurizr-embed.js", outputDir);
-
-        writeStaticFile("css/bootstrap-5.3.7.min.css", outputDir);
-        writeStaticFile("css/structurizr.css", outputDir);
-        writeStaticFile("css/structurizr-static.css", outputDir);
-        writeStaticFile("css/structurizr-static-dark.css", outputDir);
-
-        writeStaticFile("img/favicon.png", outputDir);
-        writeStaticFile("img/structurizr-banner-light.png", outputDir);
-        writeStaticFile("img/structurizr-banner-dark.png", outputDir);
-
-        // clear all documentation - this isn't supported by the static site
-        workspace.getDocumentation().clear();
-        workspace.getModel().getElements().stream().filter(e -> e instanceof Documentable).map(e -> (Documentable)e).forEach(e -> e.getDocumentation().clear());
-
-        String json = WorkspaceUtils.toJson(workspace, false);
-        String base64 = Base64.getEncoder().encodeToString(json.getBytes(StandardCharsets.UTF_8));
-
-        writeToFile(
-                new File(outputDir, "workspace.js"),
-                String.format("const jsonAsString = '%s';", base64)
-        );
-    }
-
-    private void writeStaticFile(String filename, File outputDir) throws IOException {
-        writeStaticFile(filename, outputDir, filename);
-    }
-
-    private void writeStaticFile(String filename, File outputDir, String outputFilename) throws IOException {
-        InputStream in = getClass().getResourceAsStream("/static/static/" + filename);
-        if (in != null) {
-            File outputFile = new File(outputDir, outputFilename);
-            outputFile.mkdirs();
-            Files.copy(in, outputFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-        } else {
-            log.error(String.format("Unable to find static file: %s", filename));
-        }
-    }
 
     private Exporter findExporter(String format, File workspacePath) {
         if (EXPORTERS.containsKey(format.toLowerCase())) {
@@ -263,9 +289,9 @@ public class ExportCommand extends AbstractCommand {
                 return (Exporter) clazz.getDeclaredConstructor().newInstance();
             }
         } catch (ClassNotFoundException e) {
-            log.error(" - unknown export format: " + format);
+            log.error("Unknown export format: " + format);
         } catch (Exception e) {
-            log.error(" - error creating instance of " + format, e);
+            log.error("Error creating instance of " + format, e);
         }
 
         return null;
@@ -280,7 +306,7 @@ public class ExportCommand extends AbstractCommand {
     }
 
     private void writeToFile(File file, String content) throws Exception {
-        log.info(" - writing " + file.getCanonicalPath());
+        log.info("Writing " + file.getCanonicalPath());
 
         BufferedWriter writer = Files.newBufferedWriter(file.toPath(), StandardCharsets.UTF_8);
         writer.write(content);

@@ -5,7 +5,7 @@ import com.structurizr.configuration.Features;
 import com.structurizr.server.component.workspace.WorkspaceBranch;
 import com.structurizr.server.component.workspace.WorkspaceComponentException;
 import com.structurizr.server.domain.WorkspaceMetadata;
-import com.structurizr.server.web.ControllerTestsBase;
+import com.structurizr.server.web.AbstractTestsBase;
 import com.structurizr.server.web.MockWorkspaceComponent;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -14,8 +14,9 @@ import org.springframework.ui.ModelMap;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
-public class EmbedControllerTests extends ControllerTestsBase {
+public class EmbedControllerTests extends AbstractTestsBase {
 
     private EmbedController controller;
     private ModelMap model;
@@ -28,7 +29,7 @@ public class EmbedControllerTests extends ControllerTestsBase {
 
     @Test
     void embedDiagrams_ReturnsThe404Page_WhenTheWorkspaceDoesNotExist() {
-        disableAuthentication();
+        configureAsServerWithAuthenticationDisabled();
 
         controller.setWorkspaceComponent(new MockWorkspaceComponent() {
             @Override
@@ -43,7 +44,7 @@ public class EmbedControllerTests extends ControllerTestsBase {
 
     @Test
     void embedDiagrams_ReturnsThe404Page_WhenTheWorkspaceIsNotPublic() {
-        enableAuthentication();
+        configureAsServerWithAuthenticationEnabled();
 
         controller.setWorkspaceComponent(new MockWorkspaceComponent() {
             @Override
@@ -61,7 +62,7 @@ public class EmbedControllerTests extends ControllerTestsBase {
 
     @Test
     void embedDiagrams_ReturnsTheBranchesNotEnabledPage_WhenTheBranchesAreNotEnabled() {
-        enableAuthentication();
+        configureAsServerWithAuthenticationEnabled();
 
         controller.setWorkspaceComponent(new MockWorkspaceComponent() {
             @Override
@@ -79,7 +80,7 @@ public class EmbedControllerTests extends ControllerTestsBase {
 
     @Test
     void embedDiagrams_ReturnsThe404Page_WhenTheBranchDoesNotExist() {
-        enableAuthentication();
+        configureAsServerWithAuthenticationEnabled();
         Configuration.getInstance().setFeatureEnabled(Features.WORKSPACE_BRANCHES);
 
         controller.setWorkspaceComponent(new MockWorkspaceComponent() {
@@ -98,7 +99,7 @@ public class EmbedControllerTests extends ControllerTestsBase {
 
     @Test
     void embedDiagrams_ReturnsTheDiagramsPage_WhenAuthenticationIsEnabledAndTheWorkspaceIsPublic() {
-        enableAuthentication();
+        configureAsServerWithAuthenticationEnabled();
 
         controller.setWorkspaceComponent(new MockWorkspaceComponent() {
             @Override
@@ -124,7 +125,7 @@ public class EmbedControllerTests extends ControllerTestsBase {
 
     @Test
     void embedDiagrams_ReturnsTheDiagramsPageForABranch_WhenAuthenticationIsEnabledAndTheWorkspaceIsPublic() {
-        enableAuthentication();
+        configureAsServerWithAuthenticationEnabled();
         Configuration.getInstance().setFeatureEnabled(Features.WORKSPACE_BRANCHES);
 
         controller.setWorkspaceComponent(new MockWorkspaceComponent() {
@@ -152,11 +153,13 @@ public class EmbedControllerTests extends ControllerTestsBase {
         assertEquals("diagrams", view);
         assertEquals("/share/1", model.get("urlPrefix"));
         assertEquals("?branch=branch1", model.get("urlSuffix"));
+        assertEquals(false, model.get("publishThumbnails"));
+        assertEquals(false, model.get("publishImages"));
     }
 
     @Test
     void embedDiagrams_ReturnsTheDiagramsPage_WhenAuthenticationIsDisabled() {
-        disableAuthentication();
+        configureAsServerWithAuthenticationDisabled();
 
         controller.setWorkspaceComponent(new MockWorkspaceComponent() {
             @Override
@@ -175,6 +178,8 @@ public class EmbedControllerTests extends ControllerTestsBase {
         assertEquals("diagrams", view);
         assertEquals("/workspace/1", model.get("urlPrefix"));
         assertEquals("", model.get("urlSuffix"));
+        assertEquals(false, model.get("publishThumbnails"));
+        assertEquals(false, model.get("publishImages"));
     }
 
 }

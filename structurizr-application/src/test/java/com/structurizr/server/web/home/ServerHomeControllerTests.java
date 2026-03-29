@@ -3,7 +3,7 @@ package com.structurizr.server.web.home;
 import com.structurizr.configuration.StructurizrProperties;
 import com.structurizr.server.domain.User;
 import com.structurizr.server.domain.WorkspaceMetadata;
-import com.structurizr.server.web.ControllerTestsBase;
+import com.structurizr.server.web.AbstractTestsBase;
 import com.structurizr.server.web.MockWorkspaceComponent;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -16,7 +16,7 @@ import java.util.Properties;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class ServerHomeControllerTests extends ControllerTestsBase {
+public class ServerHomeControllerTests extends AbstractTestsBase {
 
     private ServerHomeController controller;
     private ModelMap model;
@@ -30,7 +30,7 @@ public class ServerHomeControllerTests extends ControllerTestsBase {
 
     @Test
     void showHomePage_WhenAuthenticationIsDisabled() {
-        disableAuthentication();
+        configureAsServerWithAuthenticationDisabled();
 
         WorkspaceMetadata workspace1 = new WorkspaceMetadata(1);
 
@@ -52,7 +52,7 @@ public class ServerHomeControllerTests extends ControllerTestsBase {
 
     @Test
     void showHomePage_WhenAuthenticationIsEnabledAndTheUserIsAuthenticatedAndHasAdminPermission() {
-        enableAuthentication();
+        configureAsServerWithAuthenticationEnabled();
         setUser("user@example.com");
 
         WorkspaceMetadata workspace1 = new WorkspaceMetadata(1);
@@ -76,7 +76,7 @@ public class ServerHomeControllerTests extends ControllerTestsBase {
     void showAuthenticatedDashboard_WhenAuthenticationIsEnabledAndTheUserIsAuthenticatedAndDoesNotHaveAdminPermission() {
         Properties properties = new Properties();
         properties.setProperty(StructurizrProperties.ADMIN_USERS_AND_ROLES, "admin@example.com");
-        enableAuthentication(properties);
+        configureAsServerWithAuthenticationEnabled(properties);
         setUser("user@example.com");
 
         WorkspaceMetadata workspace1 = new WorkspaceMetadata(1);
@@ -100,7 +100,7 @@ public class ServerHomeControllerTests extends ControllerTestsBase {
     void showAuthenticatedDashboard_WhenAuthenticationIsEnabledAndTheUserIsAuthenticatedAndTheUserIsAnAdmin() {
         Properties properties = new Properties();
         properties.setProperty(StructurizrProperties.ADMIN_USERS_AND_ROLES, "admin@example.com");
-        enableAuthentication(properties);
+        configureAsServerWithAuthenticationEnabled(properties);
         setUser("admin@example.com");
 
         WorkspaceMetadata workspace1 = new WorkspaceMetadata(1);
@@ -122,7 +122,7 @@ public class ServerHomeControllerTests extends ControllerTestsBase {
 
     @Test
     void showAuthenticatedDashboard_WhenAuthenticationIsEnabledAndTheUserIsNotAuthenticated() {
-        enableAuthentication();
+        configureAsServerWithAuthenticationEnabled();
 
         WorkspaceMetadata workspace1 = new WorkspaceMetadata(1);
 
