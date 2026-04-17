@@ -309,6 +309,7 @@ public final class StructurizrDslParser extends StructurizrDslTokens {
                                 currentPatternIdentifier = null;
                             } else if (patternContextCount < 0) {
                                 // no more patterns, close PatternsDslContext
+                                patternContextCount = 0;
                                 endContext();
                             }
                         }
