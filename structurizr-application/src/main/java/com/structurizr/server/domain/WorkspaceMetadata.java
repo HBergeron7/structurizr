@@ -18,6 +18,7 @@ public class WorkspaceMetadata {
 
     static final String NAME_PROPERTY = "name";
     static final String DESCRIPTION_PROPERTY = "description";
+    static final String FOLDER_PROPERTY = "folder";
     static final String VERSION_PROPERTY = "version";
     static final String CLIENT_SIDE_ENCRYPTED_PROPERTY = "clientSideEncrypted";
     static final String LAST_MODIFIED_USER_PROPERTY = "lastModifiedUser";
@@ -37,6 +38,7 @@ public class WorkspaceMetadata {
     private final long id;
     private String name = "";
     private String description = "";
+    private String folder = "";
     private String version;
     private long size;
     private boolean clientSideEncrypted = false;
@@ -85,6 +87,18 @@ public class WorkspaceMetadata {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public String getFolder() {
+        return folder;
+    }
+
+    public void setFolder(String folder) {
+        if (StringUtils.isNullOrEmpty(folder)) {
+            this.folder = null;
+        } else {
+            this.folder = folder;
+        }
     }
 
     public String getVersion() {
@@ -453,6 +467,7 @@ public class WorkspaceMetadata {
         WorkspaceMetadata workspace = new WorkspaceMetadata(workspaceId);
         workspace.setName(properties.getProperty(NAME_PROPERTY));
         workspace.setDescription(properties.getProperty(DESCRIPTION_PROPERTY));
+        workspace.setFolder(properties.getProperty(FOLDER_PROPERTY));
         workspace.setVersion(properties.getProperty(VERSION_PROPERTY));
         workspace.setClientSideEncrypted("true".equals(properties.getProperty(CLIENT_SIDE_ENCRYPTED_PROPERTY)));
         workspace.setLastModifiedUser(properties.getProperty(LAST_MODIFIED_USER_PROPERTY));
@@ -513,6 +528,12 @@ public class WorkspaceMetadata {
             properties.setProperty(DESCRIPTION_PROPERTY, this.getDescription());
         } else {
             properties.setProperty(DESCRIPTION_PROPERTY, "");
+        }
+
+        if (this.getFolder() != null) {
+            properties.setProperty(FOLDER_PROPERTY, this.getFolder());
+        } else {
+            properties.setProperty(FOLDER_PROPERTY, "");
         }
 
         if (this.getVersion() != null) {

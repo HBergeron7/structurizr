@@ -20,17 +20,24 @@ final class LocalHomeController extends AbstractHomeController {
             @RequestParam(required = false, defaultValue = SORT_NAME) String sort,
             @RequestParam(required = false, defaultValue = DEFAULT_PAGE_NUMBER) int pageNumber,
             @RequestParam(required = false, defaultValue = DEFAULT_PAGE_SIZE) int pageSize,
+            @RequestParam(required = false, defaultValue = DEFAULT_FOLDER) String folder,
             ModelMap model) {
 
         if (Configuration.getInstance().isSingleWorkspace()) {
             return "redirect:/workspace/1";
         } else {
             List<WorkspaceMetadata> workspaces = workspaceComponent.getWorkspaces();
+            List<String> folders = collectFolders(workspaces);
+
+            folder = determineFolder(folder);
             sort = determineSort(sort);
+            workspaces = filterByFolder(workspaces, folder);
             workspaces = sortAndPaginate(new ArrayList<>(workspaces), sort, pageNumber, pageSize, model);
 
             model.addAttribute("workspaces", workspaces);
             model.addAttribute("numberOfWorkspaces", workspaces.size());
+            model.addAttribute("folders", folder == null ? folders : List.of());
+            model.addAttribute("selectedFolder", folder);
 
             model.addAttribute("sort", sort);
             addCommonAttributes(model, "", true);

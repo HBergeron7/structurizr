@@ -125,9 +125,10 @@ public class WorkspaceUtilsTests {
 
     @Test
     void fromJson() throws Exception {
-        Workspace workspace = WorkspaceUtils.fromJson("{\"id\":0,\"name\":\"Name\",\"description\":\"Description\",\"model\":{},\"documentation\":{},\"views\":{\"configuration\":{\"branding\":{},\"styles\":{},\"terminology\":{}}}}");
+        Workspace workspace = WorkspaceUtils.fromJson("{\"id\":0,\"name\":\"Name\",\"description\":\"Description\",\"folder\":\"Folder\",\"model\":{},\"documentation\":{},\"views\":{\"configuration\":{\"branding\":{},\"styles\":{},\"terminology\":{}}}}");
         assertEquals("Name", workspace.getName());
         assertEquals("Description", workspace.getDescription());
+        assertEquals("Folder", workspace.getFolder());
     }
 
     @Test

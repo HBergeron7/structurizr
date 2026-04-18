@@ -25,6 +25,12 @@
         overflow-y: hidden;
         margin-top: 10px;
     }
+
+    .folderIcon {
+        margin-top: 35px;
+        width: 96px;
+        height: 96px;
+    }
 </style>
 
 <div id="dashboard" class="section" style="padding-bottom: 0px">
@@ -32,9 +38,23 @@
 
         <div style="margin-bottom: 20px">
             <c:if test="${numberOfWorkspaces > 0}">
-            <a href="?sort=name&pageSize=${pageSize}" style="color: #444444;<c:if test="${sort eq 'name'}"> font-weight: bold;</c:if>">Name</a>
+            <c:url var="sortByNameUrl" value="/">
+                <c:param name="sort" value="name" />
+                <c:param name="pageSize" value="${pageSize}" />
+                <c:if test="${not empty selectedFolder}">
+                    <c:param name="folder" value="${selectedFolder}" />
+                </c:if>
+            </c:url>
+            <c:url var="sortByDateUrl" value="/">
+                <c:param name="sort" value="date" />
+                <c:param name="pageSize" value="${pageSize}" />
+                <c:if test="${not empty selectedFolder}">
+                    <c:param name="folder" value="${selectedFolder}" />
+                </c:if>
+            </c:url>
+            <a href="${sortByNameUrl}" style="color: #444444;<c:if test="${sort eq 'name'}"> font-weight: bold;</c:if>">Name</a>
             <img src="/static/bootstrap-icons/sort-down.svg" class="icon-sm" />
-            <a href="?sort=date&pageSize=${pageSize}" style="color: #444444;<c:if test="${sort eq 'date'}"> font-weight: bold;</c:if>">Date</a>
+            <a href="${sortByDateUrl}" style="color: #444444;<c:if test="${sort eq 'date'}"> font-weight: bold;</c:if>">Date</a>
             </c:if>
 
             <c:if test="${not empty pageNumber}">
@@ -42,6 +62,31 @@
                 <%@ include file="/WEB-INF/fragments/workspaces-page-control.jspf" %>
             </c:if>
         </div>
+
+        <c:if test="${not empty selectedFolder}">
+            <div style="margin-bottom: 20px; font-size: 24px">
+                <img src="/static/bootstrap-icons/folder.svg" class="icon-md" />
+                <c:out value="${selectedFolder}" escapeXml="true" />
+            </div>
+        </c:if>
+
+        <c:forEach var="folder" items="${folders}">
+            <c:url var="folderUrl" value="/">
+                <c:param name="folder" value="${folder}" />
+                <c:param name="sort" value="${sort}" />
+                <c:param name="pageNumber" value="1" />
+                <c:param name="pageSize" value="${pageSize}" />
+            </c:url>
+            <div class="workspaceSummary centered">
+                <div>
+                    <a href="${folderUrl}"><c:out value="${folder}" escapeXml="true" /></a>
+                </div>
+
+                <div class="workspaceThumbnail" style="padding-top: 20px; margin-bottom: 10px">
+                    <a href="${folderUrl}"><img src="/static/bootstrap-icons/folder.svg" class="folderIcon" /></a>
+                </div>
+            </div>
+        </c:forEach>
 
         <c:forEach var="workspace" items="${workspaces}" varStatus="status">
             <div class="workspaceSummary centered <c:if test="${not workspace.active}">inactive</c:if>">
@@ -83,11 +128,35 @@
             <%@ include file="/WEB-INF/fragments/workspaces-page-control.jspf" %>
             <span style="padding-left: 20px; padding-right: 20px">|</span>
             Page size:
-            <a href="?sort=${sort}&pageNumber=1&pageSize=10">10</a>
+            <c:url var="pageSize10Url" value="/">
+                <c:param name="sort" value="${sort}" />
+                <c:param name="pageNumber" value="1" />
+                <c:param name="pageSize" value="10" />
+                <c:if test="${not empty selectedFolder}">
+                    <c:param name="folder" value="${selectedFolder}" />
+                </c:if>
+            </c:url>
+            <c:url var="pageSize20Url" value="/">
+                <c:param name="sort" value="${sort}" />
+                <c:param name="pageNumber" value="1" />
+                <c:param name="pageSize" value="20" />
+                <c:if test="${not empty selectedFolder}">
+                    <c:param name="folder" value="${selectedFolder}" />
+                </c:if>
+            </c:url>
+            <c:url var="pageSize50Url" value="/">
+                <c:param name="sort" value="${sort}" />
+                <c:param name="pageNumber" value="1" />
+                <c:param name="pageSize" value="50" />
+                <c:if test="${not empty selectedFolder}">
+                    <c:param name="folder" value="${selectedFolder}" />
+                </c:if>
+            </c:url>
+            <a href="${pageSize10Url}">10</a>
             |
-            <a href="?sort=${sort}&pageNumber=1&pageSize=20">20</a>
+            <a href="${pageSize20Url}">20</a>
             |
-            <a href="?sort=${sort}&pageNumber=1&pageSize=50">50</a>
+            <a href="${pageSize50Url}">50</a>
         </div>
         </c:if>
     </div>

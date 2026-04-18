@@ -15,7 +15,7 @@ class WorkspaceParserTests extends AbstractTests {
             parser.parse(null, tokens("workspace", "name", "description", "extra"));
             fail();
         } catch (Exception e) {
-            assertEquals("Too many tokens, expected: workspace [name] [description] or workspace extends <file|url>", e.getMessage());
+            assertEquals("Too many tokens, expected: workspace [name] [description] [folder] or workspace extends <file|url>", e.getMessage());
         }
     }
 
@@ -44,6 +44,19 @@ class WorkspaceParserTests extends AbstractTests {
         workspace = parser.parse(null, tokens("workspace", "New Name", "New Description"));
         assertEquals("New Name", workspace.getName());
         assertEquals("New Description", workspace.getDescription());
+    }
+
+    @Test
+    void test_parse_SetsTheWorkspaceFolder_WhenANameDescriptionAndFolderAreSpecified() {
+        assertEquals("Name", workspace.getName());
+        assertEquals("Description", workspace.getDescription());
+        assertEquals(null, workspace.getFolder());
+
+        workspace = parser.parse(null, tokens("workspace", "New Name", "New Description", "New Folder"));
+
+        assertEquals("New Name", workspace.getName());
+        assertEquals("New Description", workspace.getDescription());
+        assertEquals("New Folder", workspace.getFolder());
     }
 
     @Test

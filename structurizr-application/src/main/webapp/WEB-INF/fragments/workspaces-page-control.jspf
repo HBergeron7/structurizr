@@ -1,6 +1,14 @@
 <c:choose>
     <c:when test="${pageNumber gt 1}">
-        <a href="?sort=${sort}&pageNumber=1&pageSize=${pageSize}"><img src="/static/bootstrap-icons/chevron-double-left.svg" class="icon-sm" /></a>
+        <c:url var="firstPageUrl" value="/">
+            <c:param name="sort" value="${sort}" />
+            <c:param name="pageNumber" value="1" />
+            <c:param name="pageSize" value="${pageSize}" />
+            <c:if test="${not empty selectedFolder}">
+                <c:param name="folder" value="${selectedFolder}" />
+            </c:if>
+        </c:url>
+        <a href="${firstPageUrl}"><img src="/static/bootstrap-icons/chevron-double-left.svg" class="icon-sm" /></a>
     </c:when>
     <c:otherwise>
         <img src="/static/bootstrap-icons/chevron-double-left.svg" class="icon-sm" style="opacity: 0.25" />
@@ -9,7 +17,15 @@
 
 <c:choose>
     <c:when test="${not empty previousPage}">
-        <a href="?sort=${sort}&pageNumber=${previousPage}&pageSize=${pageSize}"><img src="/static/bootstrap-icons/chevron-left.svg" class="icon-sm" /></a>
+        <c:url var="previousPageUrl" value="/">
+            <c:param name="sort" value="${sort}" />
+            <c:param name="pageNumber" value="${previousPage}" />
+            <c:param name="pageSize" value="${pageSize}" />
+            <c:if test="${not empty selectedFolder}">
+                <c:param name="folder" value="${selectedFolder}" />
+            </c:if>
+        </c:url>
+        <a href="${previousPageUrl}"><img src="/static/bootstrap-icons/chevron-left.svg" class="icon-sm" /></a>
     </c:when>
     <c:otherwise>
         <img src="/static/bootstrap-icons/chevron-left.svg" class="icon-sm" style="opacity: 0.25" />
@@ -20,7 +36,15 @@
 
 <c:choose>
     <c:when test="${not empty nextPage}">
-        <a href="?sort=${sort}&pageNumber=${nextPage}&pageSize=${pageSize}"><img src="/static/bootstrap-icons/chevron-right.svg" class="icon-sm" /></a>
+        <c:url var="nextPageUrl" value="/">
+            <c:param name="sort" value="${sort}" />
+            <c:param name="pageNumber" value="${nextPage}" />
+            <c:param name="pageSize" value="${pageSize}" />
+            <c:if test="${not empty selectedFolder}">
+                <c:param name="folder" value="${selectedFolder}" />
+            </c:if>
+        </c:url>
+        <a href="${nextPageUrl}"><img src="/static/bootstrap-icons/chevron-right.svg" class="icon-sm" /></a>
     </c:when>
     <c:otherwise>
         <img src="/static/bootstrap-icons/chevron-right.svg" class="icon-sm" style="opacity: 0.25" />
@@ -29,7 +53,15 @@
 
 <c:choose>
     <c:when test="${pageNumber < maxPage}">
-        <a href="?sort=${sort}&pageNumber=${maxPage}&pageSize=${pageSize}"><img src="/static/bootstrap-icons/chevron-double-right.svg" class="icon-sm" /></a>
+        <c:url var="lastPageUrl" value="/">
+            <c:param name="sort" value="${sort}" />
+            <c:param name="pageNumber" value="${maxPage}" />
+            <c:param name="pageSize" value="${pageSize}" />
+            <c:if test="${not empty selectedFolder}">
+                <c:param name="folder" value="${selectedFolder}" />
+            </c:if>
+        </c:url>
+        <a href="${lastPageUrl}"><img src="/static/bootstrap-icons/chevron-double-right.svg" class="icon-sm" /></a>
     </c:when>
     <c:otherwise>
         <img src="/static/bootstrap-icons/chevron-double-right.svg" class="icon-sm" style="opacity: 0.25" />

@@ -604,6 +604,27 @@ public class WorkspaceComponentImplTests extends AbstractTestsBase {
     }
 
     @Test
+    void test_putWorkspace_UpdatesTheFolder_WhenTheFolderIsSpecified() throws Exception {
+        Workspace workspace = new Workspace("Name", "Description");
+        workspace.setFolder("Folder");
+
+        String json = WorkspaceUtils.toJson(workspace, false);
+
+        final WorkspaceMetadata workspaceMetadata = new WorkspaceMetadata(1);
+
+        WorkspaceComponent workspaceComponent = new WorkspaceComponentImpl(new MockWorkspaceAdapter() {
+            @Override
+            public WorkspaceMetadata getWorkspaceMetadata(long workspaceId) {
+                return workspaceMetadata;
+            }
+        });
+
+        workspaceComponent.putWorkspace(1, "", json);
+
+        assertEquals("Folder", workspaceMetadata.getFolder());
+    }
+
+    @Test
     void test_putWorkspace_DoesNotUpdateTheVisibility_WhenAuthenticationIsEnabledAndAdminUsersAreDefined() throws Exception {
         Properties properties = new Properties();
         properties.setProperty(StructurizrProperties.ADMIN_USERS_AND_ROLES, "admin@example.com");

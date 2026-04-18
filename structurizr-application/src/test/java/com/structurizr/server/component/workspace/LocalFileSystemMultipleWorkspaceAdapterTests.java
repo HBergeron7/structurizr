@@ -99,6 +99,7 @@ class LocalFileSystemMultipleWorkspaceAdapterTests extends AbstractWorkspaceAdap
     void workspaceMetadata() {
         try {
             Workspace workspace = new Workspace("JSON", "Description");
+            workspace.setFolder("Folder");
             File workspaceDirectory = workspaceAdapter.getDataDirectory(1);
             workspaceDirectory.mkdirs();
 
@@ -109,6 +110,7 @@ class LocalFileSystemMultipleWorkspaceAdapterTests extends AbstractWorkspaceAdap
             WorkspaceMetadata wmd = workspaceAdapter.getWorkspaceMetadata(1);
             assertEquals("JSON", wmd.getName());
             assertEquals("Description", wmd.getDescription());
+            assertEquals("Folder", wmd.getFolder());
         } catch (Exception e) {
             e.printStackTrace();
             fail();

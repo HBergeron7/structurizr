@@ -41,12 +41,72 @@ public class ServerHomeControllerTests extends AbstractTestsBase {
             }
         });
 
-        String result = controller.showHomePage("", 1, 20, model);
+        String result = controller.showHomePage("", 1, 20, "", model);
 
         assertEquals(1, model.getAttribute("numberOfWorkspaces"));
         assertTrue(((Collection)model.getAttribute("workspaces")).contains(workspace1));
         assertEquals("home", result);
         assertEquals(true, model.getAttribute("userCanCreateWorkspace"));
+    }
+
+    @Test
+    void showHomePage_ShowsFoldersAndOnlyUnfolderedWorkspaces_OnTheRootPage() {
+        configureAsServerWithAuthenticationDisabled();
+
+        WorkspaceMetadata workspace1 = new WorkspaceMetadata(1);
+        workspace1.setName("Workspace 1");
+
+        WorkspaceMetadata workspace2 = new WorkspaceMetadata(2);
+        workspace2.setName("Workspace 2");
+        workspace2.setFolder("Folder 1");
+
+        WorkspaceMetadata workspace3 = new WorkspaceMetadata(3);
+        workspace3.setName("Workspace 3");
+        workspace3.setFolder("Folder 2");
+
+        controller.setWorkspaceComponent(new MockWorkspaceComponent() {
+            @Override
+            public List<WorkspaceMetadata> getWorkspaces(User user) {
+                return List.of(workspace1, workspace2, workspace3);
+            }
+        });
+
+        String result = controller.showHomePage("", 1, 20, "", model);
+
+        assertEquals(List.of("Folder 1", "Folder 2"), model.getAttribute("folders"));
+        assertEquals(null, model.getAttribute("selectedFolder"));
+        assertEquals(List.of(workspace1), model.getAttribute("workspaces"));
+        assertEquals("home", result);
+    }
+
+    @Test
+    void showHomePage_ShowsOnlyWorkspacesInTheSelectedFolder() {
+        configureAsServerWithAuthenticationDisabled();
+
+        WorkspaceMetadata workspace1 = new WorkspaceMetadata(1);
+        workspace1.setName("Workspace 1");
+
+        WorkspaceMetadata workspace2 = new WorkspaceMetadata(2);
+        workspace2.setName("Workspace 2");
+        workspace2.setFolder("Folder 1");
+
+        WorkspaceMetadata workspace3 = new WorkspaceMetadata(3);
+        workspace3.setName("Workspace 3");
+        workspace3.setFolder("Folder 2");
+
+        controller.setWorkspaceComponent(new MockWorkspaceComponent() {
+            @Override
+            public List<WorkspaceMetadata> getWorkspaces(User user) {
+                return List.of(workspace1, workspace2, workspace3);
+            }
+        });
+
+        String result = controller.showHomePage("", 1, 20, "Folder 1", model);
+
+        assertEquals(List.of(), model.getAttribute("folders"));
+        assertEquals("Folder 1", model.getAttribute("selectedFolder"));
+        assertEquals(List.of(workspace2), model.getAttribute("workspaces"));
+        assertEquals("home", result);
     }
 
 
@@ -64,7 +124,7 @@ public class ServerHomeControllerTests extends AbstractTestsBase {
             }
         });
 
-        String result = controller.showHomePage("", 1, 20, model);
+        String result = controller.showHomePage("", 1, 20, "", model);
 
         assertEquals(1, model.getAttribute("numberOfWorkspaces"));
         assertTrue(((Collection)model.getAttribute("workspaces")).contains(workspace1));
@@ -88,7 +148,7 @@ public class ServerHomeControllerTests extends AbstractTestsBase {
             }
         });
 
-        String result = controller.showHomePage("", 1, 20, model);
+        String result = controller.showHomePage("", 1, 20, "", model);
 
         assertEquals(1, model.getAttribute("numberOfWorkspaces"));
         assertTrue(((Collection)model.getAttribute("workspaces")).contains(workspace1));
@@ -112,7 +172,7 @@ public class ServerHomeControllerTests extends AbstractTestsBase {
             }
         });
 
-        String result = controller.showHomePage("", 1, 20, model);
+        String result = controller.showHomePage("", 1, 20, "", model);
 
         assertEquals(1, model.getAttribute("numberOfWorkspaces"));
         assertTrue(((Collection)model.getAttribute("workspaces")).contains(workspace1));
@@ -133,7 +193,7 @@ public class ServerHomeControllerTests extends AbstractTestsBase {
             }
         });
 
-        String result = controller.showHomePage("", 1, 20, model);
+        String result = controller.showHomePage("", 1, 20, "", model);
 
         assertEquals(1, model.getAttribute("numberOfWorkspaces"));
         assertTrue(((Collection)model.getAttribute("workspaces")).contains(workspace1));

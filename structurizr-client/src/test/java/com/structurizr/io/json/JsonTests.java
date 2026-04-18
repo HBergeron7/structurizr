@@ -16,6 +16,7 @@ public class JsonTests {
     @Test
     void write_and_read() throws Exception {
         final Workspace workspace1 = new Workspace("Name", "Description");
+        workspace1.setFolder("Folder");
 
         // output the model as JSON
         JsonWriter jsonWriter = new JsonWriter(true);
@@ -28,6 +29,7 @@ public class JsonTests {
         final Workspace workspace2 = jsonReader.read(stringReader);
         assertEquals("Name", workspace2.getName());
         assertEquals("Description", workspace2.getDescription());
+        assertEquals("Folder", workspace2.getFolder());
     }
 
     @Test

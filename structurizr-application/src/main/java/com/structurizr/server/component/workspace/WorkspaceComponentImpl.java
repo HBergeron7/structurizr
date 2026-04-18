@@ -397,6 +397,7 @@ class WorkspaceComponentImpl implements WorkspaceComponent {
                 try {
                     workspaceMetadata.setName(workspaceToBeStored.getName());
                     workspaceMetadata.setDescription(workspaceToBeStored.getDescription());
+                    workspaceMetadata.setFolder(workspaceToBeStored.getFolder());
 
                     // configure workspace visibility and users
                     if (configuration != null) {

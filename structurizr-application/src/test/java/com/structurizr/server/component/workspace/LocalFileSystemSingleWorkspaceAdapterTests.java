@@ -69,6 +69,7 @@ class LocalFileSystemSingleWorkspaceAdapterTests extends AbstractWorkspaceAdapte
     @Test
     void getWorkspaceMetadata_WhenJsonFileExists() throws Exception {
         Workspace workspace = new Workspace("Name - JSON", "Description - JSON");
+        workspace.setFolder("Folder - JSON");
         WorkspaceUtils.saveWorkspaceToJson(workspace, new File(dataDirectory, "workspace.json"));
 
         workspaceAdapter = new LocalFileSystemSingleWorkspaceAdapter();
@@ -76,6 +77,7 @@ class LocalFileSystemSingleWorkspaceAdapterTests extends AbstractWorkspaceAdapte
         WorkspaceMetadata wmd = workspaceAdapter.getWorkspaceMetadata(1);
         assertEquals("Name - JSON", wmd.getName());
         assertEquals("Description - JSON", wmd.getDescription());
+        assertEquals("Folder - JSON", wmd.getFolder());
     }
 
     @Test

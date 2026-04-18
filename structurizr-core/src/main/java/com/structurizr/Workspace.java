@@ -37,7 +37,7 @@ public final class Workspace extends AbstractWorkspace implements Documentable {
      * @param name          the name of the workspace
      */
     public Workspace(String name) {
-        this(name, "");
+        this(name, "", "");
     }
 
     /**
@@ -47,7 +47,18 @@ public final class Workspace extends AbstractWorkspace implements Documentable {
      * @param description   a short description
      */
     public Workspace(String name, String description) {
-        super(name, description);
+        this(name, description, "");
+    }
+
+    /**
+     * Creates a new workspace.
+     *
+     * @param name          the name of the workspace
+     * @param description   a short description
+     * @param folder        an optional folder name
+     */
+    public Workspace(String name, String description, String folder) {
+        super(name, description, folder);
 
         model = createModel();
         viewSet = createViewSet();

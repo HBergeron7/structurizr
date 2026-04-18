@@ -277,6 +277,7 @@ public class WorkspaceMetadataTests extends AbstractTestsBase {
         Properties properties = new Properties();
         properties.setProperty(WorkspaceMetadata.NAME_PROPERTY, "Name");
         properties.setProperty(WorkspaceMetadata.DESCRIPTION_PROPERTY, "Description");
+        properties.setProperty(WorkspaceMetadata.FOLDER_PROPERTY, "Folder");
         properties.setProperty(WorkspaceMetadata.VERSION_PROPERTY, "v1.2.3");
         properties.setProperty(WorkspaceMetadata.CLIENT_SIDE_ENCRYPTED_PROPERTY, "false");
         properties.setProperty(WorkspaceMetadata.LAST_MODIFIED_USER_PROPERTY, "user1");
@@ -296,6 +297,7 @@ public class WorkspaceMetadataTests extends AbstractTestsBase {
 
         assertEquals("Name", workspace.getName());
         assertEquals("Description", workspace.getDescription());
+        assertEquals("Folder", workspace.getFolder());
         assertEquals("v1.2.3", workspace.getVersion());
         assertFalse(workspace.isClientEncrypted());
         assertEquals("user1", workspace.getLastModifiedUser());
@@ -316,6 +318,7 @@ public class WorkspaceMetadataTests extends AbstractTestsBase {
 
         assertEquals("Name", properties.getProperty(WorkspaceMetadata.NAME_PROPERTY));
         assertEquals("Description", properties.getProperty(WorkspaceMetadata.DESCRIPTION_PROPERTY));
+        assertEquals("Folder", properties.getProperty(WorkspaceMetadata.FOLDER_PROPERTY));
         assertEquals("v1.2.3", properties.getProperty(WorkspaceMetadata.VERSION_PROPERTY));
         assertEquals("false", properties.getProperty(WorkspaceMetadata.CLIENT_SIDE_ENCRYPTED_PROPERTY));
         assertEquals("user1", properties.getProperty(WorkspaceMetadata.LAST_MODIFIED_USER_PROPERTY));

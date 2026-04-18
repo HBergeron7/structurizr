@@ -17,6 +17,7 @@ public abstract class AbstractWorkspace implements PropertyHolder {
     private long id;
     private String name;
     private String description;
+    private String folder;
     private String version;
     private Date lastModifiedDate;
     private String lastModifiedUser;
@@ -32,10 +33,15 @@ public abstract class AbstractWorkspace implements PropertyHolder {
     }
 
     AbstractWorkspace(String name, String description) {
+        this(name, description, null);
+    }
+
+    AbstractWorkspace(String name, String description, String folder) {
         this();
 
         this.name = name;
         this.description = description;
+        setFolder(folder);
     }
 
     /**
@@ -90,6 +96,28 @@ public abstract class AbstractWorkspace implements PropertyHolder {
      */
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    /**
+     * Gets the folder associated with this workspace.
+     *
+     * @return  the folder, as a String, or null if this workspace is not in a folder
+     */
+    public String getFolder() {
+        return folder;
+    }
+
+    /**
+     * Sets the folder associated with this workspace.
+     *
+     * @param folder    the folder, as a String
+     */
+    public void setFolder(String folder) {
+        if (StringUtils.isNullOrEmpty(folder)) {
+            this.folder = null;
+        } else {
+            this.folder = folder;
+        }
     }
 
     /**

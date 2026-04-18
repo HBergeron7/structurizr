@@ -190,6 +190,7 @@ abstract class LocalFileSystemWorkspaceAdapter extends AbstractFileSystemWorkspa
             if (workspace != null) {
                 wmd.setName(workspace.getName());
                 wmd.setDescription(workspace.getDescription());
+                wmd.setFolder(workspace.getFolder());
             }
         } catch (Exception e) {
             log.error(e);

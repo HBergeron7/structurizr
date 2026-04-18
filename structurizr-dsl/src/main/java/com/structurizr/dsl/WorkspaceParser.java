@@ -14,13 +14,14 @@ import java.io.File;
 
 final class WorkspaceParser extends AbstractParser {
 
-    private static final String GRAMMAR_STANDALONE = "workspace [name] [description]";
+    private static final String GRAMMAR_STANDALONE = "workspace [name] [description] [folder]";
     private static final String GRAMMAR_EXTENDS = "workspace extends <file|url>";
 
     private static final String STRUCTURIZR_DSL_IDENTIFIER_PROPERTY_NAME = "structurizr.dsl.identifier";
 
     private static final int FIRST_INDEX = 1;
     private static final int SECOND_INDEX = 2;
+    private static final int THIRD_INDEX = 3;
 
     Workspace parse(DslParserContext context, Tokens tokens) {
         // workspace [name] [description]
@@ -28,14 +29,14 @@ final class WorkspaceParser extends AbstractParser {
 
         Workspace workspace = new Workspace("Name", "Description");
 
-        if (tokens.hasMoreThan(SECOND_INDEX)) {
-            throw new RuntimeException("Too many tokens, expected: " + GRAMMAR_STANDALONE + " or " + GRAMMAR_EXTENDS);
-        }
-
         if (tokens.includes(FIRST_INDEX)) {
             String firstToken = tokens.get(FIRST_INDEX);
 
             if (StructurizrDslTokens.EXTENDS_TOKEN.equals(firstToken)) {
+                if (tokens.hasMoreThan(SECOND_INDEX)) {
+                    throw new RuntimeException("Too many tokens, expected: " + GRAMMAR_STANDALONE + " or " + GRAMMAR_EXTENDS);
+                }
+
                 if (tokens.includes(SECOND_INDEX)) {
                     String source = tokens.get(SECOND_INDEX);
 
@@ -100,10 +101,18 @@ final class WorkspaceParser extends AbstractParser {
                     throw new RuntimeException("Expected: " + GRAMMAR_EXTENDS);
                 }
             } else {
+                if (tokens.hasMoreThan(THIRD_INDEX)) {
+                    throw new RuntimeException("Too many tokens, expected: " + GRAMMAR_STANDALONE + " or " + GRAMMAR_EXTENDS);
+                }
+
                 workspace.setName(firstToken);
 
                 if (tokens.includes(SECOND_INDEX)) {
                     workspace.setDescription(tokens.get(SECOND_INDEX));
+                }
+
+                if (tokens.includes(THIRD_INDEX)) {
+                    workspace.setFolder(tokens.get(THIRD_INDEX));
                 }
             }
         }
