@@ -47,12 +47,19 @@ public class Provides implements PropertyHolder {
         if (match) {
             for (var filter : consumes.getProperties().entrySet()) {
                 String key = filter.getKey();
-                match = this.properties.containsKey(key) && this.properties.get(key).equals(filter.getValue());
+                match = this.properties.containsKey(key);
+                if (match) {
+                    List<String> consumesList = Arrays.asList(filter.getValue().split(","));
+                    List<String> providesList = Arrays.asList(this.properties.get(key).split(","));
+                    // Provider must match all consumer properties
+                    match = providesList.containsAll(consumesList);
+                }
+
                 if (!match) break;
             }
         }
 
-        return match; 
+        return match;
     }
 
     @JsonIgnore
