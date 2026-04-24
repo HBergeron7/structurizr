@@ -68,6 +68,8 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
     var selectedElements = [];
     var highlightedElement = undefined;
     var highlightedLink = undefined;
+    var expandedRootGroup = undefined;
+    var expandGroupTimer;
 
     var elementStylesInUse = [];
     var elementStylesInUseMap = {};
@@ -395,6 +397,7 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
         linesToAnimate = undefined;
         animationSteps = undefined;
         animationStarted = false;
+        expandedRootGroup = undefined;
 
         undoStack = new structurizr.util.Stack();
 
@@ -631,6 +634,8 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
                 box.positionCalculated = false;
 
                 box.on('change:position', function(cell, newPosition, opt) {
+                    var repositionParentBoundaries = true;
+
                     if (opt.translateBy === undefined) {
                         // cell has moved programmatically
                         cell.elementInView.x = newPosition.x;
@@ -641,6 +646,10 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
                             // a boundary/group/deployment node has been dragged, and moved this element
                             cell.elementInView.x = newPosition.x;
                             cell.elementInView.y = newPosition.y;
+
+                            if (isRootGroup(translatedByCell) && translatedByCell._collapsed === true) {
+                                repositionParentBoundaries = false;
+                            }
                         } else {
                             // an element has been dragged
                             var cellViewMoved = paper.findViewByModel(cell);
@@ -662,7 +671,9 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
                         }
                     }
 
-                    repositionParentCells(cell);
+                    if (repositionParentBoundaries) {
+                        repositionParentCells(cell);
+                    }
 
                     fireWorkspaceChangedEvent();
                 });
@@ -1010,6 +1021,8 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
                 structurizr.ui.DEFAULT_AUTOLAYOUT_EDGE_SEPARATION,
                 structurizr.ui.DEFAULT_AUTOLAYOUT_VERTICES
             );
+        } else {
+            collapseAllRootGroups();
         }
 
         if (callback !== undefined) {
@@ -1181,6 +1194,15 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
         return getGroupSeparator() !== undefined;
     }
 
+    function configureGroup(group, name, scope, isRootGroup, rootGroup) {
+        group._structurizrGroup = true;
+        group._groupFullName = name;
+        group._groupScope = scope;
+        group._structurizrRootGroup = isRootGroup;
+        group._rootGroup = rootGroup || group;
+        group._collapsed = false;
+    }
+
     function findOrCreateGroup(name, scope) {
         if (useNestedGroups()) {
             const separator = getGroupSeparator();
@@ -1194,10 +1216,12 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
                     group = createBoundaryForGroup(name);
                     parentGroup.embed(group);
                     group._name = groupName;
+                    configureGroup(group, name, scope, false, parentGroup._rootGroup);
                     registerGroup(name, scope, group);
                 } else {
                     group = createBoundaryForGroup(name);
                     group._name = name;
+                    configureGroup(group, name, scope, true, group);
                     registerGroup(name, scope, group);
                 }
             }
@@ -1208,10 +1232,316 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
             if (group === undefined) {
                 group = createBoundaryForGroup(name);
                 group._name = name;
+                configureGroup(group, name, scope, true, group);
                 registerGroup(name, scope, group);
             }
 
             return group;
+        }
+    }
+
+    function cloneLinkEnd(linkEnd) {
+        if (linkEnd === undefined) {
+            return undefined;
+        }
+
+        return JSON.parse(JSON.stringify(linkEnd));
+    }
+
+    function createRetargetedLinkEnd(linkEnd, cellId) {
+        const retargetedLinkEnd = cloneLinkEnd(linkEnd) || {};
+        retargetedLinkEnd.id = cellId;
+        return retargetedLinkEnd;
+    }
+
+    function isGroupBoundary(cell) {
+        return cell !== undefined && cell.attributes.type === 'structurizr.boundary' && cell._structurizrGroup === true;
+    }
+
+    function isRootGroup(cell) {
+        return isGroupBoundary(cell) && cell._structurizrRootGroup === true;
+    }
+
+    function getRootGroupForCell(cell) {
+        while (cell) {
+            if (isRootGroup(cell)) {
+                return cell;
+            }
+
+            const parentId = cell.get('parent');
+            if (parentId === undefined) {
+                return undefined;
+            }
+
+            cell = graph.getCell(parentId);
+        }
+
+        return undefined;
+    }
+
+    function getCollapsedRootGroupForCell(cell) {
+        const rootGroup = getRootGroupForCell(cell);
+        if (rootGroup && rootGroup._collapsed === true) {
+            return rootGroup;
+        }
+
+        return undefined;
+    }
+
+    function isCellInsideRootGroup(cell, rootGroup) {
+        return getRootGroupForCell(cell) === rootGroup;
+    }
+
+    function setCellVisibility(cell, visible) {
+        const cellView = paper.findViewByModel(cell);
+        if (cellView) {
+            $('#' + cellView.id).css('display', visible ? '' : 'none');
+        }
+    }
+
+    function setLinkVisibility(link, visible) {
+        const linkView = paper.findViewByModel(link);
+        if (linkView) {
+            $('#' + linkView.el.id).css('display', visible ? '' : 'none');
+        }
+    }
+
+    function setRootGroupVisibility(rootGroup, visible) {
+        rootGroup.getEmbeddedCells({ deep: true, breadthFirst: true }).forEach(function(cell) {
+            setCellVisibility(cell, visible);
+        });
+    }
+
+    function updateRootGroupInteractivity(rootGroup) {
+        const pointerEvents = rootGroup._collapsed === true ? 'visiblePainted' : 'none';
+
+        rootGroup.attr({
+            '.structurizrBoundary': {
+                'pointer-events': pointerEvents
+            },
+            '.structurizrName': {
+                'pointer-events': pointerEvents
+            },
+            '.structurizrMetaData': {
+                'pointer-events': pointerEvents
+            },
+            '.structurizrIcon': {
+                'pointer-events': pointerEvents
+            }
+        });
+
+        const cellView = paper.findViewByModel(rootGroup);
+        if (cellView) {
+            $('#' + cellView.id).attr('style', 'cursor: ' + (editable === true && rootGroup._collapsed === true ? 'move' : 'default') + ' !important');
+        }
+    }
+
+    function ensureOriginalLinkEndpoints(link) {
+        if (link._originalSource === undefined) {
+            link._originalSource = cloneLinkEnd(link.source());
+        }
+
+        if (link._originalTarget === undefined) {
+            link._originalTarget = cloneLinkEnd(link.target());
+        }
+    }
+
+    function syncCollapsedGroupLinks() {
+        lines.forEach(function(link) {
+            ensureOriginalLinkEndpoints(link);
+
+            const sourceCell = graph.getCell(link._originalSource.id);
+            const targetCell = graph.getCell(link._originalTarget.id);
+
+            if (!sourceCell || !targetCell) {
+                return;
+            }
+
+            const sourceRootGroup = getCollapsedRootGroupForCell(sourceCell);
+            const targetRootGroup = getCollapsedRootGroupForCell(targetCell);
+            const hideLink = sourceRootGroup && targetRootGroup && sourceRootGroup.id === targetRootGroup.id;
+
+            if (hideLink) {
+                link._hiddenForCollapsedGroup = true;
+                setLinkVisibility(link, false);
+                return;
+            }
+
+            link._hiddenForCollapsedGroup = false;
+            link.source(sourceRootGroup ? createRetargetedLinkEnd(link._originalSource, sourceRootGroup.id) : cloneLinkEnd(link._originalSource));
+            link.target(targetRootGroup ? createRetargetedLinkEnd(link._originalTarget, targetRootGroup.id) : cloneLinkEnd(link._originalTarget));
+            setLinkVisibility(link, true);
+        });
+    }
+
+    function bringRootGroupToFront(rootGroup) {
+        if (!rootGroup) {
+            return;
+        }
+
+        rootGroup.toFront();
+        rootGroup.getEmbeddedCells({ deep: true, breadthFirst: true }).forEach(function(cell) {
+            cell.toFront();
+        });
+
+        lines.forEach(function(link) {
+            if (link._hiddenForCollapsedGroup === true) {
+                return;
+            }
+
+            ensureOriginalLinkEndpoints(link);
+
+            const sourceCell = graph.getCell(link._originalSource.id);
+            const targetCell = graph.getCell(link._originalTarget.id);
+
+            if (isCellInsideRootGroup(sourceCell, rootGroup) || isCellInsideRootGroup(targetCell, rootGroup)) {
+                link.toFront();
+            }
+        });
+    }
+
+    function getCellCenter(cell) {
+        const position = cell.get('position');
+        const size = cell.get('size');
+
+        return {
+            x: position.x + (size.width / 2),
+            y: position.y + (size.height / 2)
+        };
+    }
+
+    function setCellCenter(cell, center) {
+        const size = cell.get('size');
+        cell.position(center.x - (size.width / 2), center.y - (size.height / 2));
+    }
+
+    function applyCollapsedSizeToRootGroup(rootGroup) {
+        const size = rootGroup._collapsedSize;
+        const metadataText = rootGroup.attr('.structurizrMetaData').text;
+        const margin = 15;
+        var refX = (margin / size.width);
+
+        rootGroup.attr({ rect: { width: size.width, height: size.height }});
+        rootGroup.resize(size.width, size.height);
+
+        if (rootGroup._computedStyle.icon !== undefined) {
+            const iconWidth = rootGroup.attr('.structurizrIcon')['width'];
+            const iconHeight = rootGroup.attr('.structurizrIcon')['height'];
+
+            rootGroup.attr({
+                '.structurizrIcon': {
+                    'x': margin,
+                    'y': size.height - iconHeight - 10
+                }
+            });
+
+            refX = ((margin + 10 + iconWidth) / size.width);
+        }
+
+        if (metadataText && metadataText.length > 0) {
+            rootGroup.attr({
+                '.structurizrName': {
+                    'x': undefined,
+                    'ref-x': 0.5,
+                    'text-anchor': 'middle',
+                    'dominant-baseline': 'middle',
+                    'y': size.height / 2
+                },
+                '.structurizrMetaData': {
+                    'ref-x': refX,
+                    'y': size.height - 15
+                }
+            });
+        } else {
+            rootGroup.attr({
+                '.structurizrName': {
+                    'x': undefined,
+                    'ref-x': 0.5,
+                    'text-anchor': 'middle',
+                    'dominant-baseline': 'middle',
+                    'y': size.height / 2
+                },
+                '.structurizrMetaData': {
+                    'ref-x': refX,
+                    'y': size.height - 15
+                }
+            });
+        }
+    }
+
+    function collapseRootGroup(rootGroup) {
+        if (!isRootGroup(rootGroup) || rootGroup._collapsed === true) {
+            return;
+        }
+
+        const rootGroupCenter = getCellCenter(rootGroup);
+
+        rootGroup._expandedBounds = {
+            x: rootGroup.get('position').x,
+            y: rootGroup.get('position').y,
+            width: rootGroup.get('size').width,
+            height: rootGroup.get('size').height
+        };
+
+        rootGroup._collapsed = true;
+        setRootGroupVisibility(rootGroup, false);
+        applyCollapsedSizeToRootGroup(rootGroup);
+        setCellCenter(rootGroup, rootGroupCenter);
+        repositionParentCells(rootGroup);
+        updateRootGroupInteractivity(rootGroup);
+        syncCollapsedGroupLinks();
+
+        if (expandedRootGroup === rootGroup) {
+            expandedRootGroup = undefined;
+        }
+    }
+
+    function expandRootGroup(rootGroup) {
+        if (!isRootGroup(rootGroup) || rootGroup._collapsed !== true) {
+            return;
+        }
+
+        if (expandedRootGroup && expandedRootGroup !== rootGroup) {
+            collapseRootGroup(expandedRootGroup);
+        }
+
+        const rootGroupCenter = getCellCenter(rootGroup);
+
+        rootGroup._collapsed = false;
+        setRootGroupVisibility(rootGroup, true);
+        reposition(rootGroup);
+        setCellCenter(rootGroup, rootGroupCenter);
+        repositionParentCells(rootGroup);
+        updateRootGroupInteractivity(rootGroup);
+        syncCollapsedGroupLinks();
+        bringRootGroupToFront(rootGroup);
+        expandedRootGroup = rootGroup;
+    }
+
+    function collapseAllRootGroups() {
+        Object.keys(groupsByName).forEach(function(identifier) {
+            const group = groupsByName[identifier];
+            if (isRootGroup(group)) {
+                collapseRootGroup(group);
+            }
+        });
+    }
+
+    function collapseExpandedRootGroupForMouseMove(evt) {
+        if (!expandedRootGroup || expandedRootGroup._collapsed === true) {
+            return;
+        }
+
+        const point = V(paper.viewport).toLocalPoint(evt.clientX, evt.clientY);
+        const bbox = expandedRootGroup.getBBox();
+        const insideExpandedRootGroup =
+            point.x >= bbox.x &&
+            point.x <= (bbox.x + bbox.width) &&
+            point.y >= bbox.y &&
+            point.y <= (bbox.y + bbox.height);
+
+        if (insideExpandedRootGroup === false) {
+            collapseRootGroup(expandedRootGroup);
         }
     }
 
@@ -4054,6 +4384,22 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
         graph.addCell(boundary);
 
         boundary.on('change:position', moveLinksBetweenElementsContainedWithin);
+        boundary.on('change:position', function(cell, newPosition, opt) {
+            if (opt.translateBy === undefined || opt.translateBy !== cell.id) {
+                return;
+            }
+
+            if (!isRootGroup(cell) || cell._collapsed !== true) {
+                return;
+            }
+
+            var parentId = cell.get('parent');
+            while (parentId) {
+                const parentCell = graph.getCell(parentId);
+                reposition(parentCell);
+                parentId = parentCell.get('parent');
+            }
+        });
 
         boundary._computedStyle = {};
         boundary._computedStyle.background = fill;
@@ -4080,7 +4426,18 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
             boundary._computedStyle.minimumWidth = widthOfName;
         }
 
-        $('#' + cellView.id).attr('style', 'cursor: ' + (editable === true ? 'move' : 'default') + ' !important');
+        if (type === structurizr.constants.GROUP_ELEMENT_TYPE) {
+            boundary._collapsedSize = {
+                width: elementStyle.width,
+                height: elementStyle.height
+            };
+        } else {
+            $('#' + cellView.id).attr('style', 'cursor: ' + (editable === true ? 'move' : 'default') + ' !important');
+        }
+
+        if (type === structurizr.constants.GROUP_ELEMENT_TYPE) {
+            updateRootGroupInteractivity(boundary);
+        }
 
         return boundary;
     }
@@ -4348,6 +4705,8 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
             if (metadataText && metadataText.length > 0) {
                 parentCell.attr({
                     '.structurizrName': {
+                        'text-anchor': 'start',
+                        'dominant-baseline': 'auto',
                         'ref-x': refX,
                         'y': newHeight - (15 + fontSize)
                     },
@@ -4363,6 +4722,8 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
             } else {
                 parentCell.attr({
                     '.structurizrName': {
+                        'text-anchor': 'start',
+                        'dominant-baseline': 'auto',
                         'ref-x': refX,
                         'y': newHeight - 15
                     },
@@ -5165,6 +5526,23 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
         return svgMarkup;
     }
 
+    function includeCellInContentArea(cell) {
+        if (cell.attributes.type === 'structurizr.image') {
+            return true;
+        }
+
+        if (cell.attributes.type === 'structurizr.boundary') {
+            const collapsedRootGroup = getCollapsedRootGroupForCell(cell);
+            return collapsedRootGroup === undefined || collapsedRootGroup === cell;
+        }
+
+        if (cell.elementInView !== undefined) {
+            return getCollapsedRootGroupForCell(cell) === undefined;
+        }
+
+        return false;
+    }
+
     function findContentArea(crop, margin) {
         var minX = diagramWidth;
         var maxX = 0;
@@ -5174,7 +5552,7 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
         for (var i = 0; i < graph.getElements().length; i++) {
             var cell = graph.getElements()[i];
 
-            if (cell.elementInView !== undefined || cell.attributes.type === 'structurizr.boundary' || cell.attributes.type === 'structurizr.image') {
+            if (includeCellInContentArea(cell)) {
                 var bbox = paper.findViewByModel(cell).getBBox();
                 minX = Math.min(minX, bbox.x);
                 minY = Math.min(minY, bbox.y);
@@ -5186,6 +5564,10 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
 
         for (var i = 0; i < graph.getLinks().length; i++) {
             var link = graph.getLinks()[i];
+            if (link._hiddenForCollapsedGroup === true) {
+                continue;
+            }
+
             var bbox = paper.findViewByModel(link).getBBox();
 
             minX = Math.min(minX, bbox.x);
@@ -6560,6 +6942,12 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
 
     function addPaperEventHandlers() {
         paper.on('cell:mouseover', function (cellView, evt) {
+            if (isRootGroup(cellView.model) && cellView.model._collapsed === true) {
+                expandGroupTimer = setTimeout(() => {
+                    expandRootGroup(cellView.model);
+                }, editable ? 1000 : 10);
+            }
+
             if (cellView.model.elementInView) {
                 highlightedElement = cellView;
 
@@ -6599,6 +6987,11 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
         });
 
         paper.on('cell:mouseout', function (cell, evt) {
+            if (isRootGroup(cell.model) && cell.model._collapsed === true) {
+                console.log("Root Group Cell Mouse Out");
+                clearTimeout(expandGroupTimer); 
+            }
+
             if (evt.altKey && tooltip && tooltip.isVisible()) {
                 // do nothing ... sticky tooltip mode
             } else {
@@ -6626,8 +7019,20 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
             }
         });
 
+        canvas.on('mousemove', function(evt) {
+            collapseExpandedRootGroupForMouseMove(evt);
+        });
+
+        canvas.on('mouseleave', function() {
+            clearTimeout(expandGroupTimer); 
+            if (expandedRootGroup) {
+                collapseRootGroup(expandedRootGroup);
+            }
+        });
+
         paper.on('cell:pointerdown', function (cell, evt, x, y) {
             window.focus();
+            clearTimeout(expandGroupTimer); 
 
             if (!cell.getConnectionLength) {
                 // an element has been clicked
@@ -6951,6 +7356,7 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
             this.zoomToWidthOrHeight();
 
             centreDiagram();
+            collapseAllRootGroups();
             diagramRendered = true;
         } catch (err) {
             console.error('There was an error applying the automatic layout: ' + err);
@@ -6958,13 +7364,7 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
     }
 
     function centreDiagram() {
-        var cellViews = [];
-        cells.forEach(function (cell) {
-            var element = paper.findViewByModel(cell);
-            if (element.model.positionCalculated === false) {
-                cellViews.push(element);
-            }
-        });
+        var cellViews = getVisibleCellViewsForCanvasOperations();
 
         var contentArea = findContentArea(false, 0);
 
@@ -6975,6 +7375,28 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
             moveElement(cellView.model, dx, dy);
         });
         moveLinksBetweenElements(cellViews, dx, dy);
+    }
+
+    function getVisibleCellViewsForCanvasOperations() {
+        var cellViews = [];
+        var includedCellIds = {};
+
+        cells.forEach(function(cell) {
+            if (cell.positionCalculated !== false) {
+                return;
+            }
+
+            const collapsedRootGroup = getCollapsedRootGroupForCell(cell);
+            const cellToMove = collapsedRootGroup || cell;
+            const cellView = paper.findViewByModel(cellToMove);
+
+            if (cellView && includedCellIds[cellToMove.id] !== true) {
+                includedCellIds[cellToMove.id] = true;
+                cellViews.push(cellView);
+            }
+        });
+
+        return cellViews;
     }
 
     this.undoStackIsEmpty = function() {
