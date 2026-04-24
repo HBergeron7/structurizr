@@ -62,7 +62,7 @@ structurizr.ui.DetailsPanel = function() {
 
             totalProvides = totalProvides.concat(element.provides ? element.provides : []);
             totalConsumes = totalConsumes.concat(element.consumes ? element.consumes : []);
-            detailsPanelInterfaces.html(generateInterfaces(totalProvides, []));
+            detailsPanelInterfaces.html(generateInterfaces(totalProvides, totalConsumes));
              
         } else {
             detailsPanelInterfaces.html(generateInterfaces(element.provides, element.consumes));
