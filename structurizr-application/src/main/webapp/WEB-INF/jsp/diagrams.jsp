@@ -81,6 +81,7 @@
             <%@ include file="/WEB-INF/fragments/quick-navigation.jspf" %>
             <%@ include file="/WEB-INF/fragments/tooltip.jspf" %>
             <%@ include file="/WEB-INF/fragments/diagrams/navigation.jspf" %>
+            <%@ include file="/WEB-INF/fragments/diagrams/navigator.jspf" %>
 
             <div id="embeddedControls" style="text-align: right; position: absolute; bottom: 10px; right: 10px; opacity: 0.1; z-index: 100;">
                 <div class="btn-group">
@@ -105,16 +106,20 @@
                     </script>
 
                     <div class="btn-group">
-                        <button id="backEmbeddedButton" class="btn btn-default backButton" title="Go back to previous diagram"><img src="/static/bootstrap-icons/arrow-90deg-left.svg" class="icon-btn" /></button>
+                        <c:if test="${workspace.id > 0}">
+                        <button id="locationEmbeddedButton" class="btn btn-default" title="Diagram navigator"><img src="/static/bootstrap-icons/geo-alt.svg" class="icon-btn" /></button>
+                        <script nonce="${scriptNonce}">
+                            $('#locationEmbeddedButton').click(function() { openDiagramNavigator(); });
+                        </script>
+                        </c:if>
 
                         <c:if test="${workspace.id > 0 && (embed eq true && workspace.editable eq false)}">
-                            <button id="openCurrentDiagramInNewWindowEmbeddedButton" class="btn btn-default" title="Link to this diagram"><img src="/static/bootstrap-icons/link.svg" class="icon-btn" /></button>
+                        <button id="openCurrentDiagramInNewWindowEmbeddedButton" class="btn btn-default" title="Link to this diagram"><img src="/static/bootstrap-icons/link.svg" class="icon-btn" /></button>
+                        <script nonce="${scriptNonce}">
+                            $('#openCurrentDiagramInNewWindowEmbeddedButton').click(function() { openCurrentDiagramInNewWindow(); });
+                        </script>
                         </c:if>
                     </div>
-                    <script nonce="${scriptNonce}">
-                        $('#backEmbeddedButton').click(function() { back(); });
-                        $('#openCurrentDiagramInNewWindowEmbeddedButton').click(function() { openCurrentDiagramInNewWindow(); });
-                    </script>
                 </c:if>
 
                 <c:if test="${structurizrConfiguration.profile == 'Playground'}">
@@ -374,6 +379,10 @@
     function viewChanged(key) {
         $('#keyModal').modal('hide');
 
+        if (structurizr.workspace.id > 0) { // i.e. not a playground page
+            highlightViewInDiagramNavigator(key);
+        }
+
         // set the view key in the embed code modal
         $('.diagramEmbedDiagramId').text(key);
 
@@ -538,7 +547,7 @@
             // don't generate thumbnail
         } else {
             structurizr.diagram.exportCurrentThumbnailToPNG(function (thumbnail) {
-                const domId = '#diagram' + (viewKeys.indexOf(viewKey) + 1) + 'Thumbnail';
+                const domId = '.diagram' + (viewKeys.indexOf(viewKey)) + 'Thumbnail';
                 var suffix;
 
                 if (structurizr.ui.isDarkMode()) {
@@ -574,27 +583,28 @@
         }
     }
 
-    function selectDiagramByView(view)
-    {
+    function selectDiagramByView(view) {
         if (structurizr.workspace.id > 0) {
             $('.diagramThumbnail').removeClass('diagramThumbnailActive');
-            var index = 1;
+            var index = 0;
             views.forEach(function (v) {
                 if (view.key === v.key) {
-                    const thumbnail = $('#diagram' + index + 'Thumbnail');
+                    const thumbnail = $('.diagram' + index + 'Thumbnail');
                     thumbnail.addClass('diagramThumbnailActive');
                 }
                 index++;
             });
 
-            scrollActiveThumbnailIntoView();
+            setTimeout(function() {
+                scrollActiveThumbnailIntoView();
+            }, 10);
         }
     }
 
     function scrollActiveThumbnailIntoView() {
         // scroll the thumbnail into view
         var diagramNavigation = $('#diagramNavigationPanel');
-        var thumbnail = $('.diagramThumbnailActive');
+        var thumbnail = $('#diagramNavigationPanel .diagramThumbnailActive');
         if (diagramNavigation.length > 0 && thumbnail.length > 0) {
             if (thumbnail.offset().top < diagramNavigation.offset().top) {
                 thumbnail[0].scrollIntoView(true);
@@ -614,13 +624,13 @@
 
     function initThumbnails() {
         var html = '';
-        var index = 1;
+        var index = 0;
         views.forEach(function(view) {
             viewKeys.push(view.key);
-            var id = 'diagram' + index;
-            var title = structurizr.util.escapeHtml(structurizr.ui.getTitleForView(view));
+            const id = 'diagram' + index + 'Thumbnail';
+            const title = structurizr.util.escapeHtml(structurizr.ui.getTitleForView(view));
 
-            html += '<div id="' + id + 'Thumbnail" class="diagramThumbnail centered small">';
+            html += '<div class="diagramThumbnail ' + id + ' centered small">';
 
             <c:choose>
             <c:when test="${not empty param.version or embed eq true}">
@@ -632,26 +642,40 @@
             </c:otherwise>
             </c:choose>
 
-            html += '<div>';
+            html += '<div style="font-size: 14px;">';
             html += title;
-            html += '<br /><span class="small">#' + structurizr.util.escapeHtml(view.key) + '</span>';
-            html += '</div></div>';
+            html += '<div class="small">#' + structurizr.util.escapeHtml(view.key) + '</div>';
+            html += '</div>'
+
+            html += '<div class="diagramLevelWrapper">';
+            for (var i = 1; i <= 4; i++) {
+                if (view.level === i) {
+                    html += '<span class="diagramLevel diagramLevel' + i + '"></span>';
+                } else {
+                    html += '<span class="diagramLevel"></span>';
+                }
+            }
+            html += '</div>';
+
+            html += '</div>';
 
             index++;
         });
 
         $('#diagramNavigation').append(html);
 
+        renderDiagramNavigator();
+
         $('.viewThumbnail').on('error', function() {
             $(this).on('error', undefined);
             $(this).attr('src', '/static/img/thumbnail-not-available.png');
         });
 
-        index = 1;
+        index = 0;
         views.forEach(function(view) {
-            document.getElementById('diagram' + index + 'Thumbnail').onclick = function() {
+            $('.diagram' + index + 'Thumbnail').click(function() {
                 window.location.hash = encodeURIComponent(view.key);
-            };
+            });
 
             index++;
         });
@@ -669,7 +693,7 @@
         }
 
         const perspective = structurizr.diagram.getPerspective();
-        if (perspective.length > 0) {
+        if (perspective && perspective.length > 0) {
             if (url.indexOf('?') === -1) {
                 url = url + '?perspective=' + perspective;
             } else {
@@ -677,12 +701,14 @@
             }
         }
 
-        const tags = structurizr.diagram.getFilter().tags;
-        if (tags.length > 0) {
-            if (url.indexOf('?') === -1) {
-                url = url + '?tags=' + tags.join(',');
-            } else {
-                url = url + '&tags=' + tags.join(',');
+        if (structurizr.diagram.getFilter().active) {
+            const tags = structurizr.diagram.getFilter().tags;
+            if (tags.length > 0) {
+                if (url.indexOf('?') === -1) {
+                    url = url + '?tags=' + tags.join(',');
+                } else {
+                    url = url + '&tags=' + tags.join(',');
+                }
             }
         }
 
@@ -897,10 +923,15 @@
             } else if (e.which === b) {
                 back();
                 return;
-            } else if (e.which === l && structurizr.diagram.isEditable()) {
-                openAutoLayoutModal();
-                e.preventDefault();
-                return;
+            } else if (e.which === l) {
+                if (structurizr.diagram.isEditable()) {
+                    openAutoLayoutModal();
+                    e.preventDefault();
+                    return;
+                } else {
+                    openDiagramNavigator();
+                    return;
+                }
             }
         });
     }
@@ -924,7 +955,7 @@
     }
 
     function diagramCreated() {
-        if (structurizr.workspace.id > 0) { // i.e. not a demo page
+        if (structurizr.workspace.id > 0) { // i.e. not a playground page
             initThumbnails();
         }
 

@@ -1538,7 +1538,7 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
     }
 
     function expandRootGroup(rootGroup) {
-        if (!isRootGroup(rootGroup) || rootGroup._collapsed !== true) {
+        if (!isRootGroup(rootGroup) || rootGroup._collapsed !== true || isExpandedRootGroupPinned()) {
             return;
         }
 
@@ -7332,6 +7332,7 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
                 highlightedElement = undefined;
                 highlightedLink = undefined;
                 clearNonEditableSelection();
+                collapseExpandedRootGroupForMouseMove(evt);
             }
         });
 
