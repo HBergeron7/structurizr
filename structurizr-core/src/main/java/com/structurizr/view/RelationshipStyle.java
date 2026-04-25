@@ -16,6 +16,10 @@ public final class RelationshipStyle extends AbstractStyle {
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
     private String color;
 
+    /** the highlight colour of the line, as a HTML hex value (e.g. #123456) */
+    @JsonInclude(value = JsonInclude.Include.NON_NULL)
+    private String highlight;
+
     /** the font size of the annotation, in pixels */
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
     private Integer fontSize;
@@ -102,6 +106,29 @@ public final class RelationshipStyle extends AbstractStyle {
 
     public RelationshipStyle color(String color) {
         setColor(color);
+        return this;
+    }
+
+    public String getHighlight() {
+        return highlight;
+    }
+
+    public void setHighlight(String color) {
+        if (Color.isHexColorCode(color)) {
+            this.highlight = color.toLowerCase();
+        } else {
+            String hexColorCode = Color.fromColorNameToHexColorCode(color);
+
+            if (hexColorCode != null) {
+                this.highlight = hexColorCode.toLowerCase();
+            } else {
+                throw new IllegalArgumentException(color + " is not a valid hex colour code or HTML colour name.");
+            }
+        }
+    }
+
+    public RelationshipStyle highlight(String color) {
+        setHighlight(color);
         return this;
     }
 
@@ -296,6 +323,10 @@ public final class RelationshipStyle extends AbstractStyle {
 
         if (!StringUtils.isNullOrEmpty(relationshipStyle.getColor())) {
             this.setColor(relationshipStyle.getColor());
+        }
+
+        if (!StringUtils.isNullOrEmpty(relationshipStyle.getHighlight())) {
+            this.setHighlight(relationshipStyle.getHighlight());
         }
 
         if (relationshipStyle.getDashed() != null) {

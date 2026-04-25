@@ -80,6 +80,7 @@ class StructurizrDslTokens {
     static final String ELEMENT_STYLE_STROKE_WIDTH_TOKEN = "strokeWidth";
     static final String ELEMENT_STYLE_COLOUR_TOKEN = "colour";
     static final String ELEMENT_STYLE_COLOR_TOKEN = "color";
+    static final String ELEMENT_STYLE_HIGHLIGHT_TOKEN = "highlight";
     static final String ELEMENT_STYLE_ICON_TOKEN = "icon";
     static final String ELEMENT_STYLE_ICON_POSITION_TOKEN = "iconPosition";
     static final String ELEMENT_STYLE_OPACITY_TOKEN = "opacity";
@@ -93,6 +94,7 @@ class StructurizrDslTokens {
     static final String RELATIONSHIP_STYLE_THICKNESS_TOKEN = "thickness";
     static final String RELATIONSHIP_STYLE_COLOUR_TOKEN = "colour";
     static final String RELATIONSHIP_STYLE_COLOR_TOKEN = "color";
+    static final String RELATIONSHIP_STYLE_HIGHLIGHT_TOKEN = "highlight";
     static final String RELATIONSHIP_STYLE_DASHED_TOKEN = "dashed";
     static final String RELATIONSHIP_STYLE_OPACITY_TOKEN = "opacity";
     static final String RELATIONSHIP_STYLE_ROUTING_TOKEN = "routing";

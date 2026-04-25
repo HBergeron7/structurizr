@@ -73,6 +73,21 @@ final class RelationshipStyleParser extends AbstractParser {
         }
     }
 
+    void parseHighlight(RelationshipStyleDslContext context, Tokens tokens) {
+        RelationshipStyle style = context.getStyle();
+
+        if (tokens.hasMoreThan(FIRST_PROPERTY_INDEX)) {
+            throw new RuntimeException("Too many tokens, expected: highlight <#rrggbb|color name>");
+        }
+
+        if (tokens.includes(FIRST_PROPERTY_INDEX)) {
+            String colour = tokens.get(1);
+            style.setHighlight(colour);
+        } else {
+            throw new RuntimeException("Expected: highlight <#rrggbb|color name>");
+        }
+    }
+
     void parseDashed(RelationshipStyleDslContext context, Tokens tokens) {
         // dashed true|false
         RelationshipStyle style = context.getStyle();

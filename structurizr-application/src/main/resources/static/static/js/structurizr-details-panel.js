@@ -19,10 +19,21 @@ structurizr.ui.DetailsPanel = function() {
     var tabRelationButton = $('#relation-tab-button');
     const md = window.markdownit();
 
+    this.show = function() {
+        detailsPanel.show();
+    };
+
+    this.hide = function() {
+        detailsPanel.hide();
+    };
+
     this.showDetailsForElement = function(element, style, perspective) {
         if (element === undefined) {
             return;
         }
+
+        detailsPanel.show();
+
         detailsTabs.removeClass('hidden');
         tabDetails.addClass('active');
         tabDetails.addClass('show');
@@ -172,6 +183,8 @@ structurizr.ui.DetailsPanel = function() {
         if (relationship === undefined) {
             return;
         }
+
+        detailsPanel.show();
 
         detailsTabs.addClass('hidden');
         tabDetails.addClass('active');
@@ -577,4 +590,3 @@ structurizr.ui.DetailsPanel = function() {
 };
 
 const detailsPanel = new structurizr.ui.DetailsPanel();
-

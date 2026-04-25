@@ -28,6 +28,9 @@ public final class ElementStyle extends AbstractStyle {
     private String color;
 
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
+    private String highlight;
+
+    @JsonInclude(value = JsonInclude.Include.NON_NULL)
     private Integer fontSize;
 
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
@@ -222,6 +225,34 @@ public final class ElementStyle extends AbstractStyle {
     }
 
     /**
+     * Gets the highlight colour of the element, as a HTML RGB hex string (e.g. #123456).
+     *
+     * @return  the highlight colour as a String, or null if not specified
+     */
+    public String getHighlight() {
+        return highlight;
+    }
+
+    public void setHighlight(String color) {
+        if (Color.isHexColorCode(color)) {
+            this.highlight = color.toLowerCase();
+        } else {
+            String hexColorCode = Color.fromColorNameToHexColorCode(color);
+
+            if (hexColorCode != null) {
+                this.highlight = hexColorCode.toLowerCase();
+            } else {
+                throw new IllegalArgumentException(color + " is not a valid hex colour code or HTML colour name.");
+            }
+        }
+    }
+
+    public ElementStyle highlight(String color) {
+        setHighlight(color);
+        return this;
+    }
+
+    /**
      * Gets the standard font size used to render text, in pixels.
      *
      * @return  the font size, in pixels, as an Integer, or null if not specified
@@ -411,6 +442,10 @@ public final class ElementStyle extends AbstractStyle {
 
         if (!StringUtils.isNullOrEmpty(elementStyle.getColor())) {
             this.setColor(elementStyle.getColor());
+        }
+
+        if (!StringUtils.isNullOrEmpty(elementStyle.getHighlight())) {
+            this.setHighlight(elementStyle.getHighlight());
         }
 
         if (elementStyle.getFontSize() != null) {

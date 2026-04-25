@@ -133,6 +133,21 @@ final class ElementStyleParser extends AbstractParser {
         }
     }
 
+    void parseHighlight(ElementStyleDslContext context, Tokens tokens) {
+        ElementStyle style = context.getStyle();
+
+        if (tokens.hasMoreThan(FIRST_PROPERTY_INDEX)) {
+            throw new RuntimeException("Too many tokens, expected: highlight <#rrggbb|color name>");
+        }
+
+        if (tokens.includes(FIRST_PROPERTY_INDEX)) {
+            String colour = tokens.get(1);
+            style.setHighlight(colour);
+        } else {
+            throw new RuntimeException("Expected: highlight <#rrggbb|color name>");
+        }
+    }
+
     void parseBorder(ElementStyleDslContext context, Tokens tokens) {
         Map<String, Border> borders = new HashMap<>();
         for (Border border : Border.values()) {

@@ -15,12 +15,12 @@ structurizr.ui.DEFAULT_AUTOLAYOUT_VERTICES = true;
 structurizr.ui.LIGHT_MODE_DEFAULTS = {
     background: '#ffffff',
     color: '#444444',
-    strokeWidth: 2
+    strokeWidth: 5
 };
 structurizr.ui.DARK_MODE_DEFAULTS = {
     background: '#111111',
     color: '#cccccc',
-    strokeWidth: 2
+    strokeWidth: 5
 };
 
 structurizr.ui.themes = [];
@@ -139,13 +139,14 @@ structurizr.ui.loadTheme = function( url) {
         });
 };
 
-structurizr.ui.ElementStyle = function(width, height, background, color, fontSize, shape, icon, border, stroke, strokeWidth, opacity, metadata, description) {
+structurizr.ui.ElementStyle = function(width, height, background, color, fontSize, shape, icon, border, stroke, strokeWidth, opacity, metadata, description, highlight) {
     this.width = width;
     this.height = height;
     this.background = background;
     this.stroke = stroke;
     this.strokeWidth = strokeWidth;
     this.color = color;
+    this.highlight = highlight;
     this.fontSize = fontSize;
     this.shape = shape;
     this.icon = icon;
@@ -162,14 +163,15 @@ structurizr.ui.ElementStyle = function(width, height, background, color, fontSiz
     };
 
     this.toString = function() {
-        return "".concat(this.tag, ",", this.width, ",", this.height, ",", this.background, ",", this.stroke, ",", this.color, ",", this.fontSize, ",", this.shape, ",", this.icon, ",", this.iconPosition, ",", this.border, ",", this.opacity, ",", this.metadata, ",", this.description);
+        return "".concat(this.tag, ",", this.width, ",", this.height, ",", this.background, ",", this.stroke, ",", this.color, ",", this.highlight, ",", this.fontSize, ",", this.shape, ",", this.icon, ",", this.iconPosition, ",", this.border, ",", this.opacity, ",", this.metadata, ",", this.description);
     };
 
 };
 
-structurizr.ui.RelationshipStyle = function(thickness, color, dashed, routing, jump, fontSize, width, position, opacity, metadata, description) {
+structurizr.ui.RelationshipStyle = function(thickness, color, dashed, routing, jump, fontSize, width, position, opacity, metadata, description, highlight) {
     this.thickness = thickness;
     this.color = color;
+    this.highlight = highlight;
     this.dashed = dashed;
     this.routing = routing;
     this.jump = jump;
@@ -187,7 +189,7 @@ structurizr.ui.RelationshipStyle = function(thickness, color, dashed, routing, j
     };
 
     this.toString = function() {
-        return "".concat(this.tag, ",", this.thickness, ",", this.color, ",", this.dashed, ",", this.routing, ",", this.jump, ",", this.fontSize, ",", this.width, ",", this.position, ",", this.opacity)
+        return "".concat(this.tag, ",", this.thickness, ",", this.color, ",", this.highlight, ",", this.dashed, ",", this.routing, ",", this.jump, ",", this.fontSize, ",", this.width, ",", this.position, ",", this.opacity)
     };
 
 };
@@ -268,6 +270,7 @@ structurizr.ui.findElementStyle = function(element, darkMode) {
                 structurizr.util.copyAttributeIfSpecified(elementStyleDefinition, elementStyle, 'background');
                 structurizr.util.copyAttributeIfSpecified(elementStyleDefinition, elementStyle, 'stroke');
                 structurizr.util.copyAttributeIfSpecified(elementStyleDefinition, elementStyle, 'color');
+                structurizr.util.copyAttributeIfSpecified(elementStyleDefinition, elementStyle, 'highlight');
                 structurizr.util.copyAttributeIfSpecified(elementStyleDefinition, elementStyle, 'fontSize');
                 structurizr.util.copyAttributeIfSpecified(elementStyleDefinition, elementStyle, 'shape');
                 structurizr.util.copyAttributeIfSpecified(elementStyleDefinition, elementStyle, 'icon');
@@ -293,7 +296,8 @@ structurizr.ui.findElementStyle = function(element, darkMode) {
         defaultStyle.strokeWidth,
         defaultStyle.opacity,
         defaultStyle.metadata,
-        defaultStyle.description);
+        defaultStyle.description,
+        defaultStyle.highlight);
 
     style.tags = ['Element'];
 
@@ -323,6 +327,7 @@ structurizr.ui.findElementStyle = function(element, darkMode) {
             style.copyStyleAttributeIfSpecified(elementStyle, 'stroke');
             style.copyStyleAttributeIfSpecified(elementStyle, 'strokeWidth');
             style.copyStyleAttributeIfSpecified(elementStyle, 'color');
+            style.copyStyleAttributeIfSpecified(elementStyle, 'highlight');
             style.copyStyleAttributeIfSpecified(elementStyle, 'fontSize');
             style.copyStyleAttributeIfSpecified(elementStyle, 'shape');
             style.copyStyleAttributeIfSpecified(elementStyle, 'icon');
@@ -476,6 +481,7 @@ structurizr.ui.findRelationshipStyle = function(relationship, darkMode) {
             } else {
                 structurizr.util.copyAttributeIfSpecified(relationshipStyleDefinition, relationshipStyle, 'thickness');
                 structurizr.util.copyAttributeIfSpecified(relationshipStyleDefinition, relationshipStyle, 'color');
+                structurizr.util.copyAttributeIfSpecified(relationshipStyleDefinition, relationshipStyle, 'highlight');
                 structurizr.util.copyAttributeIfSpecified(relationshipStyleDefinition, relationshipStyle, 'dashed');
                 structurizr.util.copyAttributeIfSpecified(relationshipStyleDefinition, relationshipStyle, 'style');
                 structurizr.util.copyAttributeIfSpecified(relationshipStyleDefinition, relationshipStyle, 'routing');
@@ -499,7 +505,8 @@ structurizr.ui.findRelationshipStyle = function(relationship, darkMode) {
         defaultStyle.position,
         defaultStyle.opacity,
         defaultStyle.metadata,
-        defaultStyle.description);
+        defaultStyle.description,
+        defaultStyle.highlight);
     style.tags = [ "Relationship" ];
 
     const tags = structurizr.workspace.getAllTagsForRelationship(relationship);
@@ -508,6 +515,7 @@ structurizr.ui.findRelationshipStyle = function(relationship, darkMode) {
         if (relationshipStyle) {
             style.copyStyleAttributeIfSpecified(relationshipStyle, 'thickness');
             style.copyStyleAttributeIfSpecified(relationshipStyle, 'color');
+            style.copyStyleAttributeIfSpecified(relationshipStyle, 'highlight');
             style.copyStyleAttributeIfSpecified(relationshipStyle, 'dashed');
             style.copyStyleAttributeIfSpecified(relationshipStyle, 'style');
             style.copyStyleAttributeIfSpecified(relationshipStyle, 'routing');

@@ -7,6 +7,7 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
     const metadataFontSizeDifferenceRatio = 0.7;
 
     const darkenPercentage = -10;
+    const defaultHighlightColor = '#2B7DFF';
 
     var scale = 0.5;
     var minZoomScale = 0.1;
@@ -68,6 +69,8 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
     var selectedElements = [];
     var highlightedElement = undefined;
     var highlightedLink = undefined;
+    var hoveredNonEditableCellView = undefined;
+    var selectedNonEditableCellView = undefined;
     var expandedRootGroup = undefined;
     var expandGroupTimer;
 
@@ -391,6 +394,10 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
         diagramMetadataWidth = 0;
         diagramMetadataHeight = 0;
         selectedElements = [];
+        hoveredNonEditableCellView = undefined;
+        selectedNonEditableCellView = undefined;
+        highlightedElement = undefined;
+        highlightedLink = undefined;
         enterpriseBoundary = undefined;
         boundariesByElementId = {};
         groupsByName = {};
@@ -398,6 +405,7 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
         animationSteps = undefined;
         animationStarted = false;
         expandedRootGroup = undefined;
+        hideDetailsPanel();
 
         undoStack = new structurizr.util.Stack();
 
@@ -1292,6 +1300,39 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
         return getRootGroupForCell(cell) === rootGroup;
     }
 
+    function isRelationshipInsideRootGroup(link, rootGroup) {
+        if (!link || !rootGroup) {
+            return false;
+        }
+
+        ensureOriginalLinkEndpoints(link);
+
+        const sourceCell = graph.getCell(link._originalSource.id);
+        const targetCell = graph.getCell(link._originalTarget.id);
+
+        return isCellInsideRootGroup(sourceCell, rootGroup) || isCellInsideRootGroup(targetCell, rootGroup);
+    }
+
+    function isCellViewInsideRootGroup(cellView, rootGroup) {
+        if (!cellView || !rootGroup) {
+            return false;
+        }
+
+        if (cellView.model.elementInView) {
+            return isCellInsideRootGroup(cellView.model, rootGroup);
+        }
+
+        if (cellView.model.relationshipInView) {
+            return isRelationshipInsideRootGroup(cellView.model, rootGroup);
+        }
+
+        return false;
+    }
+
+    function isExpandedRootGroupPinned() {
+        return expandedRootGroup && isCellViewInsideRootGroup(selectedNonEditableCellView, expandedRootGroup);
+    }
+
     function setCellVisibility(cell, visible) {
         const cellView = paper.findViewByModel(cell);
         if (cellView) {
@@ -1529,6 +1570,10 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
 
     function collapseExpandedRootGroupForMouseMove(evt) {
         if (!expandedRootGroup || expandedRootGroup._collapsed === true) {
+            return;
+        }
+
+        if (isExpandedRootGroupPinned()) {
             return;
         }
 
@@ -2376,6 +2421,7 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
         cell._computedStyle.color = color;
         cell._computedStyle.borderStyle = configuration.border;
         cell._computedStyle.stroke = stroke;
+        cell._computedStyle.highlight = configuration.highlight;
         cell._computedStyle.opacity = configuration.opacity;
     }
 
@@ -4054,6 +4100,7 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
 
             link._computedStyle = {};
             link._computedStyle.color = fill;
+            link._computedStyle.highlight = configuration.highlight;
             link._computedStyle.lineStyle = configuration.style;
 
             if (relationshipInView.order) {
@@ -4406,6 +4453,7 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
         boundary._computedStyle.color = textColor;
         boundary._computedStyle.borderStyle = elementStyle.border;
         boundary._computedStyle.stroke = stroke;
+        boundary._computedStyle.highlight = elementStyle.highlight;
         boundary._computedStyle.fontSize = elementStyle.fontSize;
 
         var cellView = paper.findViewByModel(boundary);
@@ -4522,6 +4570,7 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
         cell._computedStyle.color = textColor;
         cell._computedStyle.borderStyle = configuration.border;
         cell._computedStyle.stroke = stroke;
+        cell._computedStyle.highlight = configuration.highlight;
         cell._computedStyle.fontSize = configuration.fontSize;
         cell._computedStyle.opacity = configuration.opacity;
 
@@ -6079,7 +6128,131 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
         }
     };
 
+    function hexColorToRgba(color, opacity) {
+        if (color === undefined) {
+            return undefined;
+        }
+
+        const hex = color.replace('#', '');
+        const bigint = parseInt(hex, 16);
+        const red = (bigint >> 16) & 255;
+        const green = (bigint >> 8) & 255;
+        const blue = bigint & 255;
+
+        return 'rgba(' + red + ', ' + green + ', ' + blue + ', ' + opacity + ')';
+    }
+
+    function getElementStyleForInteractions(cell) {
+        if (filter.perspective && cell._perspectiveStyle) {
+            return {
+                stroke: cell._perspectiveStyle.stroke,
+                highlight: cell._computedStyle.highlight
+            };
+        }
+
+        return cell._computedStyle;
+    }
+
+    function getRelationshipStyleForInteractions(link) {
+        if (filter.perspective && link._perspectiveStyle) {
+            return {
+                color: link._perspectiveStyle.color,
+                highlight: link._computedStyle.highlight
+            };
+        }
+
+        return link._computedStyle;
+    }
+
+    function getInteractionHighlightColor(style, opacity) {
+        const highlight = style && style.highlight ? style.highlight : defaultHighlightColor;
+        return opacity === undefined ? highlight : hexColorToRgba(highlight, opacity);
+    }
+
+    function setElementOutlineColor(cell, color) {
+        const domId = paper.findViewByModel(cell).id;
+        $('#' + domId + ' .structurizrHighlightableElement').css('stroke', color);
+
+        if (cell.attributes.type === 'structurizr.person') {
+            $('#' + domId + ' .structurizrPersonLeftArm').css('stroke', color);
+            $('#' + domId + ' .structurizrPersonRightArm').css('stroke', color);
+        } else if (cell.attributes.type === 'structurizr.robot') {
+            $('#' + domId + ' .structurizrRobotLeftArm').css('stroke', color);
+            $('#' + domId + ' .structurizrRobotRightArm').css('stroke', color);
+        }
+    }
+
+    function setRelationshipOutlineColor(link, color) {
+        link.attr('line/stroke', color);
+        link.attr('line/targetMarker/stroke', color);
+        link.attr('line/targetMarker/fill', color);
+    }
+
+    function refreshNonEditableInteractionHighlight(cellView) {
+        if (!cellView) {
+            return;
+        }
+
+        if (cellView.model.elementInView) {
+            const style = getElementStyleForInteractions(cellView.model);
+
+            if (selectedNonEditableCellView === cellView) {
+                setElementOutlineColor(cellView.model, getInteractionHighlightColor(style));
+            } else if (hoveredNonEditableCellView === cellView) {
+                setElementOutlineColor(cellView.model, getInteractionHighlightColor(style, 0.6));
+            } else {
+                setElementOutlineColor(cellView.model, style.stroke);
+            }
+        } else if (cellView.model.relationshipInView) {
+            const style = getRelationshipStyleForInteractions(cellView.model);
+
+            if (selectedNonEditableCellView === cellView) {
+                setRelationshipOutlineColor(cellView.model, getInteractionHighlightColor(style));
+            } else if (hoveredNonEditableCellView === cellView) {
+                setRelationshipOutlineColor(cellView.model, getInteractionHighlightColor(style, 0.6));
+            } else {
+                setRelationshipOutlineColor(cellView.model, style.color);
+            }
+        }
+    }
+
+    function setHoveredNonEditableCellView(cellView) {
+        const previousHoveredNonEditableCellView = hoveredNonEditableCellView;
+        hoveredNonEditableCellView = cellView;
+        refreshNonEditableInteractionHighlight(previousHoveredNonEditableCellView);
+        refreshNonEditableInteractionHighlight(hoveredNonEditableCellView);
+    }
+
+    function hideDetailsPanel() {
+        if (detailsPanel && detailsPanel.hide) {
+            detailsPanel.hide();
+        }
+    }
+
+    function clearNonEditableSelection() {
+        const previousSelectedNonEditableCellView = selectedNonEditableCellView;
+        selectedNonEditableCellView = undefined;
+        refreshNonEditableInteractionHighlight(previousSelectedNonEditableCellView);
+        hideDetailsPanel();
+    }
+
+    function selectNonEditableCellView(cellView) {
+        const previousSelectedNonEditableCellView = selectedNonEditableCellView;
+        selectedNonEditableCellView = cellView;
+        refreshNonEditableInteractionHighlight(previousSelectedNonEditableCellView);
+        refreshNonEditableInteractionHighlight(selectedNonEditableCellView);
+
+        if (expandedRootGroup && expandedRootGroup._collapsed !== true && isExpandedRootGroupPinned() === false) {
+            collapseRootGroup(expandedRootGroup);
+        }
+    }
+
     function highlightRelationship(cellView) {
+        if (editable === false) {
+            refreshNonEditableInteractionHighlight(cellView);
+            return;
+        }
+
         $('#' + cellView.id).children().first().css({
             'stroke': '#aaaaaa',
             'stroke-width': 15
@@ -6087,6 +6260,11 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
     }
 
     function unhighlightRelationship(cellView) {
+        if (editable === false) {
+            refreshNonEditableInteractionHighlight(cellView);
+            return;
+        }
+
         $('#' + cellView.id).children().first().css({
             'stroke': '',
             'stroke-width': 10
@@ -6951,12 +7129,16 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
             if (cellView.model.elementInView) {
                 highlightedElement = cellView;
 
-                // and highlight connections to/from element
-                const connectionsForElement = connections[cellView.model.elementInView.id];
-                if (connectionsForElement) {
-                    connectionsForElement.forEach(function (cellView) {
-                        highlightRelationship(cellView);
-                    });
+                if (editable === false) {
+                    setHoveredNonEditableCellView(cellView);
+                } else {
+                    // and highlight connections to/from element
+                    const connectionsForElement = connections[cellView.model.elementInView.id];
+                    if (connectionsForElement) {
+                        connectionsForElement.forEach(function (cellView) {
+                            highlightRelationship(cellView);
+                        });
+                    }
                 }
             }
 
@@ -6967,7 +7149,11 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
                 currentX = point.x;
                 currentY = point.y;
 
-                highlightRelationship(cellView);
+                if (editable === false) {
+                    setHoveredNonEditableCellView(cellView);
+                } else {
+                    highlightRelationship(cellView);
+                }
             }
 
             const x = evt.clientX;
@@ -7000,20 +7186,28 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
                 }
 
                 if (highlightedElement) {
-                    // and unhighlight connections to/from element
                     if (cell.model.elementInView) {
-                        const connectionsForElement = connections[cell.model.elementInView.id];
-                        if (connectionsForElement) {
-                            connectionsForElement.forEach(function (cellView) {
-                                unhighlightRelationship(cellView);
-                            });
+                        if (editable === false) {
+                            setHoveredNonEditableCellView(undefined);
+                        } else {
+                            // and unhighlight connections to/from element
+                            const connectionsForElement = connections[cell.model.elementInView.id];
+                            if (connectionsForElement) {
+                                connectionsForElement.forEach(function (cellView) {
+                                    unhighlightRelationship(cellView);
+                                });
+                            }
                         }
                         highlightedElement = undefined;
                     }
                 }
 
                 if (highlightedLink) {
-                    unhighlightRelationship(cell);
+                    if (editable === false) {
+                        setHoveredNonEditableCellView(undefined);
+                    } else {
+                        unhighlightRelationship(cell);
+                    }
                     highlightedLink = undefined;
                 }
             }
@@ -7025,7 +7219,7 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
 
         canvas.on('mouseleave', function() {
             clearTimeout(expandGroupTimer); 
-            if (expandedRootGroup) {
+            if (expandedRootGroup && isExpandedRootGroupPinned() === false) {
                 collapseRootGroup(expandedRootGroup);
             }
         });
@@ -7132,6 +7326,15 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
             }
         });
 
+        paper.on('blank:pointerclick', function (evt, x, y) {
+            if (self.isEditable() === false) {
+                setHoveredNonEditableCellView(undefined);
+                highlightedElement = undefined;
+                highlightedLink = undefined;
+                clearNonEditableSelection();
+            }
+        });
+
         paper.on('cell:pointerclick', function (cellView, evt, x, y) {
             if (self.isEditable()) {
                 if (cellView.model.elementInView && cellView.model.positionCalculated === false) {
@@ -7162,8 +7365,10 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
                 }
             } else {
                 if (cellView.model.elementInView) {
+                    selectNonEditableCellView(cellView);
                     showDetailsForElement(structurizr.workspace.findElementById(cellView.model.elementInView.id), cellView.model._computedStyle);
                 } else if (cellView.model.relationshipInView) {
+                    selectNonEditableCellView(cellView);
                     showDetailsForRelationship(structurizr.workspace.findRelationshipById(cellView.model.relationshipInView.id), cellView.model.relationshipInView, cellView.model._computedStyle);
                 }
             }
