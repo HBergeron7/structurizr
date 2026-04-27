@@ -59,6 +59,16 @@ structurizr.ui.Tooltip = function() {
         visible = true;
     }
 
+    function getRelationshipEndpointName(relationship, endpoint) {
+        const endpointName = relationship[endpoint + 'Name'];
+        if (endpointName !== undefined) {
+            return endpointName;
+        }
+
+        const element = structurizr.workspace.findElementById(relationship[endpoint + 'Id']);
+        return element ? element.name : '';
+    }
+
     this.showTooltip = function(name, description, metadata, background, color) {
         tooltipName.html(structurizr.util.escapeHtml(name));
         tooltipDescription.html(structurizr.util.escapeHtml(description));
@@ -201,11 +211,11 @@ structurizr.ui.Tooltip = function() {
 
             var description = '';
             description += '<p style="font-weight: bold">';
-            description += structurizr.util.escapeHtml(structurizr.workspace.findElementById(relationship.sourceId).name);
+            description += structurizr.util.escapeHtml(getRelationshipEndpointName(relationship, 'source'));
             description += ' <span style="color: gray;">--</span> ';
             description += structurizr.util.escapeHtml(relationshipSummary);
             description += ' <span style="color: gray;">-&gt;</span> ';
-            description += structurizr.util.escapeHtml(structurizr.workspace.findElementById(relationship.destinationId).name);
+            description += structurizr.util.escapeHtml(getRelationshipEndpointName(relationship, 'destination'));
             description += '</p>';
             tooltipDescription.html(description);
 
@@ -305,11 +315,13 @@ structurizr.ui.Tooltip = function() {
     function renderTags(tags) {
         if (tags.length > 0) {
             var tagsHtml = '<div class="smaller">';
+            var renderedTags = [];
 
             tags.forEach(function (tag) {
                 if (tag !== undefined) {
                     tag = tag.trim();
-                    if (tag.length > 0) {
+                    if (tag.length > 0 && renderedTags.indexOf(tag) === -1) {
+                        renderedTags.push(tag);
                         tagsHtml += '<span class="tag">';
                         tagsHtml += structurizr.util.escapeHtml(tag);
                         tagsHtml += '</span>';

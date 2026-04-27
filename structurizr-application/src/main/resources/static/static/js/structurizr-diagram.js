@@ -59,6 +59,8 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
     var enterpriseBoundary; // for backwards compatibility with older workspace definitions
     var boundariesByElementId = {};
     var groupsByName = {};
+    var syntheticGroupElementsById = {};
+    var syntheticRelationshipsById = {};
     var mapOfIdToBox = {};
     var mapOfIdToLine = {};
     var cells;
@@ -123,6 +125,9 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
     var diagramRendered = false;
 
     var parentElement = $('#' + id);
+    const syntheticGroupElementIdPrefix = '__structurizr.group__:';
+    const syntheticRelationshipIdPrefix = '__structurizr.syntheticRelationship__:';
+    const syntheticRelationshipVerticesPropertyName = 'structurizr.syntheticRelationshipVertices';
     const viewportId = id + '-viewport';
     const canvasId = id + '-canvas';
     parentElement.append('<div id="' + viewportId + '" class="structurizrDiagramViewport"><div id="' + canvasId + '" class=structurizrDiagramCanvas"></div></div>');
@@ -401,6 +406,8 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
         enterpriseBoundary = undefined;
         boundariesByElementId = {};
         groupsByName = {};
+        syntheticGroupElementsById = {};
+        syntheticRelationshipsById = {};
         linesToAnimate = undefined;
         animationSteps = undefined;
         animationStarted = false;
@@ -1202,6 +1209,23 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
         return getGroupSeparator() !== undefined;
     }
 
+    function createSyntheticGroupElementId(group) {
+        return syntheticGroupElementIdPrefix + group._groupScope + ':' + group._groupFullName;
+    }
+
+    function registerSyntheticGroupElement(group) {
+        const syntheticElement = {
+            id: createSyntheticGroupElementId(group),
+            name: group._name,
+            type: structurizr.constants.GROUP_ELEMENT_TYPE,
+            tags: 'Element,Group'
+        };
+
+        group._syntheticElement = syntheticElement;
+        syntheticGroupElementsById[syntheticElement.id] = syntheticElement;
+        mapOfIdToBox[syntheticElement.id] = group;
+    }
+
     function configureGroup(group, name, scope, isRootGroup, rootGroup) {
         group._structurizrGroup = true;
         group._groupFullName = name;
@@ -1209,6 +1233,7 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
         group._structurizrRootGroup = isRootGroup;
         group._rootGroup = rootGroup || group;
         group._collapsed = false;
+        registerSyntheticGroupElement(group);
     }
 
     function findOrCreateGroup(name, scope) {
@@ -1256,12 +1281,6 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
         return JSON.parse(JSON.stringify(linkEnd));
     }
 
-    function createRetargetedLinkEnd(linkEnd, cellId) {
-        const retargetedLinkEnd = cloneLinkEnd(linkEnd) || {};
-        retargetedLinkEnd.id = cellId;
-        return retargetedLinkEnd;
-    }
-
     function isGroupBoundary(cell) {
         return cell !== undefined && cell.attributes.type === 'structurizr.boundary' && cell._structurizrGroup === true;
     }
@@ -1296,6 +1315,84 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
         return undefined;
     }
 
+    function getVisibleEndpointForCell(cell) {
+        const collapsedRootGroup = getCollapsedRootGroupForCell(cell);
+        if (collapsedRootGroup) {
+            return {
+                id: collapsedRootGroup._syntheticElement.id,
+                name: collapsedRootGroup._syntheticElement.name,
+                cell: collapsedRootGroup,
+                group: collapsedRootGroup,
+                collapsed: true
+            };
+        }
+
+        return {
+            id: cell.elementInView.id,
+            name: structurizr.workspace.findElementById(cell.elementInView.id).name,
+            cell: cell,
+            collapsed: false
+        };
+    }
+
+    function resolveRelationshipById(relationshipId) {
+        return syntheticRelationshipsById[relationshipId] || structurizr.workspace.findRelationshipById(relationshipId);
+    }
+
+    function resolveRelationshipEndpointName(relationship, endpoint) {
+        const endpointName = relationship[endpoint + 'Name'];
+        if (endpointName !== undefined) {
+            return endpointName;
+        }
+
+        const element = structurizr.workspace.findElementById(relationship[endpoint + 'Id']);
+        return element ? element.name : '';
+    }
+
+    function ensureCurrentViewProperties() {
+        if (currentView.properties === undefined) {
+            currentView.properties = {};
+        }
+    }
+
+    function getSyntheticRelationshipVerticesMap() {
+        ensureCurrentViewProperties();
+
+        const persistedVertices = currentView.properties[syntheticRelationshipVerticesPropertyName];
+        if (persistedVertices === undefined || persistedVertices.length === 0) {
+            return {};
+        }
+
+        try {
+            return JSON.parse(persistedVertices);
+        } catch (err) {
+            console.log('Could not parse persisted synthetic relationship vertices for view ' + currentView.key);
+            return {};
+        }
+    }
+
+    function getPersistedVerticesForSyntheticRelationship(relationshipId) {
+        const verticesByRelationshipId = getSyntheticRelationshipVerticesMap();
+        return verticesByRelationshipId[relationshipId];
+    }
+
+    function persistVerticesForSyntheticRelationship(relationshipId, vertices) {
+        ensureCurrentViewProperties();
+
+        const verticesByRelationshipId = getSyntheticRelationshipVerticesMap();
+        if (vertices && vertices.length > 0) {
+            verticesByRelationshipId[relationshipId] = vertices;
+        } else {
+            delete verticesByRelationshipId[relationshipId];
+        }
+
+        if (Object.keys(verticesByRelationshipId).length > 0) {
+            currentView.properties[syntheticRelationshipVerticesPropertyName] = JSON.stringify(verticesByRelationshipId);
+        } else {
+            delete currentView.properties[syntheticRelationshipVerticesPropertyName];
+        }
+    }
+
     function isCellInsideRootGroup(cell, rootGroup) {
         return getRootGroupForCell(cell) === rootGroup;
     }
@@ -1303,6 +1400,15 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
     function isRelationshipInsideRootGroup(link, rootGroup) {
         if (!link || !rootGroup) {
             return false;
+        }
+
+        if (link._syntheticRelationship === true) {
+            const relationship = resolveRelationshipById(link.relationshipInView.id);
+            if (!relationship) {
+                return false;
+            }
+
+            return relationship.sourceId === rootGroup._syntheticElement.id || relationship.destinationId === rootGroup._syntheticElement.id;
         }
 
         ensureOriginalLinkEndpoints(link);
@@ -1387,7 +1493,172 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
         }
     }
 
-    function syncCollapsedGroupLinks() {
+    function removeSyntheticSummaryRelationships() {
+        lines.filter(function(link) {
+            return link._syntheticRelationship === true;
+        }).forEach(function(link) {
+            const relationshipId = link.relationshipInView.id;
+            const linkView = paper.findViewByModel(link);
+
+            if (hoveredNonEditableCellView === linkView) {
+                setHoveredNonEditableCellView(undefined);
+            }
+
+            if (selectedNonEditableCellView === linkView) {
+                clearNonEditableSelection();
+            }
+
+            delete syntheticRelationshipsById[relationshipId];
+            delete linesByRelationshipId[relationshipId];
+            delete mapOfIdToLine[relationshipId];
+            link.remove();
+        });
+
+        lines = lines.filter(function(link) {
+            return link._syntheticRelationship !== true;
+        });
+    }
+
+    function collectUniqueRelationshipDescriptions(relationships) {
+        const descriptions = [];
+
+        relationships.forEach(function(relationship) {
+            const description = relationship.description ? relationship.description.trim() : '';
+            if (description.length > 0 && descriptions.indexOf(description) === -1) {
+                descriptions.push(description);
+            }
+        });
+
+        return descriptions;
+    }
+
+    function collectUniqueRelationshipTechnologies(relationships) {
+        const technologies = [];
+
+        relationships.forEach(function(relationship) {
+            const technology = relationship.technology ? relationship.technology.trim() : '';
+            if (technology.length > 0 && technologies.indexOf(technology) === -1) {
+                technologies.push(technology);
+            }
+        });
+
+        return technologies;
+    }
+
+    function collectRelationshipTags(relationships) {
+        const tags = [];
+
+        relationships.forEach(function(relationship) {
+            if (!relationship.tags) {
+                return;
+            }
+
+            relationship.tags.split(',').forEach(function(tag) {
+                tag = tag.trim();
+                if (tag.length > 0 && tags.indexOf(tag) === -1) {
+                    tags.push(tag);
+                }
+            });
+        });
+
+        return tags;
+    }
+
+    function collectRelationshipProperties(relationships) {
+        const properties = {};
+
+        relationships.forEach(function(relationship) {
+            if (!relationship.properties) {
+                return;
+            }
+
+            Object.keys(relationship.properties).forEach(function(name) {
+                if (properties[name] === undefined) {
+                    properties[name] = relationship.properties[name];
+                }
+            });
+        });
+
+        return properties;
+    }
+
+    function collectRelationshipPerspectives(relationships) {
+        const perspectivesByName = {};
+        const perspectives = [];
+
+        relationships.forEach(function(relationship) {
+            if (!relationship.perspectives) {
+                return;
+            }
+
+            relationship.perspectives.forEach(function(perspective) {
+                if (perspectivesByName[perspective.name] === undefined) {
+                    perspectivesByName[perspective.name] = true;
+                    perspectives.push(perspective);
+                }
+            });
+        });
+
+        return perspectives;
+    }
+
+    function createSyntheticRelationship(sourceEndpoint, destinationEndpoint, relationships) {
+        const relationshipId = syntheticRelationshipIdPrefix + sourceEndpoint.id + '->' + destinationEndpoint.id;
+        const descriptions = collectUniqueRelationshipDescriptions(relationships);
+        const technologies = collectUniqueRelationshipTechnologies(relationships);
+        const tags = collectRelationshipTags(relationships);
+        const linkedRelationshipIds = relationships.map(function(relationship) {
+            return relationship.id;
+        });
+        const firstRelationship = relationships[0];
+
+        if (tags.indexOf('Relationship') === -1) {
+            tags.unshift('Relationship');
+        }
+
+        technologies.forEach(function(technology) {
+            if (tags.indexOf(technology) === -1) {
+                tags.push(technology);
+            }
+        });
+
+        const relationship = {
+            id: relationshipId,
+            sourceId: sourceEndpoint.id,
+            destinationId: destinationEndpoint.id,
+            sourceName: sourceEndpoint.name,
+            destinationName: destinationEndpoint.name,
+            description: descriptions.join('/'),
+            technology: technologies.join('/'),
+            tags: tags.join(','),
+            properties: collectRelationshipProperties(relationships),
+            perspectives: collectRelationshipPerspectives(relationships),
+            linkedRelationshipId: firstRelationship.id,
+            linkedRelationshipIdList: linkedRelationshipIds,
+            url: undefined,
+            vertices: getPersistedVerticesForSyntheticRelationship(relationshipId),
+            _synthetic: true
+        };
+
+        relationships.forEach(function(linkedRelationship) {
+            if (relationship.url !== undefined) {
+                return;
+            }
+
+            if (linkedRelationship.url && linkedRelationship.url.trim().length > 0) {
+                relationship.url = linkedRelationship.url;
+            }
+        });
+
+        syntheticRelationshipsById[relationship.id] = relationship;
+        return relationship;
+    }
+
+    function syncCollapsedGroupRelationships() {
+        removeSyntheticSummaryRelationships();
+
+        const hiddenRelationshipsByVisibleEndpointPair = {};
+
         lines.forEach(function(link) {
             ensureOriginalLinkEndpoints(link);
 
@@ -1398,9 +1669,10 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
                 return;
             }
 
-            const sourceRootGroup = getCollapsedRootGroupForCell(sourceCell);
-            const targetRootGroup = getCollapsedRootGroupForCell(targetCell);
-            const hideLink = sourceRootGroup && targetRootGroup && sourceRootGroup.id === targetRootGroup.id;
+            const sourceEndpoint = getVisibleEndpointForCell(sourceCell);
+            const targetEndpoint = getVisibleEndpointForCell(targetCell);
+            const shouldSummarise = sourceEndpoint.collapsed === true || targetEndpoint.collapsed === true;
+            const hideLink = sourceEndpoint.id === targetEndpoint.id;
 
             if (hideLink) {
                 link._hiddenForCollapsedGroup = true;
@@ -1408,11 +1680,56 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
                 return;
             }
 
-            link._hiddenForCollapsedGroup = false;
-            link.source(sourceRootGroup ? createRetargetedLinkEnd(link._originalSource, sourceRootGroup.id) : cloneLinkEnd(link._originalSource));
-            link.target(targetRootGroup ? createRetargetedLinkEnd(link._originalTarget, targetRootGroup.id) : cloneLinkEnd(link._originalTarget));
-            setLinkVisibility(link, true);
+            if (shouldSummarise === false) {
+                link._hiddenForCollapsedGroup = false;
+                setLinkVisibility(link, true);
+                return;
+            }
+
+            const relationship = resolveRelationshipById(link.relationshipInView.id);
+            if (!relationship) {
+                return;
+            }
+
+            link._hiddenForCollapsedGroup = true;
+            setLinkVisibility(link, false);
+
+            const relationshipIdentifier = sourceEndpoint.id + '->' + targetEndpoint.id;
+            var relationshipGroup = hiddenRelationshipsByVisibleEndpointPair[relationshipIdentifier];
+            if (relationshipGroup === undefined) {
+                relationshipGroup = {
+                    sourceEndpoint: sourceEndpoint,
+                    targetEndpoint: targetEndpoint,
+                    relationships: []
+                };
+                hiddenRelationshipsByVisibleEndpointPair[relationshipIdentifier] = relationshipGroup;
+            }
+
+            relationshipGroup.relationships.push(relationship);
         });
+
+        Object.keys(hiddenRelationshipsByVisibleEndpointPair).forEach(function(identifier) {
+            const relationshipGroup = hiddenRelationshipsByVisibleEndpointPair[identifier];
+            const syntheticRelationship = createSyntheticRelationship(
+                relationshipGroup.sourceEndpoint,
+                relationshipGroup.targetEndpoint,
+                relationshipGroup.relationships
+            );
+            const relationshipInView = { id: syntheticRelationship.id, _synthetic: true };
+            const line = createArrow(relationshipInView);
+            if (line === undefined) {
+                return;
+            }
+
+            line._syntheticRelationship = true;
+            lines.push(line);
+            linesByRelationshipId[syntheticRelationship.id] = line;
+            mapOfIdToLine[syntheticRelationship.id] = line;
+        });
+
+        if (filter.active || filter.perspective !== undefined) {
+            runFilter(filter.id);
+        }
     }
 
     function bringRootGroupToFront(rootGroup) {
@@ -1425,8 +1742,12 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
             cell.toFront();
         });
 
-        lines.forEach(function(link) {
+        graph.getLinks().forEach(function(link) {
             if (link._hiddenForCollapsedGroup === true) {
+                return;
+            }
+
+            if (link._syntheticRelationship === true) {
                 return;
             }
 
@@ -1437,6 +1758,10 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
 
             if (isCellInsideRootGroup(sourceCell, rootGroup) || isCellInsideRootGroup(targetCell, rootGroup)) {
                 link.toFront();
+                const linkView = paper.findViewByModel(link);
+                if (linkView) {
+                    linkView.update();
+                }
             }
         });
     }
@@ -1530,7 +1855,7 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
         setCellCenter(rootGroup, rootGroupCenter);
         repositionParentCells(rootGroup);
         updateRootGroupInteractivity(rootGroup);
-        syncCollapsedGroupLinks();
+        syncCollapsedGroupRelationships();
 
         if (expandedRootGroup === rootGroup) {
             expandedRootGroup = undefined;
@@ -1538,11 +1863,11 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
     }
 
     function expandRootGroup(rootGroup) {
-        if (!isRootGroup(rootGroup) || rootGroup._collapsed !== true || isExpandedRootGroupPinned()) {
+        if (!isRootGroup(rootGroup) || rootGroup._collapsed !== true) {
             return;
         }
 
-        if (expandedRootGroup && expandedRootGroup !== rootGroup) {
+        if (isExpandedRootGroupPinned === false && expandedRootGroup && expandedRootGroup !== rootGroup) {
             collapseRootGroup(expandedRootGroup);
         }
 
@@ -1554,7 +1879,7 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
         setCellCenter(rootGroup, rootGroupCenter);
         repositionParentCells(rootGroup);
         updateRootGroupInteractivity(rootGroup);
-        syncCollapsedGroupLinks();
+        syncCollapsedGroupRelationships();
         bringRootGroupToFront(rootGroup);
         expandedRootGroup = rootGroup;
     }
@@ -1701,6 +2026,10 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
     }
 
     function relationshipHasUrl(relationship) {
+        if (relationship === undefined) {
+            return false;
+        }
+
         var result = (relationship.url !== undefined);
 
         if (!result) {
@@ -1716,7 +2045,7 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
 
         if (result === false) {
             if (relationship.linkedRelationshipId) {
-                return relationshipHasUrl(structurizr.workspace.findRelationshipById(relationship.linkedRelationshipId));
+                return relationshipHasUrl(resolveRelationshipById(relationship.linkedRelationshipId));
             }
         }
 
@@ -1819,6 +2148,10 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
     }
 
     function getPerspectiveForRelationship(relationship) {
+        if (relationship === undefined) {
+            return undefined;
+        }
+
         var p;
 
         if (relationship.perspectives) {
@@ -1829,9 +2162,9 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
             });
         }
 
-        if (p === false) {
+        if (p === undefined) {
             if (relationship.linkedRelationshipId) {
-                p = getPerspectiveForRelationship(structurizr.workspace.findRelationshipById(relationship.linkedRelationshipId));
+                p = getPerspectiveForRelationship(resolveRelationshipById(relationship.linkedRelationshipId));
             }
         }
 
@@ -1944,7 +2277,10 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
 
         const relationships = [];
         lines.forEach(function (line) {
-            relationships.push(structurizr.workspace.findRelationshipById(line.relationshipInView.id));
+            const relationship = resolveRelationshipById(line.relationshipInView.id);
+            if (relationship) {
+                relationships.push(relationship);
+            }
         });
 
         relationships.forEach(function(relationship) {
@@ -3856,6 +4192,10 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
     }
 
     function includeRelationshipOnDiagram(relationship) {
+        if (relationship === undefined) {
+            return false;
+        }
+
         return includeOnDiagram(structurizr.workspace.getAllTagsForRelationship(relationship));
     }
 
@@ -3889,7 +4229,7 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
 
     function createArrow(relationshipInView) {
         var internalPadding = 10;
-        var relationship = structurizr.workspace.findRelationshipById(relationshipInView.id);
+        var relationship = resolveRelationshipById(relationshipInView.id);
 
         if (!includeRelationshipOnDiagram(relationship)) {
             return;
@@ -4086,14 +4426,26 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
 
             if (relationshipInView.vertices) {
                 link.set('vertices', relationshipInView.vertices);
+            } else if (relationship._synthetic === true && relationship.vertices) {
+                link.set('vertices', relationship.vertices);
             }
 
             link.on('change:vertices', function (event) {
                 var vertices = link.get('vertices');
+
+                if (relationship._synthetic === true) {
+                    relationship.vertices = vertices;
+                    persistVerticesForSyntheticRelationship(relationship.id, vertices);
+                    fireWorkspaceChangedEvent();
+                    return;
+                }
+
                 if (vertices) {
                     link.relationshipInView.vertices = vertices;
-                    fireWorkspaceChangedEvent();
+                } else {
+                    delete link.relationshipInView.vertices;
                 }
+                fireWorkspaceChangedEvent();
             });
 
             graph.addCell(link);
@@ -4130,11 +4482,20 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
                 linkView.addTools(toolsView);
             }
 
+            if (editable === false) {
+                const linkView = paper.findViewByModel(link);
+                $('#' + linkView.id + ' .connection-wrap').css({
+                    'pointer-events': 'visiblePainted',
+                    'cursor': 'auto'
+                });
+                $('#' + linkView.id + ' .marker-vertices').css('display', 'none');
+            }
+
             link.set('labelSize', { width: configuration.width * 1.2, height: totalHeight });
 
             return link;
         } else {
-            console.log("Not rendering relationship " + relationship.id + ' (' + structurizr.workspace.findElementById(relationship.sourceId).name + ' -> ' + structurizr.workspace.findElementById(relationship.destinationId).name + ') because the source and destination elements are not on the diagram.');
+            console.log("Not rendering relationship " + relationship.id + ' (' + resolveRelationshipEndpointName(relationship, 'source') + ' -> ' + resolveRelationshipEndpointName(relationship, 'destination') + ') because the source and destination elements are not on the diagram.');
         }
     }
 
@@ -6606,13 +6967,17 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
         while (animationIndex < linesToAnimate.length && line.relationshipInView.order === order) {
             showRelationship(line.relationshipInView.id, line.relationshipInView.order);
 
-            var relationship = structurizr.workspace.findRelationshipById(line.relationshipInView.id);
+            var relationship = resolveRelationshipById(line.relationshipInView.id);
 
-            unfadeElement(relationship.sourceId);
-            unfadeElement(relationship.destinationId);
+            if (structurizr.workspace.findElementById(relationship.sourceId)) {
+                unfadeElement(relationship.sourceId);
+                elementsInStep.push(relationship.sourceId);
+            }
 
-            elementsInStep.push(relationship.sourceId);
-            elementsInStep.push(relationship.destinationId);
+            if (structurizr.workspace.findElementById(relationship.destinationId)) {
+                unfadeElement(relationship.destinationId);
+                elementsInStep.push(relationship.destinationId);
+            }
 
             animationIndex++;
             line = linesToAnimate[animationIndex];
@@ -6644,6 +7009,10 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
     };
 
     this.moveLabelOfHighlightedLink = function(delta) {
+        if (resolveRelationshipById(highlightedLink.model.relationshipInView.id)._synthetic === true) {
+            return;
+        }
+
         var labels = highlightedLink.model.get('labels');
         if (labels) {
             if (labels[0]) {
@@ -6670,6 +7039,10 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
     };
 
     this.toggleRoutingOfHighlightedLink = function() {
+        if (resolveRelationshipById(highlightedLink.model.relationshipInView.id)._synthetic === true) {
+            return;
+        }
+
         if (highlightedLink.model.relationshipInView.routing === undefined) {
             highlightedLink.model.relationshipInView.routing = 'Direct';
             setRouting(highlightedLink.model, 'Direct');
@@ -6687,7 +7060,7 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
             setRouting(highlightedLink.model, 'Metro');
 
         } else if (highlightedLink.model.relationshipInView.routing === 'Metro') {
-            var relationship = structurizr.workspace.findRelationshipById(highlightedLink.model.relationshipInView.id);
+            var relationship = resolveRelationshipById(highlightedLink.model.relationshipInView.id);
             if (relationship) {
                 const configuration = structurizr.ui.findRelationshipStyle(relationship, darkMode);
                 highlightedLink.model.relationshipInView.routing = undefined;
@@ -6699,6 +7072,9 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
     };
 
     this.toggleAnchorOfHighlightedLink = function() {
+        if (resolveRelationshipById(highlightedLink.model.relationshipInView.id)._synthetic === true) {
+            return;
+        }
         
         if (highlightedLink.model.relationshipInView.anchor === undefined) {
             highlightedLink.model.relationshipInView.anchor = 'Center';
@@ -6725,8 +7101,8 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
     };
 
     this.toggleJumpOfHighlightedLink = function() {
-        var relationship = structurizr.workspace.findRelationshipById(highlightedLink.model.relationshipInView.id);
-        if (relationship) {
+        var relationship = resolveRelationshipById(highlightedLink.model.relationshipInView.id);
+        if (relationship && relationship._synthetic !== true) {
             const configuration = structurizr.ui.findRelationshipStyle(relationship, darkMode);
 
             if (highlightedLink.model.relationshipInView.jump === undefined) {
@@ -7370,7 +7746,7 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
                     showDetailsForElement(structurizr.workspace.findElementById(cellView.model.elementInView.id), cellView.model._computedStyle);
                 } else if (cellView.model.relationshipInView) {
                     selectNonEditableCellView(cellView);
-                    showDetailsForRelationship(structurizr.workspace.findRelationshipById(cellView.model.relationshipInView.id), cellView.model.relationshipInView, cellView.model._computedStyle);
+                    showDetailsForRelationship(resolveRelationshipById(cellView.model.relationshipInView.id), cellView.model.relationshipInView, cellView.model._computedStyle);
                 }
             }
             
@@ -7629,7 +8005,7 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
     }
 
     function showTooltipForRelationship(cellView, x, y) {
-        const relationship = structurizr.workspace.findRelationshipById(cellView.model.relationshipInView.id);
+        const relationship = resolveRelationshipById(cellView.model.relationshipInView.id);
         const relationshipInView = cellView.model.relationshipInView;
         var style = cellView.model._computedStyle;
 

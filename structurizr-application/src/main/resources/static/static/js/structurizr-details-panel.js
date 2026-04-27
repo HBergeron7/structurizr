@@ -19,6 +19,20 @@ structurizr.ui.DetailsPanel = function() {
     var tabRelationButton = $('#relation-tab-button');
     const md = window.markdownit();
 
+    function getRelationshipEndpointName(relationship, endpoint) {
+        const endpointName = relationship[endpoint + 'Name'];
+        if (endpointName !== undefined) {
+            return endpointName;
+        }
+
+        const element = structurizr.workspace.findElementById(relationship[endpoint + 'Id']);
+        return element ? element.name : '';
+    }
+
+    function getRelationshipEndpointElement(relationship, endpoint) {
+        return structurizr.workspace.findElementById(relationship[endpoint + 'Id']);
+    }
+
     this.show = function() {
         detailsPanel.show();
     };
@@ -84,11 +98,13 @@ structurizr.ui.DetailsPanel = function() {
         if (perspective === undefined) {
             var tagsHtml = '';
             var tags = structurizr.workspace.getAllTagsForElement(element);
+            var renderedTags = [];
             tagsHtml += '<div class="smaller">';
             tags.forEach(function (tag) {
                 if (tag !== undefined) {
                     tag = tag.trim();
-                    if (tag.length > 0) {
+                    if (tag.length > 0 && renderedTags.indexOf(tag) === -1) {
+                        renderedTags.push(tag);
                         tagsHtml += '<span class="tag">';
                         tagsHtml += structurizr.util.escapeHtml(tag);
                         tagsHtml += '</span>';
@@ -209,8 +225,8 @@ structurizr.ui.DetailsPanel = function() {
             relationshipSummary = '';
         }
 
-        var sourceName = structurizr.util.escapeHtml(structurizr.workspace.findElementById(relationship.sourceId).name); 
-        var destName = structurizr.util.escapeHtml(structurizr.workspace.findElementById(relationship.destinationId).name);
+        var sourceName = structurizr.util.escapeHtml(getRelationshipEndpointName(relationship, 'source'));
+        var destName = structurizr.util.escapeHtml(getRelationshipEndpointName(relationship, 'destination'));
         detailsPanelName.html('<div style="text-align: center;">' + sourceName + '</div><img src="/static/bootstrap-icons/arrow-right-short.svg" /><div style="text-align: center;">' + destName + '</div>');
         detailsPanelDescription.html((relationshipInView.order ? relationshipInView.order + ': ' : '') + relationshipSummary);
 
@@ -245,11 +261,13 @@ structurizr.ui.DetailsPanel = function() {
         if (perspective === undefined) {
             var tagsHtml = '';
             var tags = structurizr.workspace.getAllTagsForRelationship(relationship);
+            var renderedTags = [];
             tagsHtml += '<div class="smaller">';
             tags.forEach(function (tag) {
                 if (tag !== undefined) {
                     tag = tag.trim();
-                    if (tag.length > 0) {
+                    if (tag.length > 0 && renderedTags.indexOf(tag) === -1) {
+                        renderedTags.push(tag);
                         tagsHtml += '<span class="tag">';
                         tagsHtml += structurizr.util.escapeHtml(tag);
                         tagsHtml += '</span>';
@@ -432,13 +450,15 @@ structurizr.ui.DetailsPanel = function() {
     function generateRelationshipDetails(relationship) {
         var detailsHtml = '';
        
-        var source = structurizr.workspace.findElementById(relationship.sourceId);
-        var destination = structurizr.workspace.findElementById(relationship.destinationId);
+        var source = getRelationshipEndpointElement(relationship, 'source');
+        var destination = getRelationshipEndpointElement(relationship, 'destination');
+        var sourceName = getRelationshipEndpointName(relationship, 'source');
+        var destinationName = getRelationshipEndpointName(relationship, 'destination');
 
         var provides = [];
         var consumes = [];
 
-        if (destination.provides !== undefined) {
+        if (destination && destination.provides !== undefined) {
             destination.provides.forEach(function (p) {
                 if (p.linkedRelationshipIdList !== undefined && p.linkedRelationshipIdList.includes(relationship.id)) {
                     provides.push(p);
@@ -446,7 +466,7 @@ structurizr.ui.DetailsPanel = function() {
             });
         }
 
-        if (source.consumes !== undefined) {
+        if (source && source.consumes !== undefined) {
             source.consumes.forEach(function (c) {
                 if (c.linkedRelationshipIdList !== undefined && c.linkedRelationshipIdList.includes(relationship.id)) {
                     consumes.push(c);
@@ -460,7 +480,7 @@ structurizr.ui.DetailsPanel = function() {
             relationHtml += '<div class="accordion-item">';
             relationHtml += '<h2 class="accordion-header">';
             relationHtml += '<button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#rel-collapse' + relationship.id + '" aria-expanded="false" aria-controls="rel-collapse' + relationship.id + '">';
-            relationHtml += structurizr.util.escapeHtml(source.name) + ' > ' + structurizr.util.escapeHtml(destination.name);
+            relationHtml += structurizr.util.escapeHtml(sourceName) + ' > ' + structurizr.util.escapeHtml(destinationName);
             relationHtml += '</button>';
             relationHtml += '</h2>';
             relationHtml += '<div id="rel-collapse' + relationship.id + '" class="accordion-collapse collapse show">';
