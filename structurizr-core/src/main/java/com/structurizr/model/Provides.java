@@ -51,8 +51,8 @@ public class Provides implements PropertyHolder {
                 if (match) {
                     List<String> consumesList = Arrays.asList(filter.getValue().split(","));
                     List<String> providesList = Arrays.asList(this.properties.get(key).split(","));
-                    // Provider must match all consumer properties
-                    match = providesList.containsAll(consumesList);
+                    //Provider and consumer have any match for this key
+                    match = !Collections.disjoint(consumesList, providesList);
                 }
 
                 if (!match) break;
