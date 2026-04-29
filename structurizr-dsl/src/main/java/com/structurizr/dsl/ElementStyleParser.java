@@ -301,6 +301,28 @@ final class ElementStyleParser extends AbstractParser {
         }
     }
 
+    void parseCollapsible(ElementStyleDslContext context, Tokens tokens) {
+        ElementStyle style = context.getStyle();
+
+        if (tokens.hasMoreThan(FIRST_PROPERTY_INDEX)) {
+            throw new RuntimeException("Too many tokens, expected: collapsible <true|false>");
+        }
+
+        if (tokens.includes(FIRST_PROPERTY_INDEX)) {
+            String collapsible = tokens.get(1);
+
+            if ("true".equalsIgnoreCase(collapsible)) {
+                style.setCollapsible(true);
+            } else if ("false".equalsIgnoreCase(collapsible)) {
+                style.setCollapsible(false);
+            } else {
+                throw new RuntimeException("Collapsible must be true or false");
+            }
+        } else {
+            throw new RuntimeException("Expected: collapsible <true|false>");
+        }
+    }
+
     void parseIcon(ElementStyleDslContext context, Tokens tokens) {
         ElementStyle style = context.getStyle();
 

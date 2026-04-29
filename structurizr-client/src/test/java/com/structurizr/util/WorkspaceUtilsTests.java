@@ -3,6 +3,7 @@ package com.structurizr.util;
 import com.structurizr.Workspace;
 import com.structurizr.model.Model;
 import com.structurizr.model.SoftwareSystem;
+import com.structurizr.view.SystemLandscapeView;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
@@ -129,6 +130,21 @@ public class WorkspaceUtilsTests {
         assertEquals("Name", workspace.getName());
         assertEquals("Description", workspace.getDescription());
         assertEquals("Folder", workspace.getFolder());
+    }
+
+    @Test
+    void fromJson_PreservesViewProperties() throws Exception {
+        Workspace workspace = new Workspace("Name", "Description");
+        workspace.getModel().addSoftwareSystem("Software System");
+
+        SystemLandscapeView view = workspace.getViews().createSystemLandscapeView("landscape", "Description");
+        view.addAllElements();
+        view.addProperty("structurizr.syntheticRelationshipVertices", "{\"1\":[{\"x\":10,\"y\":20}]}");
+
+        Workspace deserializedWorkspace = WorkspaceUtils.fromJson(WorkspaceUtils.toJson(workspace, false));
+        SystemLandscapeView deserializedView = deserializedWorkspace.getViews().getSystemLandscapeViews().iterator().next();
+
+        assertEquals("{\"1\":[{\"x\":10,\"y\":20}]}", deserializedView.getProperties().get("structurizr.syntheticRelationshipVertices"));
     }
 
     @Test

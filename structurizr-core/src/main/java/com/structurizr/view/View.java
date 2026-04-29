@@ -165,6 +165,12 @@ public abstract class View implements PropertyHolder, Comparable<View> {
         }
     }
 
+    void copyPropertiesFrom(View source) {
+        if (source != null) {
+            source.getProperties().forEach((name, value) -> this.properties.putIfAbsent(name, value));
+        }
+    }
+
     @Override
     public int compareTo(View view) {
         int result = getOrder() - view.getOrder();

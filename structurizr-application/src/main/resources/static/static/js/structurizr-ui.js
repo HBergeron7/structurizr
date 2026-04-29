@@ -139,7 +139,7 @@ structurizr.ui.loadTheme = function( url) {
         });
 };
 
-structurizr.ui.ElementStyle = function(width, height, background, color, fontSize, shape, icon, border, stroke, strokeWidth, opacity, metadata, description, highlight) {
+structurizr.ui.ElementStyle = function(width, height, background, color, fontSize, shape, icon, border, stroke, strokeWidth, opacity, metadata, description, collapsible, highlight) {
     this.width = width;
     this.height = height;
     this.background = background;
@@ -155,6 +155,7 @@ structurizr.ui.ElementStyle = function(width, height, background, color, fontSiz
     this.opacity = opacity;
     this.metadata = metadata;
     this.description = description;
+    this.collapsible = collapsible;
 
     this.tag = "Element";
 
@@ -163,7 +164,7 @@ structurizr.ui.ElementStyle = function(width, height, background, color, fontSiz
     };
 
     this.toString = function() {
-        return "".concat(this.tag, ",", this.width, ",", this.height, ",", this.background, ",", this.stroke, ",", this.color, ",", this.highlight, ",", this.fontSize, ",", this.shape, ",", this.icon, ",", this.iconPosition, ",", this.border, ",", this.opacity, ",", this.metadata, ",", this.description);
+        return "".concat(this.tag, ",", this.width, ",", this.height, ",", this.background, ",", this.stroke, ",", this.color, ",", this.highlight, ",", this.fontSize, ",", this.shape, ",", this.icon, ",", this.iconPosition, ",", this.border, ",", this.opacity, ",", this.metadata, ",", this.description, ",", this.collapsible);
     };
 
 };
@@ -242,7 +243,7 @@ structurizr.ui.findElementStyle = function(element, darkMode) {
     }
 
     const defaults = darkMode ? structurizr.ui.DARK_MODE_DEFAULTS : structurizr.ui.LIGHT_MODE_DEFAULTS;
-    var defaultStyle = new structurizr.ui.ElementStyle(450, 300, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, 100, true, true);
+    var defaultStyle = new structurizr.ui.ElementStyle(450, 300, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, 100, true, true, false, undefined);
     var defaultSizeInUse = true;
 
     var elementStylesMap = {};
@@ -279,6 +280,7 @@ structurizr.ui.findElementStyle = function(element, darkMode) {
                 structurizr.util.copyAttributeIfSpecified(elementStyleDefinition, elementStyle, 'opacity');
                 structurizr.util.copyAttributeIfSpecified(elementStyleDefinition, elementStyle, 'metadata');
                 structurizr.util.copyAttributeIfSpecified(elementStyleDefinition, elementStyle, 'description');
+                structurizr.util.copyAttributeIfSpecified(elementStyleDefinition, elementStyle, 'collapsible');
             }
         }
     });
@@ -297,6 +299,7 @@ structurizr.ui.findElementStyle = function(element, darkMode) {
         defaultStyle.opacity,
         defaultStyle.metadata,
         defaultStyle.description,
+        defaultStyle.collapsible,
         defaultStyle.highlight);
 
     style.tags = ['Element'];
@@ -336,6 +339,7 @@ structurizr.ui.findElementStyle = function(element, darkMode) {
             style.copyStyleAttributeIfSpecified(elementStyle, 'opacity');
             style.copyStyleAttributeIfSpecified(elementStyle, 'metadata');
             style.copyStyleAttributeIfSpecified(elementStyle, 'description');
+            style.copyStyleAttributeIfSpecified(elementStyle, 'collapsible');
 
             if (tag.indexOf('Group:') === 0) {
                 // special treatment for tags prefixed Group: ... remove the prefix

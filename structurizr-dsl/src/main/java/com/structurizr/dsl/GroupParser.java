@@ -3,28 +3,25 @@ package com.structurizr.dsl;
 import com.structurizr.model.Component;
 import com.structurizr.model.Model;
 import com.structurizr.util.StringUtils;
+import java.util.*;
 
 class GroupParser {
 
-    private static final String GRAMMAR_AS_CONTEXT = "group <name> {";
+    private static final String GRAMMAR_AS_CONTEXT = "group <name> [tags]";
     private static final String GRAMMAR_AS_PROPERTY = "group <name>";
 
     private final static int NAME_INDEX = 1;
-    private final static int BRACE_INDEX = 2;
+    private final static int TAGS_INDEX = 2;
 
 
     ElementGroup parseContext(GroupableDslContext dslContext, Tokens tokens) {
         // group <name> {
 
-        if (tokens.hasMoreThan(BRACE_INDEX)) {
+        if (tokens.hasMoreThan(TAGS_INDEX)) {
             throw new RuntimeException("Too many tokens, expected: " + GRAMMAR_AS_CONTEXT);
         }
 
-        if (!tokens.includes(BRACE_INDEX)) {
-            throw new RuntimeException("Expected: " + GRAMMAR_AS_CONTEXT);
-        }
-
-        if (!DslContext.CONTEXT_START_TOKEN.equalsIgnoreCase(tokens.get(BRACE_INDEX))) {
+        if (!tokens.includes(NAME_INDEX)) {
             throw new RuntimeException("Expected: " + GRAMMAR_AS_CONTEXT);
         }
 
@@ -41,13 +38,19 @@ class GroupParser {
             group = new ElementGroup(tokens.get(NAME_INDEX));
         }
 
+        List<String> tags = new ArrayList<>();
+        if (tokens.includes(TAGS_INDEX)) {
+            tags.addAll(Arrays.asList(tokens.get(TAGS_INDEX).split(",")));
+        }
+        group.addTags(tags.toArray(new String[0]));
+
         return group;
     }
 
     void parseProperty(ComponentDslContext dslContext, Tokens tokens) {
         // group <name>
 
-        if (tokens.includes(BRACE_INDEX)) {
+        if (tokens.hasMoreThan(NAME_INDEX)) {
             throw new RuntimeException("Too many tokens, expected: " + GRAMMAR_AS_PROPERTY);
         }
 

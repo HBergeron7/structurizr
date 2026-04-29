@@ -90,6 +90,7 @@ class StructurizrDslTokens {
     static final String ELEMENT_STYLE_HEIGHT_TOKEN = "height";
     static final String ELEMENT_STYLE_METADATA_TOKEN = "metadata";
     static final String ELEMENT_STYLE_DESCRIPTION_TOKEN = "description";
+    static final String ELEMENT_STYLE_COLLAPSIBLE_TOKEN = "collapsible";
     static final String RELATIONSHIP_STYLE_TOKEN = "relationship";
     static final String RELATIONSHIP_STYLE_THICKNESS_TOKEN = "thickness";
     static final String RELATIONSHIP_STYLE_COLOUR_TOKEN = "colour";

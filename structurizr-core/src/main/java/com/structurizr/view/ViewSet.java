@@ -1070,6 +1070,7 @@ public final class ViewSet {
             if (view.getAutomaticLayout() == null && view.getMergeFromRemote() == true) {
                 CustomView sourceView = findView(source.getCustomViews(), view);
                 if (sourceView != null) {
+                    view.copyPropertiesFrom(sourceView);
                     view.copyLayoutInformationFrom(sourceView);
                 } else {
                     log.warn("Could not find a matching view for \"" + view.getName() + "\" ... diagram layout information may be lost.");
@@ -1081,6 +1082,7 @@ public final class ViewSet {
             if (view.getAutomaticLayout() == null && view.getMergeFromRemote() == true) {
                 SystemLandscapeView sourceView = findView(source.getSystemLandscapeViews(), view);
                 if (sourceView != null) {
+                    view.copyPropertiesFrom(sourceView);
                     view.copyLayoutInformationFrom(sourceView);
                 } else {
                     log.warn("Could not find a matching view for \"" + view.getName() + "\" ... diagram layout information may be lost.");
@@ -1092,6 +1094,7 @@ public final class ViewSet {
             if (view.getAutomaticLayout() == null && view.getMergeFromRemote() == true) {
                 SystemContextView sourceView = findView(source.getSystemContextViews(), view);
                 if (sourceView != null) {
+                    view.copyPropertiesFrom(sourceView);
                     view.copyLayoutInformationFrom(sourceView);
                 } else {
                     log.warn("Could not find a matching view for \"" + view.getName() + "\" ... diagram layout information may be lost.");
@@ -1103,6 +1106,7 @@ public final class ViewSet {
             if (view.getAutomaticLayout() == null && view.getMergeFromRemote() == true) {
                 ContainerView sourceView = findView(source.getContainerViews(), view);
                 if (sourceView != null) {
+                    view.copyPropertiesFrom(sourceView);
                     view.copyLayoutInformationFrom(sourceView);
                 } else {
                     log.warn("Could not find a matching view for \"" + view.getName() + "\" ... diagram layout information may be lost.");
@@ -1114,6 +1118,7 @@ public final class ViewSet {
             if (view.getAutomaticLayout() == null && view.getMergeFromRemote() == true) {
                 ComponentView sourceView = findView(source.getComponentViews(), view);
                 if (sourceView != null) {
+                    view.copyPropertiesFrom(sourceView);
                     view.copyLayoutInformationFrom(sourceView);
                 } else {
                     log.warn("Could not find a matching view for \"" + view.getName() + "\" ... diagram layout information may be lost.");
@@ -1125,6 +1130,7 @@ public final class ViewSet {
             if (view.getAutomaticLayout() == null && view.getMergeFromRemote() == true) {
                 DynamicView sourceView = findView(source.getDynamicViews(), view);
                 if (sourceView != null) {
+                    view.copyPropertiesFrom(sourceView);
                     view.copyLayoutInformationFrom(sourceView);
                 } else {
                     log.warn("Could not find a matching view for \"" + view.getName() + "\" ... diagram layout information may be lost.");
@@ -1136,6 +1142,7 @@ public final class ViewSet {
             if (view.getAutomaticLayout() == null && view.getMergeFromRemote() == true) {
                 DeploymentView sourceView = findView(source.getDeploymentViews(), view);
                 if (sourceView != null) {
+                    view.copyPropertiesFrom(sourceView);
                     view.copyLayoutInformationFrom(sourceView);
                 } else {
                     log.warn("Could not find a matching view for \"" + view.getName() + "\" ... diagram layout information may be lost.");

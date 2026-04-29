@@ -4,8 +4,7 @@ import com.structurizr.model.Element;
 import com.structurizr.model.Model;
 import com.structurizr.util.StringUtils;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 class ElementGroup extends Element {
 
@@ -46,7 +45,7 @@ class ElementGroup extends Element {
 
     @Override
     public Set<String> getDefaultTags() {
-        return null;
+        return Collections.emptySet();
     }
 
     void addElement(Element element) {

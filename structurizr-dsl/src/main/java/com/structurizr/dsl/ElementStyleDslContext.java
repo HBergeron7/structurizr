@@ -40,6 +40,7 @@ final class ElementStyleDslContext extends DslContext {
                 StructurizrDslTokens.ELEMENT_STYLE_OPACITY_TOKEN,
                 StructurizrDslTokens.ELEMENT_STYLE_METADATA_TOKEN,
                 StructurizrDslTokens.ELEMENT_STYLE_DESCRIPTION_TOKEN,
+                StructurizrDslTokens.ELEMENT_STYLE_COLLAPSIBLE_TOKEN, 
                 StructurizrDslTokens.PROPERTIES_TOKEN
         };
     }

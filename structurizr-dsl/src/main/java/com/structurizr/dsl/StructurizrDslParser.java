@@ -651,32 +651,32 @@ public final class StructurizrDslParser extends StructurizrDslTokens {
                         throw new RuntimeException("The enterprise keyword was previously deprecated, and has now been removed - please use group instead (https://docs.structurizr.com/dsl/language#group)");
 
                     } else if (isElementKeywordOrArchetype(firstToken, GROUP_TOKEN) && inContext(ModelDslContext.class)) {
-                        ElementGroup group = new GroupParser().parseContext(getContext(ModelDslContext.class), tokens);
+                        ElementGroup group = new GroupParser().parseContext(getContext(ModelDslContext.class), tokens.withoutContextStartToken());
 
                         startContext(new ModelDslContext(group));
                         registerIdentifier(identifier, group);
                     } else if (isElementKeywordOrArchetype(firstToken, GROUP_TOKEN) && inContext(SoftwareSystemDslContext.class)) {
-                        ElementGroup group = new GroupParser().parseContext(getContext(SoftwareSystemDslContext.class), tokens);
+                        ElementGroup group = new GroupParser().parseContext(getContext(SoftwareSystemDslContext.class), tokens.withoutContextStartToken());
 
                         SoftwareSystem softwareSystem = getContext(SoftwareSystemDslContext.class).getSoftwareSystem();
                         group.setParent(softwareSystem);
                         startContext(new SoftwareSystemDslContext(softwareSystem, group));
                         registerIdentifier(identifier, group);
                     } else if (isElementKeywordOrArchetype(firstToken, GROUP_TOKEN) && inContext(ContainerDslContext.class)) {
-                        ElementGroup group = new GroupParser().parseContext(getContext(ContainerDslContext.class), tokens);
+                        ElementGroup group = new GroupParser().parseContext(getContext(ContainerDslContext.class), tokens.withoutContextStartToken());
 
                         Container container = getContext(ContainerDslContext.class).getContainer();
                         group.setParent(container);
                         startContext(new ContainerDslContext(container, group));
                         registerIdentifier(identifier, group);
                     } else if (isElementKeywordOrArchetype(firstToken, GROUP_TOKEN) && inContext(DeploymentEnvironmentDslContext.class)) {
-                        ElementGroup group = new GroupParser().parseContext(getContext(DeploymentEnvironmentDslContext.class), tokens);
+                        ElementGroup group = new GroupParser().parseContext(getContext(DeploymentEnvironmentDslContext.class), tokens.withoutContextStartToken());
 
                         DeploymentEnvironment environment = getContext(DeploymentEnvironmentDslContext.class).getEnvironment();
                         startContext(new DeploymentEnvironmentDslContext(environment.getName(), group));
                         registerIdentifier(identifier, group);
                     } else if (isElementKeywordOrArchetype(firstToken, GROUP_TOKEN) && inContext(DeploymentNodeDslContext.class)) {
-                        ElementGroup group = new GroupParser().parseContext(getContext(DeploymentNodeDslContext.class), tokens);
+                        ElementGroup group = new GroupParser().parseContext(getContext(DeploymentNodeDslContext.class), tokens.withoutContextStartToken());
 
                         DeploymentNode deploymentNode = getContext(DeploymentNodeDslContext.class).getDeploymentNode();
                         startContext(new DeploymentNodeDslContext(deploymentNode, group));
@@ -1032,6 +1032,9 @@ public final class StructurizrDslParser extends StructurizrDslTokens {
 
                     } else if (ELEMENT_STYLE_DESCRIPTION_TOKEN.equalsIgnoreCase(firstToken) && inContext(ElementStyleDslContext.class)) {
                         new ElementStyleParser().parseDescription(getContext(ElementStyleDslContext.class), tokens);
+
+                    } else if (ELEMENT_STYLE_COLLAPSIBLE_TOKEN.equalsIgnoreCase(firstToken) && inContext(ElementStyleDslContext.class)) {
+                        new ElementStyleParser().parseCollapsible(getContext(ElementStyleDslContext.class), tokens);
 
                     } else if (ELEMENT_STYLE_ICON_TOKEN.equalsIgnoreCase(firstToken) && inContext(ElementStyleDslContext.class)) {
                         new ElementStyleParser().parseIcon(getContext(ElementStyleDslContext.class), tokens);

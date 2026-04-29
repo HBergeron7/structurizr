@@ -11,6 +11,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class ViewSetTests {
 
+    private static final String SYNTHETIC_RELATIONSHIP_VERTICES_PROPERTY = "structurizr.syntheticRelationshipVertices";
+
     private Workspace createWorkspace() {
         Workspace workspace = new Workspace("Name", "Description");
         Model model = workspace.getModel();
@@ -120,6 +122,39 @@ public class ViewSetTests {
         } catch (IllegalArgumentException iae) {
             assertEquals("A software system must be specified.", iae.getMessage());
         }
+    }
+
+    @Test
+    void copyLayoutInformationFrom_CopiesMissingViewPropertiesFromTheSourceView() {
+        Workspace sourceWorkspace = createWorkspace();
+        SystemLandscapeView sourceView = sourceWorkspace.getViews().createSystemLandscapeView("key", "Description");
+        sourceView.addAllElements();
+        sourceView.addProperty(SYNTHETIC_RELATIONSHIP_VERTICES_PROPERTY, "{\"synthetic-1\":[{\"x\":10,\"y\":20}]}");
+
+        Workspace destinationWorkspace = createWorkspace();
+        SystemLandscapeView destinationView = destinationWorkspace.getViews().createSystemLandscapeView("key", "Description");
+        destinationView.addAllElements();
+
+        destinationWorkspace.getViews().copyLayoutInformationFrom(sourceWorkspace.getViews());
+
+        assertEquals("{\"synthetic-1\":[{\"x\":10,\"y\":20}]}", destinationView.getProperties().get(SYNTHETIC_RELATIONSHIP_VERTICES_PROPERTY));
+    }
+
+    @Test
+    void copyLayoutInformationFrom_DoesNotOverwriteExistingViewProperties() {
+        Workspace sourceWorkspace = createWorkspace();
+        SystemLandscapeView sourceView = sourceWorkspace.getViews().createSystemLandscapeView("key", "Description");
+        sourceView.addAllElements();
+        sourceView.addProperty(SYNTHETIC_RELATIONSHIP_VERTICES_PROPERTY, "{\"synthetic-1\":[{\"x\":10,\"y\":20}]}");
+
+        Workspace destinationWorkspace = createWorkspace();
+        SystemLandscapeView destinationView = destinationWorkspace.getViews().createSystemLandscapeView("key", "Description");
+        destinationView.addAllElements();
+        destinationView.addProperty(SYNTHETIC_RELATIONSHIP_VERTICES_PROPERTY, "{\"synthetic-2\":[{\"x\":30,\"y\":40}]}");
+
+        destinationWorkspace.getViews().copyLayoutInformationFrom(sourceWorkspace.getViews());
+
+        assertEquals("{\"synthetic-2\":[{\"x\":30,\"y\":40}]}", destinationView.getProperties().get(SYNTHETIC_RELATIONSHIP_VERTICES_PROPERTY));
     }
 
     @Test

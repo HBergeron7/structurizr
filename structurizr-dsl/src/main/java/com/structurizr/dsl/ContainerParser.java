@@ -62,6 +62,7 @@ final class ContainerParser extends AbstractParser {
 
         if (context.hasGroup()) {
             container.setGroup(context.getGroup().getName());
+            container.setGroupTags(context.getGroup().getTags());
             context.getGroup().addElement(container);
         }
 

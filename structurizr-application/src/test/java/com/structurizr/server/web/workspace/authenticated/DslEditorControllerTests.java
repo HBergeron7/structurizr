@@ -1,11 +1,15 @@
 package com.structurizr.server.web.workspace.authenticated;
 
+import com.structurizr.Workspace;
 import com.structurizr.configuration.Configuration;
 import com.structurizr.configuration.Features;
+import com.structurizr.dsl.DslUtils;
 import com.structurizr.server.component.workspace.WorkspaceComponentException;
 import com.structurizr.server.domain.WorkspaceMetadata;
 import com.structurizr.server.web.AbstractTestsBase;
 import com.structurizr.server.web.MockWorkspaceComponent;
+import com.structurizr.util.WorkspaceUtils;
+import com.structurizr.view.SystemLandscapeView;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.ui.ModelMap;
@@ -228,6 +232,49 @@ public class DslEditorControllerTests extends AbstractTestsBase {
         setUser("user1@example.com");
         String view = controller.showAuthenticatedDslEditor(1, "", "version", model);
         assertEquals("workspace-is-readonly", view);
+    }
+
+    @Test
+    void postToDslEditor_PreservesViewPropertiesUsedForSyntheticRelationshipVertices() throws Exception {
+        configureAsServerWithAuthenticationEnabled();
+        Configuration.getInstance().setFeatureEnabled(Features.UI_DSL_EDITOR);
+        setUser("user@example.com");
+
+        final WorkspaceMetadata workspaceMetaData = new WorkspaceMetadata(1);
+        workspaceMetaData.addWriteUser("user@example.com");
+        controller.setWorkspaceComponent(new MockWorkspaceComponent() {
+            @Override
+            public WorkspaceMetadata getWorkspaceMetadata(long workspaceId) {
+                return workspaceMetaData;
+            }
+        });
+
+        Workspace workspace = new Workspace("Name", "Description");
+        workspace.getModel().addSoftwareSystem("Software System", "Description");
+
+        SystemLandscapeView view = workspace.getViews().createSystemLandscapeView("landscape", "Description");
+        view.addAllElements();
+        view.addProperty("structurizr.syntheticRelationshipVertices", "{\"synthetic-1\":[{\"x\":10,\"y\":20}]}");
+
+        DslUtils.setDsl(workspace, """
+                workspace "Name" "Description" {
+                    model {
+                        softwareSystem "Software System" "Description"
+                    }
+                    views {
+                        systemLandscape "landscape" "Description" {
+                            include *
+                        }
+                    }
+                }""");
+
+        DslEditorResponse response = controller.postToDslEditor(1, WorkspaceUtils.toJson(workspace, false));
+
+        assertTrue(response.isSuccess());
+
+        Workspace renderedWorkspace = WorkspaceUtils.fromJson(response.getWorkspace());
+        SystemLandscapeView renderedView = renderedWorkspace.getViews().getSystemLandscapeViews().iterator().next();
+        assertEquals("{\"synthetic-1\":[{\"x\":10,\"y\":20}]}", renderedView.getProperties().get("structurizr.syntheticRelationshipVertices"));
     }
 
 }

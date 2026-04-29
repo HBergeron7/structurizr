@@ -54,6 +54,9 @@ public final class ElementStyle extends AbstractStyle {
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
     private Boolean description;
 
+    @JsonInclude(value = JsonInclude.Include.NON_NULL)
+    private Boolean collapsible;
+
     ElementStyle() {
     }
 
@@ -419,6 +422,29 @@ public final class ElementStyle extends AbstractStyle {
         return this;
     }
 
+    /**
+     * Determines whether the element collapsible should be shown or not.
+     *
+     * @return  true (shown), false (hidden) or null (not set)
+     */
+    public Boolean getCollapsible() {
+        return collapsible;
+    }
+
+    /**
+     * Sets whether the element collapsible should be shown or not.
+     *
+     * @param collapsible   true (shown), false (hidden) or null (not set)
+     */
+    public void setCollapsible(Boolean collapsible) {
+        this.collapsible = collapsible;
+    }
+
+    public ElementStyle collapsible(boolean collapsible) {
+        setCollapsible(collapsible);
+        return this;
+    }
+
     void copyFrom(ElementStyle elementStyle) {
         if (elementStyle.getWidth() != null) {
             this.setWidth(elementStyle.getWidth());
@@ -478,6 +504,10 @@ public final class ElementStyle extends AbstractStyle {
 
         if (elementStyle.getDescription() != null) {
             this.setDescription(elementStyle.getDescription());
+        }
+
+        if (elementStyle.getCollapsible() != null) {
+            this.setCollapsible(elementStyle.getCollapsible());
         }
 
         for (String name : elementStyle.getProperties().keySet()) {
