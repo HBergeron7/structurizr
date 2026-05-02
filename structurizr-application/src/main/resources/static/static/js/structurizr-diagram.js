@@ -135,6 +135,7 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
 
     const viewport = $('#' + viewportId);
     const canvas = $('#' + canvasId);
+    const syntheticRelationshipPropertiesPropertyName = 'structurizr.syntheticRelationshipProperties';
 
     joint.config.useCSSSelectors = true;
     const graph = new joint.dia.Graph;
@@ -1409,6 +1410,52 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
         }
     }
 
+    function getSyntheticRelationshipPropertiesMap() {
+        ensureCurrentViewProperties();
+
+        const persistedProperties = currentView.properties[syntheticRelationshipPropertiesPropertyName];
+        if (persistedProperties === undefined || persistedProperties.length === 0) {
+            return {};
+        }
+
+        try {
+            return JSON.parse(persistedProperties);
+        } catch (err) {
+            console.log('Could not parse persisted synthetic relationship properties for view ' + currentView.key);
+            return {};
+        }
+    }
+
+    function getPersistedPropertiesForSyntheticRelationship(relationshipId) {
+        const propertiesByRelationshipId = getSyntheticRelationshipPropertiesMap();
+        return propertiesByRelationshipId[relationshipId] || {};
+    }
+
+    function persistPropertiesForSyntheticRelationship(relationshipId, relationshipInView) {
+        ensureCurrentViewProperties();
+
+        const propertiesByRelationshipId = getSyntheticRelationshipPropertiesMap();
+        const properties = {};
+
+        ['routing', 'anchor', 'position'].forEach(function(name) {
+            if (relationshipInView[name] !== undefined) {
+                properties[name] = relationshipInView[name];
+            }
+        });
+
+        if (Object.keys(properties).length > 0) {
+            propertiesByRelationshipId[relationshipId] = properties;
+        } else {
+            delete propertiesByRelationshipId[relationshipId];
+        }
+
+        if (Object.keys(propertiesByRelationshipId).length > 0) {
+            currentView.properties[syntheticRelationshipPropertiesPropertyName] = JSON.stringify(propertiesByRelationshipId);
+        } else {
+            delete currentView.properties[syntheticRelationshipPropertiesPropertyName];
+        }
+    }
+
     function isCellInsideGroup(cell, group) {
         while (cell) {
             if (cell === group) {
@@ -1562,9 +1609,10 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
 
     function setLinkVisibility(link, visible) {
         const linkView = paper.findViewByModel(link);
+
         if (linkView) {
             $('#' + linkView.el.id).css('display', visible ? '' : 'none');
-            $('#' + linkView.id + ' .marker-vertices').css('display', visible ? '' : 'none');
+            $('[model-id="' + linkView.model.id + '"]').css('display', visible ? '' : 'none');
         }
     }
 
@@ -1735,6 +1783,7 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
 
     function createSyntheticRelationship(sourceEndpoint, destinationEndpoint, relationships) {
         const relationshipId = syntheticRelationshipIdPrefix + sourceEndpoint.id + '->' + destinationEndpoint.id;
+        const persistedProperties = getPersistedPropertiesForSyntheticRelationship(relationshipId);
         const descriptions = collectUniqueRelationshipDescriptions(relationships);
         const technologies = collectUniqueRelationshipTechnologies(relationships);
         const tags = collectRelationshipTags(relationships);
@@ -1768,6 +1817,9 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
             linkedRelationshipIdList: linkedRelationshipIds,
             url: undefined,
             vertices: getPersistedVerticesForSyntheticRelationship(relationshipId),
+            routing: persistedProperties.routing,
+            anchor: persistedProperties.anchor,
+            position: persistedProperties.position,
             _synthetic: true
         };
 
@@ -1847,6 +1899,9 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
                 relationshipGroup.relationships
             );
             const relationshipInView = { id: syntheticRelationship.id, _synthetic: true };
+            relationshipInView.routing = syntheticRelationship.routing;
+            relationshipInView.anchor = syntheticRelationship.anchor;
+            relationshipInView.position = syntheticRelationship.position;
             const line = createArrow(relationshipInView);
             if (line === undefined) {
                 return;
@@ -7142,9 +7197,7 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
     };
 
     this.moveLabelOfHighlightedLink = function(delta) {
-        if (resolveRelationshipById(highlightedLink.model.relationshipInView.id)._synthetic === true) {
-            return;
-        }
+        const relationship = resolveRelationshipById(highlightedLink.model.relationshipInView.id);
 
         var labels = highlightedLink.model.get('labels');
         if (labels) {
@@ -7166,15 +7219,17 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
                 }
 
                 highlightedLink.model.relationshipInView.position = Math.round(newDistance * 100);
+                if (relationship && relationship._synthetic === true) {
+                    relationship.position = highlightedLink.model.relationshipInView.position;
+                    persistPropertiesForSyntheticRelationship(relationship.id, highlightedLink.model.relationshipInView);
+                }
                 fireWorkspaceChangedEvent();
             }
         }
     };
 
     this.toggleRoutingOfHighlightedLink = function() {
-        if (resolveRelationshipById(highlightedLink.model.relationshipInView.id)._synthetic === true) {
-            return;
-        }
+        const relationship = resolveRelationshipById(highlightedLink.model.relationshipInView.id);
 
         if (highlightedLink.model.relationshipInView.routing === undefined) {
             highlightedLink.model.relationshipInView.routing = 'Direct';
@@ -7193,7 +7248,6 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
             setRouting(highlightedLink.model, 'Metro');
 
         } else if (highlightedLink.model.relationshipInView.routing === 'Metro') {
-            var relationship = resolveRelationshipById(highlightedLink.model.relationshipInView.id);
             if (relationship) {
                 const configuration = structurizr.ui.findRelationshipStyle(relationship, darkMode);
                 highlightedLink.model.relationshipInView.routing = undefined;
@@ -7201,13 +7255,15 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
             }
         }
 
+        if (relationship && relationship._synthetic === true) {
+            relationship.routing = highlightedLink.model.relationshipInView.routing;
+            persistPropertiesForSyntheticRelationship(relationship.id, highlightedLink.model.relationshipInView);
+        }
         fireWorkspaceChangedEvent();
     };
 
     this.toggleAnchorOfHighlightedLink = function() {
-        if (resolveRelationshipById(highlightedLink.model.relationshipInView.id)._synthetic === true) {
-            return;
-        }
+        const relationship = resolveRelationshipById(highlightedLink.model.relationshipInView.id);
         
         if (highlightedLink.model.relationshipInView.anchor === undefined) {
             highlightedLink.model.relationshipInView.anchor = 'Center';
@@ -7230,6 +7286,10 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
             setAnchor(highlightedLink.model, 'Center');
         }
 
+        if (relationship && relationship._synthetic === true) {
+            relationship.anchor = highlightedLink.model.relationshipInView.anchor;
+            persistPropertiesForSyntheticRelationship(relationship.id, highlightedLink.model.relationshipInView);
+        }
         fireWorkspaceChangedEvent();
     };
 
