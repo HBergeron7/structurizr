@@ -2013,7 +2013,7 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
     }
 
     function collapseGroup(group) {
-        if (!isCollapsibleGroup(group) || group._collapsed === true) {
+        if (!isCollapsibleGroup(group)) {
             return;
         }
 
@@ -2043,7 +2043,7 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
     }
 
     function expandGroup(group) {
-        if (!isCollapsibleGroup(group) || group._collapsed !== true) {
+        if (!isCollapsibleGroup(group)) {
             return;
         }
 
@@ -2735,6 +2735,8 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
         this.setPageSize(contentWidth, contentHeight);
 
         centreDiagram();
+
+        collapseAllRootGroups();
     };
 
     this.increasePageSize = function(evt) {
@@ -6142,7 +6144,9 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
         for (var i = 0; i < graph.getElements().length; i++) {
             var cell = graph.getElements()[i];
 
-            if (includeCellInContentArea(cell)) {
+            // Use includeCellInContentArea to exclude "hidden" cells
+            //if (includeCellInContentArea(cell)) {
+            if (cell.elementInView !== undefined || cell.attributes.type === 'structurizr.boundary' || cell.attributes.type === 'structurizr.image') {
                 var bbox = paper.findViewByModel(cell).getBBox();
                 minX = Math.min(minX, bbox.x);
                 minY = Math.min(minY, bbox.y);
@@ -8140,7 +8144,14 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
     }
 
     function centreDiagram() {
-        var cellViews = getVisibleCellViewsForCanvasOperations();
+        //var cellViews = getVisibleCellViewsForCanvasOperations();
+        var cellViews = [];
+        cells.forEach(function (cell) {
+            var element = paper.findViewByModel(cell);
+            if (element.model.positionCalculated === false) {
+                cellViews.push(element);
+            }
+        });
 
         var contentArea = findContentArea(false, 0);
 
