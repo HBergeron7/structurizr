@@ -44,6 +44,14 @@ class GroupParserTests extends AbstractTests {
         ElementGroup group = parser.parseContext(context(), tokens("group", "Group 1", "{"));
         assertEquals("Group 1", group.getName());
         assertTrue(group.getElements().isEmpty());
+        assertNotNull(workspace.getModel().getGroup("Group 1"));
+    }
+
+    @Test
+    void parseContext_RegistersTagsOnTheModelGroup() {
+        parser.parseContext(context(), tokens("group", "Group 1", "Tag 1, Tag 2"));
+
+        assertEquals("Tag 1,Tag 2", workspace.getModel().getGroup("Group 1").getTags());
     }
 
     @Test
@@ -98,6 +106,7 @@ class GroupParserTests extends AbstractTests {
 
         parser.parseProperty(context, tokens("group", "Group 1"));
         assertEquals("Group 1", component.getGroup());
+        assertNotNull(workspace.getModel().getGroup("Group 1"));
     }
 
     @Test

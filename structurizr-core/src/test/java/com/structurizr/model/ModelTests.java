@@ -112,6 +112,28 @@ public class ModelTests extends AbstractWorkspaceTestBase {
     }
 
     @Test
+    void addGroup_AddsTheGroup_WhenTheGroupDoesNotExist() {
+        assertTrue(model.getGroups().isEmpty());
+
+        Group group = model.addGroup("Group 1", "Tag 1", "Tag 2");
+
+        assertEquals(1, model.getGroups().size());
+        assertEquals("Group 1", group.getName());
+        assertEquals("Tag 1,Tag 2", group.getTags());
+        assertSame(group, model.getGroup("Group 1"));
+    }
+
+    @Test
+    void addGroup_MergesTags_WhenTheGroupAlreadyExists() {
+        model.addGroup("Group 1", "Tag 1");
+
+        Group group = model.addGroup("Group 1", "Tag 2");
+
+        assertEquals(1, model.getGroups().size());
+        assertEquals("Tag 1,Tag 2", group.getTags());
+    }
+
+    @Test
     void getElement_ReturnsNull_WhenAnElementWithTheSpecifiedIdDoesNotExist() {
         assertNull(model.getElement("100"));
     }

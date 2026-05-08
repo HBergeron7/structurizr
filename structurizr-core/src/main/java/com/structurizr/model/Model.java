@@ -29,6 +29,7 @@ public final class Model implements PropertyHolder {
     private Set<SoftwareSystem> softwareSystems = new TreeSet<>();
     private Set<DeploymentNode> deploymentNodes = new TreeSet<>();
     private Set<CustomElement> customElements = new TreeSet<>();
+    private Set<Group> groups = new TreeSet<>();
 
     private ImpliedRelationshipsStrategy impliedRelationshipsStrategy = new DefaultImpliedRelationshipsStrategy();
 
@@ -147,6 +148,26 @@ public final class Model implements PropertyHolder {
         } else {
             throw new IllegalArgumentException("A top-level element named '" + name + "' already exists.");
         }
+    }
+
+    /**
+     * Creates or updates a group in this model.
+     *
+     * @param name the name of the group
+     * @param tags the tags associated with the group
+     * @return the Group instance
+     */
+    @Nonnull
+    public Group addGroup(@Nonnull String name, String... tags) {
+        Group group = getGroup(name);
+
+        if (group == null) {
+            group = new Group(name);
+            groups.add(group);
+        }
+
+        group.addTags(tags);
+        return group;
     }
 
     @Nonnull
@@ -369,6 +390,37 @@ public final class Model implements PropertyHolder {
     }
 
     /**
+     * Gets the groups in this model.
+     *
+     * @return a Set of Group instances
+     */
+    @Nonnull
+    public Set<Group> getGroups() {
+        return new TreeSet<>(groups);
+    }
+
+    void setGroups(Set<Group> groups) {
+        if (groups != null) {
+            this.groups = new TreeSet<>(groups);
+        }
+    }
+
+    /**
+     * Gets the group with the specified name.
+     *
+     * @param name the group name
+     * @return the Group in this model with the specified name, or null if it doesn't exist
+     */
+    @Nullable
+    public Group getGroup(@Nonnull String name) {
+        if (name == null || name.trim().length() == 0) {
+            throw new IllegalArgumentException("A group name must be specified.");
+        }
+
+        return groups.stream().filter(group -> name.equals(group.getName())).findFirst().orElse(null);
+    }
+
+    /**
      * Gets the set of all people in this model.
      *
      * @return a Set of Person instances
@@ -417,6 +469,10 @@ public final class Model implements PropertyHolder {
     }
 
     void hydrate() {
+        if (groups == null) {
+            groups = new TreeSet<>();
+        }
+
         // add all elements to the model
         customElements.forEach(this::addElementToInternalStructures);
         people.forEach(this::addElementToInternalStructures);

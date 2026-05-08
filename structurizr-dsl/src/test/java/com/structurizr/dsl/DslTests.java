@@ -631,6 +631,8 @@ class DslTests extends AbstractTests {
         StructurizrDslParser parser = new StructurizrDslParser();
         parser.parse(new File("src/test/resources/dsl/groups.dsl"));
 
+        assertEquals(5, parser.getWorkspace().getModel().getGroups().size());
+
         ContainerView containerView = parser.getWorkspace().getViews().getContainerViews().iterator().next();
         assertEquals(4, containerView.getElements().size());
 
@@ -669,6 +671,11 @@ class DslTests extends AbstractTests {
 
         SoftwareSystem c = parser.getWorkspace().getModel().getSoftwareSystemWithName("C");
         assertEquals("Organisation", c.getGroup());
+
+        assertNotNull(parser.getWorkspace().getModel().getGroup("Organisation"));
+        assertNotNull(parser.getWorkspace().getModel().getGroup("Organisation/Department A"));
+        assertNotNull(parser.getWorkspace().getModel().getGroup("Capability 1/Service A"));
+        assertNotNull(parser.getWorkspace().getModel().getGroup("a-api.jar/API Layer"));
     }
 
     @Test

@@ -43,6 +43,7 @@ class GroupParser {
             tags.addAll(Arrays.asList(tokens.get(TAGS_INDEX).split(",")));
         }
         group.addTags(tags.toArray(new String[0]));
+        ((DslContext)dslContext).getWorkspace().getModel().addGroup(group.getName(), tags.toArray(new String[0]));
 
         return group;
     }
@@ -73,6 +74,7 @@ class GroupParser {
         }
 
         component.setGroup(group);
+        dslContext.getWorkspace().getModel().addGroup(group);
     }
 
 }

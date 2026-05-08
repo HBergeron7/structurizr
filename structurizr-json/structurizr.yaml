@@ -126,6 +126,10 @@ components:
             name:
               type: string
               description: The name of the enterprise.
+        groups:
+          type: array
+          items:
+            $ref: '#/components/schemas/Group'
         people:
           type: array
           items:
@@ -142,6 +146,17 @@ components:
           type: object
           description: A set of arbitrary name-value properties.
           additionalProperties: true
+
+    Group:
+      type: object
+      description: A group in the model.
+      properties:
+        name:
+          type: string
+          description: The name of the group.
+        tags:
+          type: string
+          description: A comma separated list of tags associated with this group.
 
     Person:
       type: object

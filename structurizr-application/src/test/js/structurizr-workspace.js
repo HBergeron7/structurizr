@@ -10,6 +10,7 @@ QUnit.test("Workspace() initialises an empty JSON document", function( assert ) 
     assert.deepEqual(workspace.model, {
         "customElements": [],
         "deploymentNodes": [],
+        "groups": [],
         "people": [],
         "softwareSystems": [],
         "properties": {}
@@ -137,6 +138,39 @@ QUnit.test("Workspace.findElementById() returns the specified element", function
         "perspectives": [],
         "properties": {}
     });
+});
+
+QUnit.test("Workspace.findGroup() returns the specified group", function( assert ) {
+    var workspace = new structurizr.Workspace({
+        model: {
+            groups: [
+                {
+                    name: 'Group 1',
+                    tags: 'Tag 1,Tag 2'
+                }
+            ]
+        }
+    });
+
+    assert.deepEqual(workspace.findGroup('Group 1'), {
+        "name": "Group 1",
+        "tags": "Tag 1,Tag 2"
+    });
+});
+
+QUnit.test("Workspace.getTags() includes model group tags", function( assert ) {
+    var workspace = new structurizr.Workspace({
+        model: {
+            groups: [
+                {
+                    name: 'Group 1',
+                    tags: 'Tag 2,Tag 1'
+                }
+            ]
+        }
+    });
+
+    assert.deepEqual(workspace.getTags(), ['Tag 1', 'Tag 2']);
 });
 
 QUnit.test("Workspace.findRelationshipById() returns undefined when the relationship doesn't exist", function( assert ) {
@@ -581,4 +615,3 @@ QUnit.test("Workspace() initialises a workspace with sorted relationship styles"
         ]    
     );
 });
-

@@ -50,6 +50,24 @@ public class JsonTests {
     }
 
     @Test
+    void write_and_read_groups() throws Exception {
+        Workspace workspace1 = new Workspace("Name", "Description");
+        workspace1.getModel().addGroup("Group 1", "Tag 1", "Tag 2");
+
+        JsonWriter jsonWriter = new JsonWriter(true);
+        StringWriter stringWriter = new StringWriter();
+        jsonWriter.write(workspace1, stringWriter);
+
+        JsonReader jsonReader = new JsonReader();
+        StringReader stringReader = new StringReader(stringWriter.toString());
+        Workspace workspace2 = jsonReader.read(stringReader);
+
+        Group group = workspace2.getModel().getGroup("Group 1");
+        assertNotNull(group);
+        assertEquals("Tag 1,Tag 2", group.getTags());
+    }
+
+    @Test
     void write_and_read_withCustomIdGenerator() throws Exception {
         Workspace workspace1 = new Workspace("Name", "Description");
         workspace1.getModel().setIdGenerator(new CustomIdGenerator());

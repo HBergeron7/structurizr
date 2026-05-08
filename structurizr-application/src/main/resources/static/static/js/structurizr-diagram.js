@@ -702,7 +702,7 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
                         if (scope === undefined) {
                             scope = element.location === 'Internal' ? 'Internal' : 'External';
                         }
-                        const group = findOrCreateGroup(element.group, scope, element.groupTags);
+                        const group = findOrCreateGroup(element.group, scope);
                         group.embed(box);
                         box.toFront();
                     }
@@ -808,7 +808,7 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
                                 if (scope === undefined) {
                                     scope = element.environment;
                                 }
-                                const group = findOrCreateGroup(element.group, scope, element.groupTags);
+                                const group = findOrCreateGroup(element.group, scope);
                                 group.embed(deploymentNodeCell);
                             }
                         }
@@ -1239,7 +1239,17 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
         registerSyntheticGroupElement(group);
     }
 
-    function findOrCreateGroup(name, scope, tags) {
+    function getTagsForGroup(name) {
+        const group = structurizr.workspace.findGroup(name);
+
+        if (group && group.tags) {
+            return group.tags;
+        } else {
+            return '';
+        }
+    }
+
+    function findOrCreateGroup(name, scope) {
         if (useNestedGroups()) {
             const separator = getGroupSeparator();
             var group = findGroup(name, scope);
@@ -1247,15 +1257,15 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
                 if (name.indexOf(separator) > -1) {
                     var parentGroupName = name.substring(0, name.lastIndexOf(separator));
                     var groupName = name.substring(name.lastIndexOf(separator) + separator.length);
-                    var parentGroup = findOrCreateGroup(parentGroupName, scope, '');
+                    var parentGroup = findOrCreateGroup(parentGroupName, scope);
 
-                    group = createBoundaryForGroup(name, tags);
+                    group = createBoundaryForGroup(name);
                     parentGroup.embed(group);
                     group._name = groupName;
                     configureGroup(group, name, scope, false, parentGroup._rootGroup);
                     registerGroup(name, scope, group);
                 } else {
-                    group = createBoundaryForGroup(name, tags);
+                    group = createBoundaryForGroup(name);
                     group._name = name;
                     configureGroup(group, name, scope, true, group);
                     registerGroup(name, scope, group);
@@ -1266,7 +1276,7 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
         } else {
             var group = findGroup(name, scope);
             if (group === undefined) {
-                group = createBoundaryForGroup(name, tags);
+                group = createBoundaryForGroup(name);
                 group._name = name;
                 configureGroup(group, name, scope, true, group);
                 registerGroup(name, scope, group);
@@ -4806,8 +4816,8 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
         }
     }
 
-    function createBoundaryForGroup(name, tags) {
-        return createBoundary(name, tags ? tags : "", undefined, 'Group', undefined);
+    function createBoundaryForGroup(name) {
+        return createBoundary(name, getTagsForGroup(name), undefined, 'Group', undefined);
     }
 
     function createBoundary(name, tags, metadata, type, element) {

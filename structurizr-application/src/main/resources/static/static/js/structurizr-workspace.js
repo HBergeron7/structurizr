@@ -15,6 +15,7 @@ structurizr.Workspace = class Workspace {
     #workspace;
     #elementsById = {};
     #relationshipsById = {};
+    #groupsByName = {};
     #allViews = [];
     #views = []
 
@@ -190,6 +191,16 @@ structurizr.Workspace = class Workspace {
         }
 
         var model = this.#workspace.model;
+
+        if (model.groups) {
+            this.#sortArrayByNameAscending(model.groups);
+            for (var i = 0; i < model.groups.length; i++) {
+                const group = model.groups[i];
+                this.#groupsByName[group.name] = group;
+            }
+        } else {
+            model.groups = [];
+        }
 
         if (model.customElements) {
             this.#sortArrayByNameAscending(model.customElements);
@@ -384,6 +395,10 @@ structurizr.Workspace = class Workspace {
         return this.#elementsById[id];
     }
 
+    findGroup(name) {
+        return this.#groupsByName[name];
+    }
+
     getTags() {
         const self = this;
         const tags = [];
@@ -405,6 +420,18 @@ structurizr.Workspace = class Workspace {
             const relationship = self.#relationshipsById[id];
             if (relationship.tags) {
                 relationship.tags.split(',').forEach(function (tag) {
+                    tag = structurizr.util.trim(tag);
+
+                    if (tag.length > 0 && tags.indexOf(tag) === -1) {
+                        tags.push(tag);
+                    }
+                });
+            }
+        });
+
+        this.model.groups.forEach(function(group) {
+            if (group.tags) {
+                group.tags.split(',').forEach(function(tag) {
                     tag = structurizr.util.trim(tag);
 
                     if (tag.length > 0 && tags.indexOf(tag) === -1) {
