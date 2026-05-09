@@ -1,6 +1,7 @@
 package com.structurizr.view;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.structurizr.model.Element;
 
 /**
@@ -12,6 +13,12 @@ public final class ElementView implements Comparable<ElementView> {
     private String id;
     private int x;
     private int y;
+
+    @JsonInclude(value = JsonInclude.Include.NON_NULL)
+    private Integer width;
+
+    @JsonInclude(value = JsonInclude.Include.NON_NULL)
+    private Integer height;
 
     ElementView() {
     }
@@ -72,6 +79,40 @@ public final class ElementView implements Comparable<ElementView> {
         this.y = y;
     }
 
+    /**
+     * Gets the width of the element when rendered.
+     *
+     * @return  the width in pixels, or null if no explicit width has been set
+     */
+    public Integer getWidth() {
+        return width;
+    }
+
+    public void setWidth(Integer width) {
+        if (width != null && width < 0) {
+            throw new IllegalArgumentException("The width must be a positive integer.");
+        }
+
+        this.width = width;
+    }
+
+    /**
+     * Gets the height of the element when rendered.
+     *
+     * @return  the height in pixels, or null if no explicit height has been set
+     */
+    public Integer getHeight() {
+        return height;
+    }
+
+    public void setHeight(Integer height) {
+        if (height != null && height < 0) {
+            throw new IllegalArgumentException("The height must be a positive integer.");
+        }
+
+        this.height = height;
+    }
+
     public void applyOffset(int x, int y) {
         this.x+=x;
         this.y+=y;
@@ -102,6 +143,8 @@ public final class ElementView implements Comparable<ElementView> {
         if (source != null) {
             setX(source.getX());
             setY(source.getY());
+            setWidth(source.getWidth());
+            setHeight(source.getHeight());
         }
     }
 

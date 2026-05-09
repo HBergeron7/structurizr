@@ -1,5 +1,6 @@
 package com.structurizr.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.structurizr.util.StringUtils;
 import com.structurizr.util.TagUtils;
 
@@ -38,6 +39,7 @@ public final class Group implements Comparable<Group> {
         return TagUtils.toString(tags);
     }
 
+    @JsonIgnore
     public Set<String> getTagsAsSet() {
         return new LinkedHashSet<>(tags);
     }

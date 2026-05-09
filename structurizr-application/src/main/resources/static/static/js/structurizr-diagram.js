@@ -587,6 +587,7 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
                 }
 
                 var elementStyle = structurizr.ui.findElementStyle(element, darkMode);
+                var cellConfiguration = getElementConfiguration(elementStyle, view.elements[i]);
                 registerElementStyle(elementStyle);
 
                 var box;
@@ -606,48 +607,49 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
                 }
 
                 if (elementStyle.shape === 'Cylinder') {
-                    box = createCylinder(view, element, elementStyle, positionX, positionY);
+                    box = createCylinder(view, element, cellConfiguration, positionX, positionY);
                 } else if (elementStyle.shape === 'Bucket') {
-                    box = createBucket(view, element, elementStyle, positionX, positionY);
+                    box = createBucket(view, element, cellConfiguration, positionX, positionY);
                 } else if (elementStyle.shape === 'Person') {
-                    box = createPerson(view, element, elementStyle, positionX, positionY);
+                    box = createPerson(view, element, cellConfiguration, positionX, positionY);
                 } else if (elementStyle.shape === 'Robot') {
-                    box = createRobot(view, element, elementStyle, positionX, positionY);
+                    box = createRobot(view, element, cellConfiguration, positionX, positionY);
                 } else if (elementStyle.shape === 'RoundedBox') {
-                    box = createBox(view, element, elementStyle, positionX, positionY, 20);
+                    box = createBox(view, element, cellConfiguration, positionX, positionY, 20);
                 } else if (elementStyle.shape === 'Folder') {
-                    box = createFolder(view, element, elementStyle, positionX, positionY);
+                    box = createFolder(view, element, cellConfiguration, positionX, positionY);
                 } else if (elementStyle.shape === 'Circle') {
-                    box = createEllipse(view, element, elementStyle, positionX, positionY, true);
+                    box = createEllipse(view, element, cellConfiguration, positionX, positionY, true);
                 } else if (elementStyle.shape === 'Ellipse') {
-                    box = createEllipse(view, element, elementStyle, positionX, positionY, false);
+                    box = createEllipse(view, element, cellConfiguration, positionX, positionY, false);
                 } else if (elementStyle.shape === 'Hexagon') {
-                    box = createHexagon(view, element, elementStyle, positionX, positionY);
+                    box = createHexagon(view, element, cellConfiguration, positionX, positionY);
                 } else if (elementStyle.shape === 'Diamond') {
-                    box = createDiamond(view, element, elementStyle, positionX, positionY);
+                    box = createDiamond(view, element, cellConfiguration, positionX, positionY);
                 } else if (elementStyle.shape === 'Pipe') {
-                    box = createPipe(view, element, elementStyle, positionX, positionY);
+                    box = createPipe(view, element, cellConfiguration, positionX, positionY);
                 } else if (elementStyle.shape === 'WebBrowser') {
-                    box = createWebBrowser(view, element, elementStyle, positionX, positionY);
+                    box = createWebBrowser(view, element, cellConfiguration, positionX, positionY);
                 } else if (elementStyle.shape === 'Window') {
-                    box = createWindow(view, element, elementStyle, positionX, positionY);
+                    box = createWindow(view, element, cellConfiguration, positionX, positionY);
                 } else if (elementStyle.shape === 'Terminal') {
-                    box = createTerminal(view, element, elementStyle, positionX, positionY);
+                    box = createTerminal(view, element, cellConfiguration, positionX, positionY);
                 } else if (elementStyle.shape === 'Shell') {
-                    box = createShell(view, element, elementStyle, positionX, positionY);
+                    box = createShell(view, element, cellConfiguration, positionX, positionY);
                 } else if (elementStyle.shape === 'MobileDevicePortrait') {
-                    box = createMobileDevicePortrait(view, element, elementStyle, positionX, positionY);
+                    box = createMobileDevicePortrait(view, element, cellConfiguration, positionX, positionY);
                 } else if (elementStyle.shape === 'MobileDeviceLandscape') {
-                    box = createMobileDeviceLandscape(view, element, elementStyle, positionX, positionY);
+                    box = createMobileDeviceLandscape(view, element, cellConfiguration, positionX, positionY);
                 } else if (elementStyle.shape === 'Component') {
-                    box = createComponent(view, element, elementStyle, positionX, positionY);
+                    box = createComponent(view, element, cellConfiguration, positionX, positionY);
                 } else {
-                    box = createBox(view, element, elementStyle, positionX, positionY, 1);
+                    box = createBox(view, element, cellConfiguration, positionX, positionY, 1);
                 }
 
                 cells.push(box);
                 cellsByElementId[element.id] = box;
 
+                box._baseStyle = cloneElementStyle(elementStyle);
                 box.elementInView = view.elements[i];
                 box.positionCalculated = false;
 
@@ -691,6 +693,33 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
 
                     if (repositionParentBoundaries) {
                         repositionParentCells(cell);
+                    }
+
+                    fireWorkspaceChangedEvent();
+                });
+
+                box.on('change:size', function(cell, newSize, opt) {
+                    var width = Math.floor(newSize.width);
+                    var height = Math.floor(newSize.height);
+                    var hasExplicitSize = (opt && opt.manualSize !== undefined) ? opt.manualSize : true;
+
+                    refreshElementSize(cell, width, height);
+
+                    if (cell.elementInView) {
+                        if (hasExplicitSize) {
+                            cell.elementInView.width = width;
+                            cell.elementInView.height = height;
+                        } else {
+                            delete cell.elementInView.width;
+                            delete cell.elementInView.height;
+                        }
+                    }
+
+                    repositionParentCells(cell);
+
+                    var cellView = paper.findViewByModel(cell);
+                    if (cellView) {
+                        cellView.updateTools();
                     }
 
                     fireWorkspaceChangedEvent();
@@ -2208,6 +2237,7 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
 
         const width = cellView.model._computedStyle.width;
         const navigationRefX = (((width - translateX) / 2) / width);
+        cellView.model._navigationTranslateX = translateX;
         cellView.model.attr('.structurizrNavigation/ref-x', navigationRefX);
 
         domElement.dblclick(function(event) {
@@ -2769,6 +2799,729 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
     this.getAspectRatio = function() {
         return diagramWidth / diagramHeight;
     }
+
+    function cloneElementStyle(elementStyle) {
+        return Object.assign({}, elementStyle, {
+            tags: elementStyle.tags ? elementStyle.tags.slice() : undefined
+        });
+    }
+
+    function hasManualElementSize(elementInView) {
+        return elementInView && elementInView.width != null && elementInView.height != null;
+    }
+
+    function getDefaultSizeForShape(elementStyle) {
+        var width = elementStyle.width;
+        var height = elementStyle.height;
+
+        if (elementStyle.shape === 'Circle' || elementStyle.shape === 'Diamond' || elementStyle.shape === 'Person' || elementStyle.shape === 'Robot') {
+            height = width;
+        } else if (elementStyle.shape === 'Hexagon') {
+            height = Math.floor((width / 2) * Math.sqrt(3));
+        }
+
+        return {
+            width: width,
+            height: height
+        };
+    }
+
+    function getElementConfiguration(elementStyle, elementInView) {
+        var configuration = cloneElementStyle(elementStyle);
+        var size = hasManualElementSize(elementInView) ? {
+            width: elementInView.width,
+            height: elementInView.height
+        } : getDefaultSizeForShape(configuration);
+
+        configuration.width = size.width;
+        configuration.height = size.height;
+
+        return configuration;
+    }
+
+    function snapElementDimension(value, minimum) {
+        return Math.max(minimum, Math.round(value / gridSize) * gridSize);
+    }
+
+    function setElementSize(cell, width, height, manualSize) {
+        cell.resize(width, height, {
+            manualSize: manualSize
+        });
+    }
+
+    function resetElementSize(cell) {
+        var size = getDefaultSizeForShape(cell._baseStyle);
+        setElementSize(cell, size.width, size.height, false);
+    }
+
+    function updateNavigationPosition(cell) {
+        if (cell._navigationTranslateX === undefined) {
+            return;
+        }
+
+        const width = cell._computedStyle.width;
+        const navigationRefX = (((width - cell._navigationTranslateX) / 2) / width);
+        cell.attributes.attrs['.structurizrNavigation']['ref-x'] = navigationRefX;
+    }
+
+    function refreshElementSize(cell, width, height) {
+        var configuration = cloneElementStyle(cell._baseStyle);
+        configuration.width = width;
+        configuration.height = height;
+
+        var fill = structurizr.util.shadeColor(configuration.background, 100-configuration.opacity, darkMode);
+        var stroke = structurizr.util.shadeColor(configuration.stroke, 100-configuration.opacity, darkMode);
+        var shape = configuration.shape || 'Box';
+
+        if (shape === 'RoundedBox' || shape === 'Box') {
+            cell.attr({
+                '.structurizrBox': {
+                    fill: fill,
+                    stroke: stroke,
+                    'stroke-width': configuration.strokeWidth,
+                    'stroke-dasharray': dashArrayForElement(configuration),
+                    width: width,
+                    height: height,
+                    rx: shape === 'RoundedBox' ? 20 : 1,
+                    ry: shape === 'RoundedBox' ? 20 : 1
+                }
+            });
+            renderElementInternals(cell.attributes.element, cell, configuration, width, 0, height, 0);
+        } else if (shape === 'Circle' || shape === 'Ellipse') {
+            cell.attr({
+                '.structurizrEllipse': {
+                    fill: fill,
+                    stroke: stroke,
+                    'stroke-width': configuration.strokeWidth,
+                    'stroke-dasharray': dashArrayForElement(configuration),
+                    cx: width / 2,
+                    cy: height / 2,
+                    rx: width / 2,
+                    ry: height / 2
+                }
+            });
+            renderElementInternals(cell.attributes.element, cell, configuration, (width * 0.9), 0, height, 0);
+        } else if (shape === 'Hexagon') {
+            var hexagonPoints =    (width / 4) + ",0 " +
+                                   (3 * (width / 4)) + ",0 " +
+                                   width + "," + (height / 2) + " " +
+                                   (3 * (width / 4)) + "," + height + " " +
+                                   (width / 4) + "," + height + " " +
+                                   "0," + (height / 2);
+
+            cell.attr({
+                '.structurizrHexagon': {
+                    fill: fill,
+                    stroke: stroke,
+                    'stroke-width': configuration.strokeWidth,
+                    'stroke-dasharray': dashArrayForElement(configuration),
+                    points: hexagonPoints
+                }
+            });
+            renderElementInternals(cell.attributes.element, cell, configuration, width, 0, height, 0);
+        } else if (shape === 'Diamond') {
+            var diamondPoints =
+                (width / 2) + ",0 " +
+                width + "," + (height / 2) + " " +
+                (width / 2) + "," + height + " " +
+                "0," + (height / 2);
+
+            cell.attr({
+                '.structurizrDiamond': {
+                    fill: fill,
+                    stroke: stroke,
+                    'stroke-width': configuration.strokeWidth,
+                    'stroke-dasharray': dashArrayForElement(configuration),
+                    points: diamondPoints
+                }
+            });
+            renderElementInternals(cell.attributes.element, cell, configuration, width, 0, height, 0);
+        } else if (shape === 'Person') {
+            var personBodyHeight = height - (height / 2.5);
+
+            cell.attr({
+                '.structurizrPersonHead': {
+                    fill: fill,
+                    stroke: stroke,
+                    'stroke-width': configuration.strokeWidth,
+                    'stroke-dasharray': dashArrayForElement(configuration),
+                    cx: width / 2,
+                    cy: height / 4.5,
+                    r: Math.min(width, height) / 4.5
+                },
+                '.structurizrPersonBody': {
+                    fill: fill,
+                    stroke: stroke,
+                    'stroke-width': configuration.strokeWidth,
+                    'stroke-dasharray': dashArrayForElement(configuration),
+                    x: 0,
+                    y: height / 2.5,
+                    width: width,
+                    height: personBodyHeight
+                },
+                '.structurizrPersonRightArm': {
+                    stroke: stroke,
+                    'stroke-width': 1,
+                    'stroke-dasharray': dashArrayForElement(configuration),
+                    x1: width / 5,
+                    y1: height / 1.5,
+                    x2: width / 5,
+                    y2: height
+                },
+                '.structurizrPersonLeftArm': {
+                    stroke: stroke,
+                    'stroke-width': 1,
+                    'stroke-dasharray': dashArrayForElement(configuration),
+                    x1: width - (width / 5),
+                    y1: height / 1.5,
+                    x2: width - (width / 5),
+                    y2: height
+                }
+            });
+            renderElementInternals(cell.attributes.element, cell, configuration, width, 0, personBodyHeight, height / 2.5);
+        } else if (shape === 'Robot') {
+            var robotBodyHeight = height - (height / 2.5);
+
+            cell.attr({
+                '.structurizrRobotHead': {
+                    fill: fill,
+                    stroke: stroke,
+                    'stroke-width': configuration.strokeWidth,
+                    'stroke-dasharray': dashArrayForElement(configuration),
+                    x: (width - width / 2.25) / 2,
+                    y: 0,
+                    width: width / 2.25,
+                    height: height / 2.25
+                },
+                '.structurizrRobotEars': {
+                    fill: fill,
+                    stroke: stroke,
+                    'stroke-width': configuration.strokeWidth,
+                    'stroke-dasharray': dashArrayForElement(configuration),
+                    x: (width - width / 1.8) / 2,
+                    y: ((height / 2.25) - (height / 10)) / 2,
+                    width: width / 1.8,
+                    height: height / 10
+                },
+                '.structurizrRobotBody': {
+                    fill: fill,
+                    stroke: stroke,
+                    'stroke-width': configuration.strokeWidth,
+                    'stroke-dasharray': dashArrayForElement(configuration),
+                    x: 0,
+                    y: height / 2.5,
+                    width: width,
+                    height: robotBodyHeight
+                },
+                '.structurizrRobotRightArm': {
+                    stroke: stroke,
+                    'stroke-width': 1,
+                    'stroke-dasharray': dashArrayForElement(configuration),
+                    x1: width / 5,
+                    y1: height / 1.5,
+                    x2: width / 5,
+                    y2: height
+                },
+                '.structurizrRobotLeftArm': {
+                    stroke: stroke,
+                    'stroke-width': 1,
+                    'stroke-dasharray': dashArrayForElement(configuration),
+                    x1: width - (width / 5),
+                    y1: height / 1.5,
+                    x2: width - (width / 5),
+                    y2: height
+                }
+            });
+            renderElementInternals(cell.attributes.element, cell, configuration, width, 0, robotBodyHeight, height / 2.5);
+        } else if (shape === 'Cylinder') {
+            var cylinderRy = 60;
+            var cylinderHeight = height - (cylinderRy / 2);
+            var cylinderPath = 'M 0,' + (cylinderRy / 2);
+            cylinderPath += ' a ' + (width / 2) + ',' + (cylinderRy / 2) + ' 0,0,0 ' + width + ' ' + 0;
+            cylinderPath += ' a ' + (width / 2) + ',' + (cylinderRy / 2) + ' 0,0,0 -' + width + ' ' + 0;
+            cylinderPath += ' l 0,' + (height - cylinderRy);
+            cylinderPath += ' a ' + (width / 2) + ',' + (cylinderRy / 2) + ' 0,0,0 ' + width + ' ' + 0;
+            cylinderPath += ' l 0,-' + (height - cylinderRy);
+
+            cell.attr({
+                '.structurizrCylinderPath': {
+                    fill: fill,
+                    stroke: stroke,
+                    'stroke-width': configuration.strokeWidth,
+                    'stroke-dasharray': dashArrayForElement(configuration),
+                    d: cylinderPath
+                },
+                '.structurizrCylinderFace': {
+                    fill: 'none',
+                    stroke: 'none',
+                    width: width,
+                    height: cylinderHeight,
+                    x: 0,
+                    y: (cylinderRy / 2)
+                }
+            });
+            renderElementInternals(cell.attributes.element, cell, configuration, width, 0, cylinderHeight, 30);
+        } else if (shape === 'Bucket') {
+            var bucketRy = 60;
+            var bucketHeight = height - (bucketRy / 2);
+            var bucketPath = 'M 0,' + (bucketRy / 2);
+            bucketPath += ' a ' + (width / 2) + ',' + (bucketRy / 2) + ' 0,0,0 ' + width + ' ' + 0;
+            bucketPath += ' a ' + (width / 2) + ',' + (bucketRy / 2) + ' 0,0,0 -' + width + ' ' + 0;
+            bucketPath += ' l ' + (width / 10) + ',' + (height - bucketRy);
+            bucketPath += ' a ' + (width / 2) + ',' + bucketRy + ' 0,0,0 ' + (width - (width * 0.2)) + ' ' + 0;
+            bucketPath += ' l ' + (width / 10) + ',-' + (height - bucketRy);
+
+            cell.attr({
+                '.structurizrCylinderPath': {
+                    fill: fill,
+                    stroke: stroke,
+                    'stroke-width': configuration.strokeWidth,
+                    'stroke-dasharray': dashArrayForElement(configuration),
+                    d: bucketPath
+                },
+                '.structurizrCylinderFace': {
+                    fill: 'none',
+                    stroke: 'none',
+                    width: width,
+                    height: bucketHeight,
+                    x: 0,
+                    y: (bucketRy / 2)
+                }
+            });
+            renderElementInternals(cell.attributes.element, cell, configuration, (width * 0.9), 0, bucketHeight, 30);
+        } else if (shape === 'Pipe') {
+            var pipeRx = 60;
+            var pipeBodyWidth = width - (pipeRx / 2);
+            var pipePath = 'M ' + (pipeRx / 2) + ',0';
+            pipePath += ' a ' + (pipeRx / 2) + ',' + (height / 2) + ' 0,0,1 0 ' + height;
+            pipePath += ' a ' + (pipeRx / 2) + ',' + (height / 2) + ' 0,0,1 0 -' + height;
+            pipePath += ' l ' + (width - pipeRx) + ',0';
+            pipePath += ' a ' + (pipeRx / 2) + ',' + (height / 2) + ' 0,0,1 0 ' + height;
+            pipePath += ' l -' + (width - pipeRx) + ',0';
+
+            cell.attr({
+                '.structurizrPipePath': {
+                    fill: fill,
+                    stroke: stroke,
+                    'stroke-width': configuration.strokeWidth,
+                    'stroke-dasharray': dashArrayForElement(configuration),
+                    d: pipePath
+                },
+                '.structurizrPipeFace': {
+                    fill: 'none',
+                    stroke: 'none',
+                    width: pipeBodyWidth,
+                    height: height,
+                    x: (pipeRx / 2),
+                    y: 0
+                }
+            });
+            renderElementInternals(cell.attributes.element, cell, configuration, pipeBodyWidth, pipeRx, height, 0);
+        } else if (shape === 'Folder') {
+            var tabHeight = height / 8;
+            var tabWidth = width / 3;
+            var folderHeight = height - tabHeight;
+
+            cell.attr({
+                '.structurizrFolderTab': {
+                    fill: fill,
+                    stroke: stroke,
+                    'stroke-width': configuration.strokeWidth,
+                    'stroke-dasharray': dashArrayForElement(configuration),
+                    x: 10,
+                    y: 0,
+                    width: tabWidth,
+                    height: tabHeight * 2,
+                    rx: 10,
+                    ry: 10
+                },
+                '.structurizrFolderBody': {
+                    fill: fill,
+                    stroke: stroke,
+                    'stroke-width': configuration.strokeWidth,
+                    'stroke-dasharray': dashArrayForElement(configuration),
+                    x: 0,
+                    y: tabHeight,
+                    width: width,
+                    height: folderHeight,
+                    rx: 5,
+                    ry: 5
+                }
+            });
+            renderElementInternals(cell.attributes.element, cell, configuration, width, 0, folderHeight, tabHeight);
+        } else if (shape === 'Component') {
+            var blockWidth = width / 6;
+            var blockHeight = height / 8;
+
+            cell.attr({
+                '.structurizrComponent': {
+                    fill: fill,
+                    stroke: stroke,
+                    'stroke-width': configuration.strokeWidth,
+                    'stroke-dasharray': dashArrayForElement(configuration),
+                    x: (blockWidth / 2),
+                    width: width - (blockWidth / 2),
+                    height: height,
+                    rx: 10,
+                    ry: 10
+                },
+                '.structurizrComponentBlockTop': {
+                    fill: fill,
+                    stroke: stroke,
+                    'stroke-width': configuration.strokeWidth,
+                    'stroke-dasharray': dashArrayForElement(configuration),
+                    x: 0,
+                    y: blockHeight * 0.6,
+                    width: blockWidth,
+                    height: blockHeight,
+                    rx: 5,
+                    ry: 5
+                },
+                '.structurizrComponentBlockBottom': {
+                    fill: fill,
+                    stroke: stroke,
+                    'stroke-width': configuration.strokeWidth,
+                    'stroke-dasharray': dashArrayForElement(configuration),
+                    x: 0,
+                    y: blockHeight * 2,
+                    width: blockWidth,
+                    height: blockHeight,
+                    rx: 5,
+                    ry: 5
+                }
+            });
+            renderElementInternals(cell.attributes.element, cell, configuration, width - 20, blockWidth, height, 0);
+        } else if (shape === 'WebBrowser') {
+            const browserControlsHeight = 40;
+            var browserHeight = height + configuration.strokeWidth;
+            var browserPanelWidth = width - (configuration.strokeWidth * 2);
+            var browserPanelHeight = browserHeight - browserControlsHeight - configuration.strokeWidth;
+
+            cell.attr({
+                '.structurizrWebBrowser': {
+                    fill: stroke,
+                    stroke: stroke,
+                    'stroke-dasharray': dashArrayForElement(configuration),
+                    width: width,
+                    height: browserHeight,
+                    rx: 10,
+                    ry: 10
+                },
+                '.structurizrWebBrowserPanel': {
+                    fill: fill,
+                    stroke: stroke,
+                    width: browserPanelWidth,
+                    height: browserPanelHeight,
+                    x: configuration.strokeWidth,
+                    y: browserControlsHeight,
+                    rx: 10,
+                    ry: 10
+                },
+                '.structurizrWebBrowserUrlBar': {
+                    fill: fill,
+                    width: width - 110,
+                    height: 20,
+                    x: 100,
+                    y: 10,
+                    rx: 10,
+                    ry: 10
+                },
+                '.structurizrWebBrowserButton1': {
+                    fill: fill,
+                    cx: 20,
+                    cy: 20,
+                    rx: 10,
+                    ry: 10
+                },
+                '.structurizrWebBrowserButton2': {
+                    fill: fill,
+                    cx: 50,
+                    cy: 20,
+                    rx: 10,
+                    ry: 10
+                },
+                '.structurizrWebBrowserButton3': {
+                    fill: fill,
+                    cx: 80,
+                    cy: 20,
+                    rx: 10,
+                    ry: 10
+                }
+            });
+            renderElementInternals(cell.attributes.element, cell, configuration, browserPanelWidth, 0, browserPanelHeight, 40);
+        } else if (shape === 'Window') {
+            const windowControlsHeight = 40;
+            var windowHeight = height + configuration.strokeWidth;
+            var windowPanelWidth = width - (configuration.strokeWidth * 2);
+            var windowPanelHeight = windowHeight - windowControlsHeight - configuration.strokeWidth;
+
+            cell.attr({
+                '.structurizrWindow': {
+                    fill: stroke,
+                    stroke: stroke,
+                    'stroke-dasharray': dashArrayForElement(configuration),
+                    width: width,
+                    height: windowHeight,
+                    rx: 10,
+                    ry: 10
+                },
+                '.structurizrWindowPanel': {
+                    fill: fill,
+                    stroke: stroke,
+                    width: windowPanelWidth,
+                    height: windowPanelHeight,
+                    x: configuration.strokeWidth,
+                    y: windowControlsHeight,
+                    rx: 10,
+                    ry: 10
+                },
+                '.structurizrWindowButton1': {
+                    fill: fill,
+                    cx: 20,
+                    cy: 20,
+                    rx: 10,
+                    ry: 10
+                },
+                '.structurizrWindowButton2': {
+                    fill: fill,
+                    cx: 50,
+                    cy: 20,
+                    rx: 10,
+                    ry: 10
+                },
+                '.structurizrWindowButton3': {
+                    fill: fill,
+                    cx: 80,
+                    cy: 20,
+                    rx: 10,
+                    ry: 10
+                }
+            });
+            renderElementInternals(cell.attributes.element, cell, configuration, windowPanelWidth, 0, windowPanelHeight, 40);
+        } else if (shape === 'Terminal') {
+            const terminalControlsHeight = 40;
+            var terminalHeight = height + configuration.strokeWidth;
+            var terminalPanelWidth = width - (configuration.strokeWidth * 2);
+            var terminalPanelHeight = terminalHeight - terminalControlsHeight - configuration.strokeWidth;
+
+            cell.attr({
+                '.structurizrTerminal': {
+                    fill: stroke,
+                    stroke: stroke,
+                    'stroke-dasharray': dashArrayForElement(configuration),
+                    width: width,
+                    height: terminalHeight,
+                    rx: 10,
+                    ry: 10
+                },
+                '.structurizrTerminalPanel': {
+                    fill: fill,
+                    stroke: stroke,
+                    width: terminalPanelWidth,
+                    height: terminalPanelHeight,
+                    x: configuration.strokeWidth,
+                    y: terminalControlsHeight,
+                    rx: 10,
+                    ry: 10
+                },
+                '.structurizrTerminalButton1': {
+                    fill: fill,
+                    cx: 20,
+                    cy: 20,
+                    rx: 10,
+                    ry: 10
+                },
+                '.structurizrTerminalButton2': {
+                    fill: fill,
+                    cx: 50,
+                    cy: 20,
+                    rx: 10,
+                    ry: 10
+                },
+                '.structurizrTerminalButton3': {
+                    fill: fill,
+                    cx: 80,
+                    cy: 20,
+                    rx: 10,
+                    ry: 10
+                },
+                '.structurizrTerminalPrompt': {
+                    fill: stroke,
+                    rx: 20,
+                    ry: 20
+                }
+            });
+            renderElementInternals(cell.attributes.element, cell, configuration, terminalPanelWidth, 0, terminalPanelHeight, 40);
+        } else if (shape === 'Shell') {
+            cell.attr({
+                '.structurizrShell': {
+                    fill: fill,
+                    stroke: stroke,
+                    'stroke-width': configuration.strokeWidth,
+                    'stroke-dasharray': dashArrayForElement(configuration),
+                    width: width,
+                    height: height,
+                    rx: 10,
+                    ry: 10
+                },
+                '.structurizrShellPrompt': {
+                    fill: stroke,
+                    rx: 20,
+                    ry: 20
+                }
+            });
+            renderElementInternals(cell.attributes.element, cell, configuration, width, 0, height, 0);
+        } else if (shape === 'MobileDevicePortrait') {
+            var speakerLength = 50;
+
+            cell.attr({
+                '.structurizrMobileDevice': {
+                    fill: stroke,
+                    stroke: stroke,
+                    'stroke-dasharray': dashArrayForElement(configuration),
+                    width: width,
+                    height: height,
+                    rx: 20,
+                    ry: 20
+                },
+                '.structurizrMobileDeviceDisplay': {
+                    fill: fill,
+                    stroke: stroke,
+                    width: width - 20,
+                    height: height - 80,
+                    x: 10,
+                    y: 40,
+                    rx: 5,
+                    ry: 5
+                },
+                '.structurizrMobileDeviceButton': {
+                    fill: fill,
+                    cx: (width / 2),
+                    cy: (height - 20),
+                    rx: 10,
+                    ry: 10
+                },
+                '.structurizrMobileDeviceSpeaker': {
+                    stroke: fill,
+                    x1: (width - speakerLength) / 2,
+                    y1: 20,
+                    x2: width - ((width - speakerLength) / 2),
+                    y2: 20
+                }
+            });
+            renderElementInternals(cell.attributes.element, cell, configuration, width, 0, height, 0);
+        } else if (shape === 'MobileDeviceLandscape') {
+            var landscapeHeight = height + configuration.strokeWidth;
+            var landscapeSpeakerLength = 50;
+
+            cell.attr({
+                '.structurizrMobileDevice': {
+                    fill: stroke,
+                    stroke: stroke,
+                    'stroke-dasharray': dashArrayForElement(configuration),
+                    width: width,
+                    height: landscapeHeight,
+                    rx: 20,
+                    ry: 20
+                },
+                '.structurizrMobileDeviceDisplay': {
+                    fill: fill,
+                    stroke: stroke,
+                    width: width - 80,
+                    height: landscapeHeight - 20,
+                    x: 40,
+                    y: 10,
+                    rx: 5,
+                    ry: 5
+                },
+                '.structurizrMobileDeviceButton': {
+                    fill: fill,
+                    cx: 20,
+                    cy: (landscapeHeight / 2),
+                    rx: 10,
+                    ry: 10
+                },
+                '.structurizrMobileDeviceSpeaker': {
+                    stroke: fill,
+                    x1: width - 20,
+                    y1: (height - landscapeSpeakerLength) / 2,
+                    x2: width - 20,
+                    y2: height - ((height - landscapeSpeakerLength) / 2)
+                }
+            });
+            renderElementInternals(cell.attributes.element, cell, configuration, width, 0, landscapeHeight, 0);
+        }
+
+        updateNavigationPosition(cell);
+        cell.attr(cell.attributes.attrs);
+    }
+
+    const ResizeTool = joint.elementTools.Control.extend({
+        options: {
+            selector: '.structurizrElement',
+            padding: 10,
+            handleAttributes: {
+                cursor: 'nwse-resize',
+                r: 10,
+                'stroke-width': 3
+            }
+        },
+        getPosition: function(view) {
+            var size = view.model.size();
+            return {
+                x: size.width,
+                y: size.height
+            };
+        },
+        setPosition: function(view, coordinates) {
+            setElementSize(
+                view.model,
+                snapElementDimension(coordinates.x, 100),
+                snapElementDimension(coordinates.y, 100),
+                true
+            );
+        },
+        resetPosition: function(view) {
+            resetElementSize(view.model);
+        },
+        onPointerDown: function(evt) {
+            this._previousPositions = getCurrentElementPositions([this.relatedView]);
+            joint.elementTools.Control.prototype.onPointerDown.call(this, evt);
+        },
+        onPointerUp: function(evt) {
+            var previousPositions = this._previousPositions;
+            joint.elementTools.Control.prototype.onPointerUp.call(this, evt);
+
+            if (previousPositions && previousPositions.length > 0) {
+                var size = this.relatedView.model.size();
+                var previousPosition = previousPositions.find(function(position) {
+                    return position.element === this.relatedView.model;
+                }, this);
+
+                if (previousPosition && (previousPosition.width !== size.width || previousPosition.height !== size.height)) {
+                    addToUndoBuffer(previousPositions);
+                }
+            }
+        },
+        onPointerDblClick: function(evt) {
+            var previousPositions = getCurrentElementPositions([this.relatedView]);
+            joint.elementTools.Control.prototype.onPointerDblClick.call(this, evt);
+
+            if (previousPositions && previousPositions.length > 0) {
+                var size = this.relatedView.model.size();
+                var previousPosition = previousPositions.find(function(position) {
+                    return position.element === this.relatedView.model;
+                }, this);
+
+                if (previousPosition && (previousPosition.width !== size.width || previousPosition.height !== size.height || previousPosition.manualSize)) {
+                    addToUndoBuffer(previousPositions);
+                }
+            }
+
+            evt.stopPropagation();
+            evt.preventDefault();
+        }
+    });
 
     function renderElementInternals(element, cell, configuration, width, horizontalOffset, height, verticalOffset) {
         const defaultIconWidth = 60;
@@ -5676,11 +6429,30 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
         }
     }
 
+    function ensureResizeTool(cellView) {
+        if (!editable || !cellView || !cellView.model || !cellView.model.elementInView || cellView.model.positionCalculated !== false) {
+            return;
+        }
+
+        if (!cellView.hasTools('structurizr-resize')) {
+            cellView.addTools(new joint.dia.ToolsView({
+                name: 'structurizr-resize',
+                tools: [
+                    new ResizeTool()
+                ]
+            }));
+            cellView.hideTools();
+        }
+    }
+
     function selectElement(cellView) {
         cellView.selected = true;
 
         const structurizrBox = $('#' + cellView.el.id + ' .structurizrHighlightableElement');
         structurizrBox.addClass('highlightedElement');
+
+        ensureResizeTool(cellView);
+        cellView.showTools();
 
         selectedElements.push(cellView);
 
@@ -5736,6 +6508,8 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
         const structurizrBox = $('#' + cellView.el.id + ' .structurizrHighlightableElement');
         structurizrBox.removeClass('firstHighlightedElement');
         structurizrBox.removeClass('highlightedElement');
+
+        cellView.hideTools();
 
         var index = selectedElements.indexOf(cellView);
         if (index > -1) {
@@ -8068,7 +8842,10 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
                     type: 'element',
                     element: element,
                     x: element.get('position').x,
-                    y: element.get('position').y
+                    y: element.get('position').y,
+                    width: element.get('size').width,
+                    height: element.get('size').height,
+                    manualSize: element.elementInView ? hasManualElementSize(element.elementInView) : false
                 });
             });
         });
@@ -8099,6 +8876,11 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
             var previousPositions = undoStack.pop();
             previousPositions.forEach(function(position) {
                 if (position.type === 'element') {
+                    if (position.element._baseStyle && position.element.elementInView) {
+                        setElementSize(position.element, position.width, position.height, position.manualSize);
+                    } else if (position.width !== undefined && position.height !== undefined) {
+                        position.element.resize(position.width, position.height);
+                    }
                     positionElement(position.element, position.x, position.y);
                 } else {
                     position.link.set('vertices' , position.vertices);
