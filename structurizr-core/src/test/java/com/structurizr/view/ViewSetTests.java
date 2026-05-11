@@ -11,7 +11,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class ViewSetTests {
 
-    private static final String SYNTHETIC_RELATIONSHIP_VERTICES_PROPERTY = "structurizr.syntheticRelationshipVertices";
+    private static final String SYNTHETIC_RELATIONSHIP_VERTICES_PROPERTY = "structurizr.synthetic.relationshipVertices";
 
     private Workspace createWorkspace() {
         Workspace workspace = new Workspace("Name", "Description");
@@ -155,6 +155,38 @@ public class ViewSetTests {
         destinationWorkspace.getViews().copyLayoutInformationFrom(sourceWorkspace.getViews());
 
         assertEquals("{\"synthetic-2\":[{\"x\":30,\"y\":40}]}", destinationView.getProperties().get(SYNTHETIC_RELATIONSHIP_VERTICES_PROPERTY));
+    }
+
+    @Test
+    void copyLayoutInformationFrom_CopiesMissingSyntheticElementPropertiesFromTheSourceView() {
+        Workspace sourceWorkspace = createWorkspace();
+        SystemLandscapeView sourceView = sourceWorkspace.getViews().createSystemLandscapeView("key", "Description");
+        sourceView.addAllElements();
+        sourceView.addProperty("structurizr.synthetic.elements", "{\"bus-1\":{\"x\":10,\"y\":20,\"width\":300,\"height\":200}}");
+
+        Workspace destinationWorkspace = createWorkspace();
+        SystemLandscapeView destinationView = destinationWorkspace.getViews().createSystemLandscapeView("key", "Description");
+        destinationView.addAllElements();
+
+        destinationWorkspace.getViews().copyLayoutInformationFrom(sourceWorkspace.getViews());
+
+        assertEquals("{\"bus-1\":{\"x\":10,\"y\":20,\"width\":300,\"height\":200}}", destinationView.getProperties().get("structurizr.synthetic.elements"));
+    }
+
+    @Test
+    void copyLayoutInformationFrom_DoesNotCopyNonSyntheticViewProperties() {
+        Workspace sourceWorkspace = createWorkspace();
+        SystemLandscapeView sourceView = sourceWorkspace.getViews().createSystemLandscapeView("key", "Description");
+        sourceView.addAllElements();
+        sourceView.addProperty("relationships.displayTechnologyAsBus", "Kafka");
+
+        Workspace destinationWorkspace = createWorkspace();
+        SystemLandscapeView destinationView = destinationWorkspace.getViews().createSystemLandscapeView("key", "Description");
+        destinationView.addAllElements();
+
+        destinationWorkspace.getViews().copyLayoutInformationFrom(sourceWorkspace.getViews());
+
+        assertNull(destinationView.getProperties().get("relationships.displayTechnologyAsBus"));
     }
 
     @Test

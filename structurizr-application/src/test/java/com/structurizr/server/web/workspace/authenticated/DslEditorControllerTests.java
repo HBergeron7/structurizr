@@ -235,7 +235,7 @@ public class DslEditorControllerTests extends AbstractTestsBase {
     }
 
     @Test
-    void postToDslEditor_PreservesViewPropertiesUsedForSyntheticRelationshipVertices() throws Exception {
+    void postToDslEditor_PreservesSyntheticViewProperties() throws Exception {
         configureAsServerWithAuthenticationEnabled();
         Configuration.getInstance().setFeatureEnabled(Features.UI_DSL_EDITOR);
         setUser("user@example.com");
@@ -254,7 +254,8 @@ public class DslEditorControllerTests extends AbstractTestsBase {
 
         SystemLandscapeView view = workspace.getViews().createSystemLandscapeView("landscape", "Description");
         view.addAllElements();
-        view.addProperty("structurizr.syntheticRelationshipVertices", "{\"synthetic-1\":[{\"x\":10,\"y\":20}]}");
+        view.addProperty("structurizr.synthetic.relationshipVertices", "{\"synthetic-1\":[{\"x\":10,\"y\":20}]}");
+        view.addProperty("structurizr.synthetic.elements", "{\"bus-1\":{\"x\":10,\"y\":20,\"width\":300,\"height\":200}}");
 
         DslUtils.setDsl(workspace, """
                 workspace "Name" "Description" {
@@ -274,7 +275,51 @@ public class DslEditorControllerTests extends AbstractTestsBase {
 
         Workspace renderedWorkspace = WorkspaceUtils.fromJson(response.getWorkspace());
         SystemLandscapeView renderedView = renderedWorkspace.getViews().getSystemLandscapeViews().iterator().next();
-        assertEquals("{\"synthetic-1\":[{\"x\":10,\"y\":20}]}", renderedView.getProperties().get("structurizr.syntheticRelationshipVertices"));
+        assertEquals("{\"synthetic-1\":[{\"x\":10,\"y\":20}]}", renderedView.getProperties().get("structurizr.synthetic.relationshipVertices"));
+        assertEquals("{\"bus-1\":{\"x\":10,\"y\":20,\"width\":300,\"height\":200}}", renderedView.getProperties().get("structurizr.synthetic.elements"));
+    }
+
+    @Test
+    void postToDslEditor_DoesNotPreserveNonSyntheticViewProperties() throws Exception {
+        configureAsServerWithAuthenticationEnabled();
+        Configuration.getInstance().setFeatureEnabled(Features.UI_DSL_EDITOR);
+        setUser("user@example.com");
+
+        final WorkspaceMetadata workspaceMetaData = new WorkspaceMetadata(1);
+        workspaceMetaData.addWriteUser("user@example.com");
+        controller.setWorkspaceComponent(new MockWorkspaceComponent() {
+            @Override
+            public WorkspaceMetadata getWorkspaceMetadata(long workspaceId) {
+                return workspaceMetaData;
+            }
+        });
+
+        Workspace workspace = new Workspace("Name", "Description");
+        workspace.getModel().addSoftwareSystem("Software System", "Description");
+
+        SystemLandscapeView view = workspace.getViews().createSystemLandscapeView("landscape", "Description");
+        view.addAllElements();
+        view.addProperty("relationships.displayTechnologyAsBus", "Kafka");
+
+        DslUtils.setDsl(workspace, """
+                workspace "Name" "Description" {
+                    model {
+                        softwareSystem "Software System" "Description"
+                    }
+                    views {
+                        systemLandscape "landscape" "Description" {
+                            include *
+                        }
+                    }
+                }""");
+
+        DslEditorResponse response = controller.postToDslEditor(1, WorkspaceUtils.toJson(workspace, false));
+
+        assertTrue(response.isSuccess());
+
+        Workspace renderedWorkspace = WorkspaceUtils.fromJson(response.getWorkspace());
+        SystemLandscapeView renderedView = renderedWorkspace.getViews().getSystemLandscapeViews().iterator().next();
+        assertNull(renderedView.getProperties().get("relationships.displayTechnologyAsBus"));
     }
 
 }

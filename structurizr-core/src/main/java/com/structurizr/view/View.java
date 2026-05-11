@@ -14,6 +14,7 @@ import java.util.Map;
  */
 public abstract class View implements PropertyHolder, Comparable<View> {
 
+    private static String SYNTHETIC_PROPERTY_PREFIX = "structurizr.synthetic.";
     private String key;
     private boolean generatedKey = false;
 
@@ -167,7 +168,12 @@ public abstract class View implements PropertyHolder, Comparable<View> {
 
     void copyPropertiesFrom(View source) {
         if (source != null) {
-            source.getProperties().forEach((name, value) -> this.properties.putIfAbsent(name, value));
+            source.getProperties().forEach((name, value) -> {
+                // Save properties that are generated
+                if (name.startsWith(SYNTHETIC_PROPERTY_PREFIX)) {
+                    this.properties.putIfAbsent(name, value);
+                }
+            });
         }
     }
 

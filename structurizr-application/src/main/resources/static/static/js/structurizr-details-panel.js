@@ -237,8 +237,18 @@ structurizr.ui.DetailsPanel = function() {
 
             relationship.linkedRelationshipIdList.forEach(function(id) {
                 var linkedRel = structurizr.workspace.findRelationshipById(id);
-                var sourceName = structurizr.util.escapeHtml(structurizr.workspace.findElementById(linkedRel.sourceId).name); 
-                var destName = structurizr.util.escapeHtml(structurizr.workspace.findElementById(linkedRel.destinationId).name);
+                if (!linkedRel) {
+                    return;
+                }
+
+                var sourceElement = structurizr.workspace.findElementById(linkedRel.sourceId);
+                var destinationElement = structurizr.workspace.findElementById(linkedRel.destinationId);
+                if (!sourceElement || !destinationElement) {
+                    return;
+                }
+
+                var sourceName = structurizr.util.escapeHtml(sourceElement.name); 
+                var destName = structurizr.util.escapeHtml(destinationElement.name);
                 impliedHtml += sourceName + '<img src="/static/bootstrap-icons/arrow-right-short.svg" />' + destName + '<br>';
             });
 
@@ -252,8 +262,8 @@ structurizr.ui.DetailsPanel = function() {
 
         // TODO: loop over linked relationships and cleanup 'detailedDescription'
         //detailsPanelDetails.html(relationship.detailedDescription ? relationship.detailedDescription : '');
-        var relationHtml = generateRelationshipDetails(relationship);
-        if (relationHtml.length > 0) {
+        var relationHtml = relationship._syntheticBus === true ? generateBusRelationshipDetails(relationship) : generateRelationshipDetails(relationship);
+        if (relationHtml.length > 0 && relationship._syntheticBus !== true) {
             relationHtml = '<div class="accordion accordion-flush" id="accordionDetails">' + relationHtml + '</div>';
         }
         detailsPanelDetails.html(relationHtml);
@@ -491,11 +501,70 @@ structurizr.ui.DetailsPanel = function() {
 
         if (relationship.linkedRelationshipIdList !== undefined) {
             relationship.linkedRelationshipIdList.forEach(function (id) {
-               relationHtml += generateRelationshipDetails(structurizr.workspace.findRelationshipById(id));
+               var linkedRelationship = structurizr.workspace.findRelationshipById(id);
+               if (linkedRelationship) {
+                   relationHtml += generateRelationshipDetails(linkedRelationship);
+               }
             });
         }
 
         return relationHtml;
+    }
+
+    function pushUniqueInterface(interfaces, candidate) {
+        if (interfaces.indexOf(candidate) === -1) {
+            interfaces.push(candidate);
+        }
+    }
+
+    function collectProvidedInterfacesForRelationship(relationship, provides) {
+        var destination = getRelationshipEndpointElement(relationship, 'destination');
+        if (destination && destination.provides !== undefined) {
+            destination.provides.forEach(function (p) {
+                if (p.linkedRelationshipIdList !== undefined && p.linkedRelationshipIdList.includes(relationship.id)) {
+                    pushUniqueInterface(provides, p);
+                }
+            });
+        }
+    }
+
+    function collectConsumedInterfacesForRelationship(relationship, consumes) {
+        var source = getRelationshipEndpointElement(relationship, 'source');
+        if (source && source.consumes !== undefined) {
+            source.consumes.forEach(function (c) {
+                if (c.linkedRelationshipIdList !== undefined && c.linkedRelationshipIdList.includes(relationship.id)) {
+                    pushUniqueInterface(consumes, c);
+                }
+            });
+        }
+    }
+
+    function generateBusRelationshipDetails(relationship) {
+        var provides = [];
+        var consumes = [];
+
+        if (relationship.linkedRelationshipIdList !== undefined) {
+            relationship.linkedRelationshipIdList.forEach(function(id) {
+                var linkedRelationship = structurizr.workspace.findRelationshipById(id);
+                if (!linkedRelationship) {
+                    return;
+                }
+
+                if (relationship._busMode === 'producers') {
+                    collectProvidedInterfacesForRelationship(linkedRelationship, provides);
+                } else if (relationship._busMode === 'consumers') {
+                    collectConsumedInterfacesForRelationship(linkedRelationship, consumes);
+                }
+            });
+        }
+
+        if (relationship._busMode === 'producers') {
+            return generateInterfaces(provides, []);
+        } else if (relationship._busMode === 'consumers') {
+            return generateInterfaces([], consumes);
+        } else {
+            return '';
+        }
     }
 
     function generateInterfaces(provides, consumes) {

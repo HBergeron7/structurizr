@@ -139,12 +139,12 @@ public class WorkspaceUtilsTests {
 
         SystemLandscapeView view = workspace.getViews().createSystemLandscapeView("landscape", "Description");
         view.addAllElements();
-        view.addProperty("structurizr.syntheticRelationshipVertices", "{\"1\":[{\"x\":10,\"y\":20}]}");
+        view.addProperty("structurizr.synthetic.relationshipVertices", "{\"1\":[{\"x\":10,\"y\":20}]}");
 
         Workspace deserializedWorkspace = WorkspaceUtils.fromJson(WorkspaceUtils.toJson(workspace, false));
         SystemLandscapeView deserializedView = deserializedWorkspace.getViews().getSystemLandscapeViews().iterator().next();
 
-        assertEquals("{\"1\":[{\"x\":10,\"y\":20}]}", deserializedView.getProperties().get("structurizr.syntheticRelationshipVertices"));
+        assertEquals("{\"1\":[{\"x\":10,\"y\":20}]}", deserializedView.getProperties().get("structurizr.synthetic.relationshipVertices"));
     }
 
     @Test

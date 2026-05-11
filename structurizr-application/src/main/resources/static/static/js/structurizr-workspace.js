@@ -520,25 +520,27 @@ structurizr.Workspace = class Workspace {
     }
 
     getAllTagsForRelationship(relationship) {
+        var tagArray = [];
         var tags = '';
         if (relationship.tags) {
             tags = relationship.tags;
         }
 
-        var linkedRelationshipId = relationship.linkedRelationshipId;
-        while (linkedRelationshipId !== undefined) {
-            // we also need to prepend the set of tags of the linked relationship
-            var linkedRelationship = this.findRelationshipById(linkedRelationshipId);
-            if (linkedRelationship && linkedRelationship.tags) {
-                tags = linkedRelationship.tags + ',' + tags;
-            }
+        tagArray.push(...tags.split(',').filter(function(tag) {
+            return tag !== undefined && tag.length > 0;
+        }));
 
-            linkedRelationshipId = linkedRelationship.linkedRelationshipId;
+        if (relationship.linkedRelationshipIdList !== undefined) { 
+            // we also need to prepend the set of tags of the linked relationship
+            relationship.linkedRelationshipIdList.forEach((linkedRelationshipId) => {
+                var linkedRelationship = this.findRelationshipById(linkedRelationshipId);
+                if (linkedRelationship) {
+                    tagArray.push(...(this.getAllTagsForRelationship(linkedRelationship)));
+                }
+            });
         }
 
-        return tags.split(',').filter(function(tag) {
-            return tag !== undefined && tag.length > 0;
-        });
+        return Array.from(new Set(tagArray));
     }
 
     getAllPropertiesForRelationship(relationship) {

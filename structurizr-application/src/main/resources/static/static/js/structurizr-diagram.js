@@ -60,7 +60,9 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
     var boundariesByElementId = {};
     var groupsByName = {};
     var syntheticGroupElementsById = {};
+    var syntheticBusElementsById = {};
     var syntheticRelationshipsById = {};
+    var aliasedLinesByRelationshipId = {};
     var mapOfIdToBox = {};
     var mapOfIdToLine = {};
     var cells;
@@ -127,15 +129,17 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
 
     var parentElement = $('#' + id);
     const syntheticGroupElementIdPrefix = '__structurizr.group__:';
+    const syntheticBusElementIdPrefix = '__structurizr.bus__:';
     const syntheticRelationshipIdPrefix = '__structurizr.syntheticRelationship__:';
-    const syntheticRelationshipVerticesPropertyName = 'structurizr.syntheticRelationshipVertices';
+    const syntheticRelationshipVerticesPropertyName = 'structurizr.synthetic.relationshipVertices';
     const viewportId = id + '-viewport';
     const canvasId = id + '-canvas';
     parentElement.append('<div id="' + viewportId + '" class="structurizrDiagramViewport"><div id="' + canvasId + '" class=structurizrDiagramCanvas"></div></div>');
 
     const viewport = $('#' + viewportId);
     const canvas = $('#' + canvasId);
-    const syntheticRelationshipPropertiesPropertyName = 'structurizr.syntheticRelationshipProperties';
+    const syntheticRelationshipsPropertyName = 'structurizr.synthetic.relationships';
+    const syntheticElementsPropertyName = 'structurizr.synthetic.elements';
 
     joint.config.useCSSSelectors = true;
     const graph = new joint.dia.Graph;
@@ -173,14 +177,14 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
         tags.push('Group');
         tags.push('Workspace:Icon');
         structurizr.workspace.views.configuration.styles.elements.forEach(function(elementStyle) {
-            if (elementStyle.tag.indexOf('Group:') > -1) {
+            if (elementStyle.tag.indexOf('Group:') > -1 || elementStyle.tag.indexOf('Bus:') > -1) {
                 tags.push(elementStyle.tag);
             }
         })
 
         structurizr.ui.themes.forEach(function(theme) {
             theme.elements.forEach(function(elementStyle) {
-                if (elementStyle.tag.indexOf('Group:') > -1) {
+                if (elementStyle.tag.indexOf('Group:') > -1 || elementStyle.tag.indexOf('Bus:') > -1) {
                     tags.push(elementStyle.tag);
                 }
             })
@@ -410,7 +414,9 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
         boundariesByElementId = {};
         groupsByName = {};
         syntheticGroupElementsById = {};
+        syntheticBusElementsById = {};
         syntheticRelationshipsById = {};
+        aliasedLinesByRelationshipId = {};
         linesToAnimate = undefined;
         animationSteps = undefined;
         animationStarted = false;
@@ -586,12 +592,6 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
                     continue;
                 }
 
-                var elementStyle = structurizr.ui.findElementStyle(element, darkMode);
-                var cellConfiguration = getElementConfiguration(elementStyle, view.elements[i]);
-                registerElementStyle(elementStyle);
-
-                var box;
-
                 if (view.elements[i].x !== undefined) {
                     positionX = Math.floor(view.elements[i].x);
                 } else {
@@ -606,124 +606,7 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
                     view.elements[i].y = positionY;
                 }
 
-                if (elementStyle.shape === 'Cylinder') {
-                    box = createCylinder(view, element, cellConfiguration, positionX, positionY);
-                } else if (elementStyle.shape === 'Bucket') {
-                    box = createBucket(view, element, cellConfiguration, positionX, positionY);
-                } else if (elementStyle.shape === 'Person') {
-                    box = createPerson(view, element, cellConfiguration, positionX, positionY);
-                } else if (elementStyle.shape === 'Robot') {
-                    box = createRobot(view, element, cellConfiguration, positionX, positionY);
-                } else if (elementStyle.shape === 'RoundedBox') {
-                    box = createBox(view, element, cellConfiguration, positionX, positionY, 20);
-                } else if (elementStyle.shape === 'Folder') {
-                    box = createFolder(view, element, cellConfiguration, positionX, positionY);
-                } else if (elementStyle.shape === 'Circle') {
-                    box = createEllipse(view, element, cellConfiguration, positionX, positionY, true);
-                } else if (elementStyle.shape === 'Ellipse') {
-                    box = createEllipse(view, element, cellConfiguration, positionX, positionY, false);
-                } else if (elementStyle.shape === 'Hexagon') {
-                    box = createHexagon(view, element, cellConfiguration, positionX, positionY);
-                } else if (elementStyle.shape === 'Diamond') {
-                    box = createDiamond(view, element, cellConfiguration, positionX, positionY);
-                } else if (elementStyle.shape === 'Pipe') {
-                    box = createPipe(view, element, cellConfiguration, positionX, positionY);
-                } else if (elementStyle.shape === 'WebBrowser') {
-                    box = createWebBrowser(view, element, cellConfiguration, positionX, positionY);
-                } else if (elementStyle.shape === 'Window') {
-                    box = createWindow(view, element, cellConfiguration, positionX, positionY);
-                } else if (elementStyle.shape === 'Terminal') {
-                    box = createTerminal(view, element, cellConfiguration, positionX, positionY);
-                } else if (elementStyle.shape === 'Shell') {
-                    box = createShell(view, element, cellConfiguration, positionX, positionY);
-                } else if (elementStyle.shape === 'MobileDevicePortrait') {
-                    box = createMobileDevicePortrait(view, element, cellConfiguration, positionX, positionY);
-                } else if (elementStyle.shape === 'MobileDeviceLandscape') {
-                    box = createMobileDeviceLandscape(view, element, cellConfiguration, positionX, positionY);
-                } else if (elementStyle.shape === 'Component') {
-                    box = createComponent(view, element, cellConfiguration, positionX, positionY);
-                } else {
-                    box = createBox(view, element, cellConfiguration, positionX, positionY, 1);
-                }
-
-                cells.push(box);
-                cellsByElementId[element.id] = box;
-
-                box._baseStyle = cloneElementStyle(elementStyle);
-                box.elementInView = view.elements[i];
-                box.positionCalculated = false;
-
-                box.on('change:position', function(cell, newPosition, opt) {
-                    var repositionParentBoundaries = true;
-
-                    if (opt.translateBy === undefined) {
-                        // cell has moved programmatically
-                        cell.elementInView.x = newPosition.x;
-                        cell.elementInView.y = newPosition.y;
-                    } else {
-                        const translatedByCell = graph.getCell(opt.translateBy);
-                        if (translatedByCell.attributes.type === 'structurizr.boundary' || translatedByCell.attributes.type === 'structurizr.deploymentNode') {
-                            // a boundary/group/deployment node has been dragged, and moved this element
-                            cell.elementInView.x = newPosition.x;
-                            cell.elementInView.y = newPosition.y;
-
-                            if (isGroupBoundary(translatedByCell) && translatedByCell._collapsed === true) {
-                                repositionParentBoundaries = false;
-                            }
-                        } else {
-                            // an element has been dragged
-                            var cellViewMoved = paper.findViewByModel(cell);
-                            if (cellViewMoved.selected === true && selectedElements.length > 1) {
-                                const dx = newPosition.x - cell.elementInView.x;
-                                const dy = newPosition.y - cell.elementInView.y;
-
-                                selectedElements.forEach(function (cellView) {
-                                    if (cellView !== cellViewMoved) {
-                                        moveElement(cellView.model, dx, dy);
-                                    }
-                                });
-
-                                moveLinksBetweenSelectedElements(dx, dy);
-                            }
-
-                            cell.elementInView.x = newPosition.x;
-                            cell.elementInView.y = newPosition.y;
-                        }
-                    }
-
-                    if (repositionParentBoundaries) {
-                        repositionParentCells(cell);
-                    }
-
-                    fireWorkspaceChangedEvent();
-                });
-
-                box.on('change:size', function(cell, newSize, opt) {
-                    var width = Math.floor(newSize.width);
-                    var height = Math.floor(newSize.height);
-                    var hasExplicitSize = (opt && opt.manualSize !== undefined) ? opt.manualSize : true;
-
-                    refreshElementSize(cell, width, height);
-
-                    if (cell.elementInView) {
-                        if (hasExplicitSize) {
-                            cell.elementInView.width = width;
-                            cell.elementInView.height = height;
-                        } else {
-                            delete cell.elementInView.width;
-                            delete cell.elementInView.height;
-                        }
-                    }
-
-                    repositionParentCells(cell);
-
-                    var cellView = paper.findViewByModel(cell);
-                    if (cellView) {
-                        cellView.updateTools();
-                    }
-
-                    fireWorkspaceChangedEvent();
-                });
+                var box = createRenderedElementCell(view, element, view.elements[i], positionX, positionY);
 
                 if (includeGroup(element, view, currentFilter) === true) {
                     if (element.group !== undefined) {
@@ -963,33 +846,28 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
             relationships = [];
         }
 
+        const busTechnologies = getRelationshipBusTechnologies();
+        if (busTechnologies.length > 0) {
+            createSyntheticBusElements(view, busTechnologies, relationships);
+        }
+
         for (var i = 0; i < relationships.length; i++) {
             const relationshipView = relationships[i];
+            const relationship = structurizr.workspace.findRelationshipById(relationshipView.id);
+
+            if (relationshipUsesTechnologyBus(relationship, busTechnologies)) {
+                continue;
+            }
 
             var line = createArrow(relationshipView);
             if (line !== undefined) {
                 lines.push(line);
                 linesByRelationshipId[relationshipView.id] = line;
-
-                const relationship = structurizr.workspace.findRelationshipById(relationshipView.id);
-
-                const sourceElementId = relationship.sourceId;
-                var connectionsFromElement = connections[sourceElementId];
-                if (connectionsFromElement === undefined) {
-                    connectionsFromElement = [];
-                }
-                connectionsFromElement.push(paper.findViewByModel(line));
-                connections[sourceElementId] = connectionsFromElement;
-
-                const destinationElementId = relationship.destinationId;
-                var connectionsToElement = connections[destinationElementId];
-                if (connectionsToElement === undefined) {
-                    connectionsToElement = [];
-                }
-                connectionsToElement.push(paper.findViewByModel(line));
-                connections[destinationElementId] = connectionsToElement;
+                registerLineConnections(line, relationship.sourceId, relationship.destinationId);
             }
         }
+
+        createSyntheticBusRelationships(relationships, busTechnologies);
 
         if (!editable) {
             $('.connection-wrap').css(
@@ -1383,12 +1261,18 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
             };
         }
 
+        const element = resolveElementById(cell.elementInView.id);
+
         return {
             id: cell.elementInView.id,
-            name: structurizr.workspace.findElementById(cell.elementInView.id).name,
+            name: element ? element.name : '',
             cell: cell,
             collapsed: false
         };
+    }
+
+    function resolveElementById(elementId) {
+        return syntheticBusElementsById[elementId] || syntheticGroupElementsById[elementId] || structurizr.workspace.findElementById(elementId);
     }
 
     function resolveRelationshipById(relationshipId) {
@@ -1401,8 +1285,288 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
             return endpointName;
         }
 
-        const element = structurizr.workspace.findElementById(relationship[endpoint + 'Id']);
+        const element = resolveElementById(relationship[endpoint + 'Id']);
         return element ? element.name : '';
+    }
+
+    function getViewProperty(name) {
+        if (currentFilter && currentFilter.properties && currentFilter.properties[name] !== undefined) {
+            return currentFilter.properties[name];
+        }
+
+        if (currentView.properties && currentView.properties[name] !== undefined) {
+            return currentView.properties[name];
+        }
+
+        return undefined;
+    }
+
+    function getRelationshipBusTechnologies() {
+        const property = getViewProperty('relationships.displayTechnologyAsBus');
+        if (!property || property.trim().length === 0) {
+            return [];
+        }
+
+        const technologies = [];
+        property.split(',').forEach(function(technology) {
+            technology = technology.trim();
+            if (technology.length > 0 && technologies.indexOf(technology) === -1) {
+                technologies.push(technology);
+            }
+        });
+
+        return technologies;
+    }
+
+    function relationshipUsesTechnologyBus(relationship, busTechnologies) {
+        if (!relationship || !relationship.technology || busTechnologies.length === 0) {
+            return false;
+        }
+
+        return busTechnologies.indexOf(relationship.technology.trim()) > -1;
+    }
+
+    function createSyntheticBusTechnologyKey(technology) {
+        return encodeURIComponent(technology.trim()).replaceAll('%', '_');
+    }
+
+    function createSyntheticBusElementId(technology) {
+        return syntheticBusElementIdPrefix + createSyntheticBusTechnologyKey(technology);
+    }
+
+    function createElementShape(view, element, cellConfiguration, positionX, positionY) {
+        if (cellConfiguration.shape === 'Cylinder') {
+            return createCylinder(view, element, cellConfiguration, positionX, positionY);
+        } else if (cellConfiguration.shape === 'Bucket') {
+            return createBucket(view, element, cellConfiguration, positionX, positionY);
+        } else if (cellConfiguration.shape === 'Person') {
+            return createPerson(view, element, cellConfiguration, positionX, positionY);
+        } else if (cellConfiguration.shape === 'Robot') {
+            return createRobot(view, element, cellConfiguration, positionX, positionY);
+        } else if (cellConfiguration.shape === 'RoundedBox') {
+            return createBox(view, element, cellConfiguration, positionX, positionY, 20);
+        } else if (cellConfiguration.shape === 'Folder') {
+            return createFolder(view, element, cellConfiguration, positionX, positionY);
+        } else if (cellConfiguration.shape === 'Circle') {
+            return createEllipse(view, element, cellConfiguration, positionX, positionY, true);
+        } else if (cellConfiguration.shape === 'Ellipse') {
+            return createEllipse(view, element, cellConfiguration, positionX, positionY, false);
+        } else if (cellConfiguration.shape === 'Hexagon') {
+            return createHexagon(view, element, cellConfiguration, positionX, positionY);
+        } else if (cellConfiguration.shape === 'Diamond') {
+            return createDiamond(view, element, cellConfiguration, positionX, positionY);
+        } else if (cellConfiguration.shape === 'Pipe') {
+            return createPipe(view, element, cellConfiguration, positionX, positionY);
+        } else if (cellConfiguration.shape === 'WebBrowser') {
+            return createWebBrowser(view, element, cellConfiguration, positionX, positionY);
+        } else if (cellConfiguration.shape === 'Window') {
+            return createWindow(view, element, cellConfiguration, positionX, positionY);
+        } else if (cellConfiguration.shape === 'Terminal') {
+            return createTerminal(view, element, cellConfiguration, positionX, positionY);
+        } else if (cellConfiguration.shape === 'Shell') {
+            return createShell(view, element, cellConfiguration, positionX, positionY);
+        } else if (cellConfiguration.shape === 'MobileDevicePortrait') {
+            return createMobileDevicePortrait(view, element, cellConfiguration, positionX, positionY);
+        } else if (cellConfiguration.shape === 'MobileDeviceLandscape') {
+            return createMobileDeviceLandscape(view, element, cellConfiguration, positionX, positionY);
+        } else if (cellConfiguration.shape === 'Component') {
+            return createComponent(view, element, cellConfiguration, positionX, positionY);
+        } else {
+            return createBox(view, element, cellConfiguration, positionX, positionY, 1);
+        }
+    }
+
+    function addStandardElementCellHandlers(box) {
+        box.on('change:position', function(cell, newPosition, opt) {
+            var repositionParentBoundaries = true;
+
+            if (opt.translateBy === undefined) {
+                // cell has moved programmatically
+                cell.elementInView.x = newPosition.x;
+                cell.elementInView.y = newPosition.y;
+            } else {
+                const translatedByCell = graph.getCell(opt.translateBy);
+                if (translatedByCell.attributes.type === 'structurizr.boundary' || translatedByCell.attributes.type === 'structurizr.deploymentNode') {
+                    // a boundary/group/deployment node has been dragged, and moved this element
+                    cell.elementInView.x = newPosition.x;
+                    cell.elementInView.y = newPosition.y;
+
+                    if (isGroupBoundary(translatedByCell) && translatedByCell._collapsed === true) {
+                        repositionParentBoundaries = false;
+                    }
+                } else {
+                    // an element has been dragged
+                    var cellViewMoved = paper.findViewByModel(cell);
+                    if (cellViewMoved.selected === true && selectedElements.length > 1) {
+                        const dx = newPosition.x - cell.elementInView.x;
+                        const dy = newPosition.y - cell.elementInView.y;
+
+                        selectedElements.forEach(function (cellView) {
+                            if (cellView !== cellViewMoved) {
+                                moveElement(cellView.model, dx, dy);
+                            }
+                        });
+
+                        moveLinksBetweenSelectedElements(dx, dy);
+                    }
+
+                    cell.elementInView.x = newPosition.x;
+                    cell.elementInView.y = newPosition.y;
+                }
+            }
+
+            if (repositionParentBoundaries) {
+                repositionParentCells(cell);
+            }
+
+            if (cell.attributes.element && cell.attributes.element._synthetic === true) {
+                persistSyntheticElement(cell.attributes.element.id, cell.elementInView);
+            }
+
+            fireWorkspaceChangedEvent();
+        });
+
+        box.on('change:size', function(cell, newSize, opt) {
+            var width = Math.floor(newSize.width);
+            var height = Math.floor(newSize.height);
+            var hasExplicitSize = (opt && opt.manualSize !== undefined) ? opt.manualSize : true;
+
+            refreshElementSize(cell, width, height);
+
+            if (cell.elementInView) {
+                if (hasExplicitSize) {
+                    cell.elementInView.width = width;
+                    cell.elementInView.height = height;
+                } else {
+                    delete cell.elementInView.width;
+                    delete cell.elementInView.height;
+                }
+            }
+
+            repositionParentCells(cell);
+
+            var cellView = paper.findViewByModel(cell);
+            if (cellView) {
+                cellView.updateTools();
+            }
+
+            if (cell.attributes.element && cell.attributes.element._synthetic === true) {
+                persistSyntheticElement(cell.attributes.element.id, cell.elementInView);
+            }
+
+            fireWorkspaceChangedEvent();
+        });
+    }
+
+    function createRenderedElementCell(view, element, elementInView, positionX, positionY) {
+        var elementStyle = structurizr.ui.findElementStyle(element, darkMode);
+        var cellConfiguration = getElementConfiguration(elementStyle, elementInView);
+        registerElementStyle(elementStyle);
+
+        var box = createElementShape(view, element, cellConfiguration, positionX, positionY);
+        cells.push(box);
+        cellsByElementId[element.id] = box;
+
+        box._baseStyle = cloneElementStyle(elementStyle);
+        box.elementInView = elementInView;
+        box.positionCalculated = false;
+
+        addStandardElementCellHandlers(box);
+
+        return box;
+    }
+
+    function calculateSyntheticBusPosition(relationships, configuration, index, total) {
+        const points = [];
+
+        relationships.forEach(function(relationship) {
+            [relationship.sourceId, relationship.destinationId].forEach(function(elementId) {
+                const cell = cellsByElementId[elementId];
+                if (!cell) {
+                    return;
+                }
+
+                const position = cell.position();
+                const size = cell.size();
+                points.push({
+                    x: position.x + (size.width / 2),
+                    y: position.y + (size.height / 2)
+                });
+            });
+        });
+
+        var centerX = diagramWidth / 2;
+        var centerY = diagramHeight / 2;
+        if (points.length > 0) {
+            centerX = 0;
+            centerY = 0;
+
+            points.forEach(function(point) {
+                centerX += point.x;
+                centerY += point.y;
+            });
+
+            centerX = centerX / points.length;
+            centerY = centerY / points.length;
+        }
+
+        const spread = 120;
+        const offset = (index - ((total - 1) / 2)) * spread;
+
+        return {
+            x: Math.floor(centerX - (configuration.width / 2) + offset),
+            y: Math.floor(centerY - (configuration.height / 2))
+        };
+    }
+
+    function createSyntheticBusElements(view, busTechnologies, relationshipViews) {
+        busTechnologies.forEach(function(technology, index) {
+            const elementId = createSyntheticBusElementId(technology);
+            if (syntheticBusElementsById[elementId] !== undefined) {
+                return;
+            }
+
+            const syntheticElement = {
+                id: elementId,
+                name: technology,
+                type: structurizr.constants.CUSTOM_ELEMENT_TYPE,
+                technology: technology,
+                tags: 'Bus:' + technology,
+                properties: {},
+                _synthetic: true,
+                _bus: true
+            };
+
+            syntheticBusElementsById[elementId] = syntheticElement;
+
+            const matchingRelationships = relationshipViews.map(function(relationshipView) {
+                return structurizr.workspace.findRelationshipById(relationshipView.id);
+            }).filter(function(relationship) {
+                return relationshipUsesTechnologyBus(relationship, [technology]);
+            });
+
+            const elementStyle = structurizr.ui.findElementStyle(syntheticElement, darkMode);
+            const persistedElement = getPersistedSyntheticElement(elementId);
+            const cellConfiguration = getElementConfiguration(elementStyle, persistedElement);
+            const position = persistedElement.x !== undefined && persistedElement.y !== undefined
+                ? { x: persistedElement.x, y: persistedElement.y }
+                : calculateSyntheticBusPosition(matchingRelationships, cellConfiguration, index, busTechnologies.length);
+            const elementInView = {
+                id: elementId,
+                x: position.x,
+                y: position.y
+            };
+
+            if (persistedElement.width !== undefined) {
+                elementInView.width = persistedElement.width;
+            }
+
+            if (persistedElement.height !== undefined) {
+                elementInView.height = persistedElement.height;
+            }
+
+            createRenderedElementCell(view, syntheticElement, elementInView, position.x, position.y);
+        });
     }
 
     function ensureCurrentViewProperties() {
@@ -1411,10 +1575,13 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
         }
     }
 
-    function getSyntheticRelationshipVerticesMap() {
+    function getPersistedSyntheticProperty(propertyName) {
         ensureCurrentViewProperties();
+        return currentView.properties[propertyName];
+    }
 
-        const persistedVertices = currentView.properties[syntheticRelationshipVerticesPropertyName];
+    function getSyntheticRelationshipVerticesMap() {
+        const persistedVertices = getPersistedSyntheticProperty(syntheticRelationshipVerticesPropertyName);
         if (persistedVertices === undefined || persistedVertices.length === 0) {
             return {};
         }
@@ -1450,9 +1617,7 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
     }
 
     function getSyntheticRelationshipPropertiesMap() {
-        ensureCurrentViewProperties();
-
-        const persistedProperties = currentView.properties[syntheticRelationshipPropertiesPropertyName];
+        const persistedProperties = getPersistedSyntheticProperty(syntheticRelationshipsPropertyName);
         if (persistedProperties === undefined || persistedProperties.length === 0) {
             return {};
         }
@@ -1489,9 +1654,53 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
         }
 
         if (Object.keys(propertiesByRelationshipId).length > 0) {
-            currentView.properties[syntheticRelationshipPropertiesPropertyName] = JSON.stringify(propertiesByRelationshipId);
+            currentView.properties[syntheticRelationshipsPropertyName] = JSON.stringify(propertiesByRelationshipId);
         } else {
-            delete currentView.properties[syntheticRelationshipPropertiesPropertyName];
+            delete currentView.properties[syntheticRelationshipsPropertyName];
+        }
+    }
+
+    function getSyntheticElementsMap() {
+        const persistedElements = getPersistedSyntheticProperty(syntheticElementsPropertyName);
+        if (persistedElements === undefined || persistedElements.length === 0) {
+            return {};
+        }
+
+        try {
+            return JSON.parse(persistedElements);
+        } catch (err) {
+            console.log('Could not parse persisted synthetic elements for view ' + currentView.key);
+            return {};
+        }
+    }
+
+    function getPersistedSyntheticElement(elementId) {
+        const elementsById = getSyntheticElementsMap();
+        return elementsById[elementId] || {};
+    }
+
+    function persistSyntheticElement(elementId, elementInView) {
+        ensureCurrentViewProperties();
+
+        const elementsById = getSyntheticElementsMap();
+        const properties = {};
+
+        ['x', 'y', 'width', 'height'].forEach(function(name) {
+            if (elementInView[name] !== undefined) {
+                properties[name] = elementInView[name];
+            }
+        });
+
+        if (Object.keys(properties).length > 0) {
+            elementsById[elementId] = properties;
+        } else {
+            delete elementsById[elementId];
+        }
+
+        if (Object.keys(elementsById).length > 0) {
+            currentView.properties[syntheticElementsPropertyName] = JSON.stringify(elementsById);
+        } else {
+            delete currentView.properties[syntheticElementsPropertyName];
         }
     }
 
@@ -1763,6 +1972,10 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
         return technologies;
     }
 
+    function collectUniqueRelationshipActions(relationships) {
+        return collectUniqueRelationshipDescriptions(relationships);
+    }
+
     function collectRelationshipTags(relationships) {
         const tags = [];
 
@@ -1820,16 +2033,60 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
         return perspectives;
     }
 
+    function collectBaseRelationshipIds(relationships) {
+        const relationshipIds = [];
+        const relationshipIdsMap = {};
+
+        function addRelationshipId(relationshipId) {
+            if (relationshipId !== undefined && relationshipIdsMap[relationshipId] !== true) {
+                relationshipIdsMap[relationshipId] = true;
+                relationshipIds.push(relationshipId);
+            }
+        }
+
+        function collectRelationshipIds(relationship) {
+            if (!relationship) {
+                return;
+            }
+
+            if (relationship._synthetic === true) {
+                if (relationship.linkedRelationshipIdList !== undefined && relationship.linkedRelationshipIdList.length > 0) {
+                    relationship.linkedRelationshipIdList.forEach(function(relationshipId) {
+                        const linkedRelationship = resolveRelationshipById(relationshipId);
+                        if (linkedRelationship && linkedRelationship !== relationship) {
+                            collectRelationshipIds(linkedRelationship);
+                        } else {
+                            addRelationshipId(relationshipId);
+                        }
+                    });
+                } else if (relationship.linkedRelationshipId !== undefined) {
+                    const linkedRelationship = resolveRelationshipById(relationship.linkedRelationshipId);
+                    if (linkedRelationship && linkedRelationship !== relationship) {
+                        collectRelationshipIds(linkedRelationship);
+                    } else {
+                        addRelationshipId(relationship.linkedRelationshipId);
+                    }
+                }
+            } else {
+                addRelationshipId(relationship.id);
+            }
+        }
+
+        relationships.forEach(function(relationship) {
+            collectRelationshipIds(relationship);
+        });
+
+        return relationshipIds;
+    }
+
     function createSyntheticRelationship(sourceEndpoint, destinationEndpoint, relationships) {
         const relationshipId = syntheticRelationshipIdPrefix + sourceEndpoint.id + '->' + destinationEndpoint.id;
         const persistedProperties = getPersistedPropertiesForSyntheticRelationship(relationshipId);
         const descriptions = collectUniqueRelationshipDescriptions(relationships);
         const technologies = collectUniqueRelationshipTechnologies(relationships);
         const tags = collectRelationshipTags(relationships);
-        const linkedRelationshipIds = relationships.map(function(relationship) {
-            return relationship.id;
-        });
-        const firstRelationship = relationships[0];
+        const linkedRelationshipIds = collectBaseRelationshipIds(relationships);
+        const firstRelationshipId = linkedRelationshipIds[0];
 
         if (tags.indexOf('Relationship') === -1) {
             tags.unshift('Relationship');
@@ -1852,7 +2109,7 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
             tags: tags.join(','),
             properties: collectRelationshipProperties(relationships),
             perspectives: collectRelationshipPerspectives(relationships),
-            linkedRelationshipId: firstRelationship.id,
+            linkedRelationshipId: firstRelationshipId,
             linkedRelationshipIdList: linkedRelationshipIds,
             url: undefined,
             vertices: getPersistedVerticesForSyntheticRelationship(relationshipId),
@@ -1874,6 +2131,196 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
 
         syntheticRelationshipsById[relationship.id] = relationship;
         return relationship;
+    }
+
+    function createSyntheticBusRelationship(sourceEndpoint, destinationEndpoint, technology, relationships, mode) {
+        const relationshipId = syntheticRelationshipIdPrefix + 'bus:' + createSyntheticBusTechnologyKey(technology) + ':' + mode + ':' + sourceEndpoint.id + '->' + destinationEndpoint.id;
+        const persistedProperties = getPersistedPropertiesForSyntheticRelationship(relationshipId);
+        const actions = collectUniqueRelationshipActions(relationships);
+        const tags = collectRelationshipTags(relationships);
+        const linkedRelationshipIds = collectBaseRelationshipIds(relationships);
+        const firstRelationshipId = linkedRelationshipIds[0];
+
+        if (tags.indexOf('Relationship') === -1) {
+            tags.unshift('Relationship');
+        }
+
+        if (technology.length > 0 && tags.indexOf(technology) === -1) {
+            tags.push(technology);
+        }
+
+        const relationship = {
+            id: relationshipId,
+            sourceId: sourceEndpoint.id,
+            destinationId: destinationEndpoint.id,
+            sourceName: sourceEndpoint.name,
+            destinationName: destinationEndpoint.name,
+            description: actions.join('/'),
+            technology: technology,
+            tags: tags.join(','),
+            properties: collectRelationshipProperties(relationships),
+            perspectives: collectRelationshipPerspectives(relationships),
+            linkedRelationshipId: firstRelationshipId,
+            linkedRelationshipIdList: linkedRelationshipIds,
+            url: undefined,
+            vertices: getPersistedVerticesForSyntheticRelationship(relationshipId),
+            routing: persistedProperties.routing,
+            anchor: persistedProperties.anchor,
+            position: persistedProperties.position,
+            _synthetic: true,
+            _syntheticBus: true,
+            _busMode: mode
+        };
+
+        relationships.forEach(function(linkedRelationship) {
+            if (relationship.url !== undefined) {
+                return;
+            }
+
+            if (linkedRelationship.url && linkedRelationship.url.trim().length > 0) {
+                relationship.url = linkedRelationship.url;
+            }
+        });
+
+        syntheticRelationshipsById[relationship.id] = relationship;
+        return relationship;
+    }
+
+    function registerAliasedLineForRelationshipId(relationshipId, line) {
+        var aliasedLines = aliasedLinesByRelationshipId[relationshipId];
+        if (aliasedLines === undefined) {
+            aliasedLines = [];
+            aliasedLinesByRelationshipId[relationshipId] = aliasedLines;
+        }
+
+        if (aliasedLines.indexOf(line) === -1) {
+            aliasedLines.push(line);
+        }
+    }
+
+    function registerAliasedLinesForSyntheticRelationship(relationship, line) {
+        if (!relationship || relationship.linkedRelationshipIdList === undefined) {
+            return;
+        }
+
+        relationship.linkedRelationshipIdList.forEach(function(relationshipId) {
+            registerAliasedLineForRelationshipId(relationshipId, line);
+        });
+    }
+
+    function registerLineConnections(line, sourceElementId, destinationElementId) {
+        const lineView = paper.findViewByModel(line);
+        if (!lineView) {
+            return;
+        }
+
+        var connectionsFromElement = connections[sourceElementId];
+        if (connectionsFromElement === undefined) {
+            connectionsFromElement = [];
+        }
+        connectionsFromElement.push(lineView);
+        connections[sourceElementId] = connectionsFromElement;
+
+        var connectionsToElement = connections[destinationElementId];
+        if (connectionsToElement === undefined) {
+            connectionsToElement = [];
+        }
+        connectionsToElement.push(lineView);
+        connections[destinationElementId] = connectionsToElement;
+    }
+
+    function createSyntheticBusRelationships(relationshipViews, busTechnologies) {
+        if (busTechnologies.length === 0) {
+            return;
+        }
+
+        const producerGroups = {};
+        const consumerGroups = {};
+
+        relationshipViews.forEach(function(relationshipView) {
+            const relationship = structurizr.workspace.findRelationshipById(relationshipView.id);
+            if (!relationshipUsesTechnologyBus(relationship, busTechnologies)) {
+                return;
+            }
+
+            if (!mapOfIdToBox[relationship.sourceId] || !mapOfIdToBox[relationship.destinationId]) {
+                return;
+            }
+
+            const technology = relationship.technology.trim();
+            const busElementId = createSyntheticBusElementId(technology);
+            const busElement = syntheticBusElementsById[busElementId];
+            if (!busElement) {
+                return;
+            }
+
+            const producerKey = relationship.sourceId + '->' + busElementId;
+            if (producerGroups[producerKey] === undefined) {
+                producerGroups[producerKey] = {
+                    sourceEndpoint: {
+                        id: relationship.sourceId,
+                        name: resolveRelationshipEndpointName(relationship, 'source')
+                    },
+                    destinationEndpoint: {
+                        id: busElement.id,
+                        name: busElement.name
+                    },
+                    technology: technology,
+                    relationships: []
+                };
+            }
+            producerGroups[producerKey].relationships.push(relationship);
+
+            const consumerKey = busElementId + '->' + relationship.destinationId;
+            if (consumerGroups[consumerKey] === undefined) {
+                consumerGroups[consumerKey] = {
+                    sourceEndpoint: {
+                        id: busElement.id,
+                        name: busElement.name
+                    },
+                    destinationEndpoint: {
+                        id: relationship.destinationId,
+                        name: resolveRelationshipEndpointName(relationship, 'destination')
+                    },
+                    technology: technology,
+                    relationships: []
+                };
+            }
+            consumerGroups[consumerKey].relationships.push(relationship);
+        });
+
+        Object.keys(producerGroups).forEach(function(key) {
+            createSyntheticBusRelationshipLine(producerGroups[key], 'producers');
+        });
+
+        Object.keys(consumerGroups).forEach(function(key) {
+            createSyntheticBusRelationshipLine(consumerGroups[key], 'consumers');
+        });
+    }
+
+    function createSyntheticBusRelationshipLine(group, mode) {
+        const syntheticRelationship = createSyntheticBusRelationship(
+            group.sourceEndpoint,
+            group.destinationEndpoint,
+            group.technology,
+            group.relationships,
+            mode
+        );
+        const relationshipInView = { id: syntheticRelationship.id, _synthetic: true };
+        relationshipInView.routing = syntheticRelationship.routing;
+        relationshipInView.anchor = syntheticRelationship.anchor;
+        relationshipInView.position = syntheticRelationship.position;
+        const line = createArrow(relationshipInView);
+        if (line === undefined) {
+            return;
+        }
+
+        line._syntheticBusRelationship = true;
+        lines.push(line);
+        linesByRelationshipId[syntheticRelationship.id] = line;
+        mapOfIdToLine[syntheticRelationship.id] = line;
+        registerLineConnections(line, syntheticRelationship.sourceId, syntheticRelationship.destinationId);
+        registerAliasedLinesForSyntheticRelationship(syntheticRelationship, line);
     }
 
     function syncCollapsedGroupRelationships() {
@@ -2462,7 +2909,10 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
         const elements = [];
         Object.keys(cellsByElementId).forEach(function(elementId) {
             const cell = cellsByElementId[elementId];
-            elements.push(structurizr.workspace.findElementById(cell.elementInView.id));
+            const element = resolveElementById(cell.elementInView.id);
+            if (element) {
+                elements.push(element);
+            }
         });
 
         elements.forEach(function(element) {
@@ -5419,6 +5869,7 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
                             vertexAdding: true,
                             vertexMoving: true,
                             vertexRemoving: true,
+                            redundancyRemoval: false,
                             scale: 2
                         })
                         //new joint.linkTools.Segments()
@@ -6476,8 +6927,8 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
 
         graph.getElements().forEach(function(element) {
             if (element.elementInView && element.positionCalculated === false) {
-                var elementInModel = structurizr.workspace.findElementById(element.elementInView.id);
-                if (elementInModel.name.match(filter)) {
+                var elementInModel = resolveElementById(element.elementInView.id);
+                if (elementInModel && elementInModel.name.match(filter)) {
                     var cellView = paper.findViewByModel(element);
                     selectElement(cellView);
                 }
@@ -7331,7 +7782,9 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
         if (this.currentViewIsDynamic()) {
             animationStarted = true;
             fireAnimationStartedEvent();
-            linesToAnimate = graph.getLinks();
+            linesToAnimate = graph.getLinks().filter(function(line) {
+                return line.relationshipInView && line.relationshipInView.order !== undefined;
+            });
             linesToAnimate.sort(function (a, b) {
                 return a.relationshipInView.order - b.relationshipInView.order;
             });
@@ -7663,6 +8116,16 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
                 }
             }
         });
+
+        const aliasedLines = aliasedLinesByRelationshipId[relationshipId];
+        if (aliasedLines !== undefined) {
+            aliasedLines.forEach(function(line) {
+                var lineView = paper.findViewByModel(line);
+                if (lineView) {
+                    $('#' + lineView.el.id).css('opacity', '1.0');
+                }
+            });
+        }
     }
 
     function hideRelationship(relationshipId, opacity) {
@@ -7677,6 +8140,16 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
                 }
             }
         });
+
+        const aliasedLines = aliasedLinesByRelationshipId[relationshipId];
+        if (aliasedLines !== undefined) {
+            aliasedLines.forEach(function(line) {
+                var lineView = paper.findViewByModel(line);
+                if (lineView) {
+                    $('#' + lineView.el.id).css('opacity', opacity);
+                }
+            });
+        }
     }
 
     function showElement(elementId) {
@@ -8760,7 +9233,7 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
             } else {
                 if (cellView.model.elementInView) {
                     selectNonEditableCellView(cellView);
-                    showDetailsForElement(structurizr.workspace.findElementById(cellView.model.elementInView.id), cellView.model._computedStyle);
+                    showDetailsForElement(resolveElementById(cellView.model.elementInView.id), cellView.model._computedStyle);
                 } else if (cellView.model.relationshipInView) {
                     selectNonEditableCellView(cellView);
                     showDetailsForRelationship(resolveRelationshipById(cellView.model.relationshipInView.id), cellView.model.relationshipInView, cellView.model._computedStyle);
@@ -9018,7 +9491,10 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
     };
 
     function showTooltipForElement(cellView, x, y) {
-        const element = structurizr.workspace.findElementById(cellView.model.elementInView.id);
+        const element = resolveElementById(cellView.model.elementInView.id);
+        if (!element) {
+            return;
+        }
         var style = cellView.model._computedStyle;
 
         if (filter.perspective !== undefined && elementHasPerspective(element) === false) {
