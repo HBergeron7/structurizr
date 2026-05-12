@@ -5898,8 +5898,6 @@ structurizr.ui.Diagram = function(id, diagramIsEditable, constructionCompleteCal
     }
 
     function setRouting(link, routing) {
-        console.log("Set Routing: " + routing);
-        console.log(link);
         if (routing === undefined || routing === 'Direct') {
             link.unset('router');
             link.connector('straight', {
