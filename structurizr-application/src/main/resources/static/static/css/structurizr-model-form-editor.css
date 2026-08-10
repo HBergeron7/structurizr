@@ -1,0 +1,84 @@
+#sourceEditorTabs {
+    margin-bottom: 0;
+}
+
+#sourceEditorTabs .nav-link {
+    cursor: pointer;
+}
+
+#modelFormEditor {
+    border: 1px solid #dee2e6;
+    border-top: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+#modelFormTree {
+    border-bottom: 1px solid #dee2e6;
+    flex: 0 1 45%;
+    min-height: 140px;
+    overflow: auto;
+    padding: 8px;
+}
+
+#modelFormDetails {
+    flex: 1 1 auto;
+    overflow: auto;
+    padding: 16px;
+}
+
+.model-form-tree-item {
+    align-items: center;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    min-height: 30px;
+    padding: 3px 6px;
+}
+
+.model-form-tree-item:hover, .model-form-tree-item.selected {
+    background-color: #e7f1ff;
+}
+
+.model-form-tree-toggle, .model-form-tree-add {
+    background: transparent;
+    border: 0;
+    line-height: 1;
+    padding: 2px 5px;
+}
+
+.model-form-tree-toggle {
+    width: 26px;
+}
+
+.model-form-tree-add {
+    margin-left: auto;
+}
+
+.model-form-tree-add img, .model-form-tree-toggle img {
+    height: 13px;
+    width: 13px;
+}
+
+.model-form-field {
+    margin-bottom: 10px;
+}
+
+.model-form-interface {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    margin-bottom: 8px;
+    padding: 10px;
+}
+
+.model-form-section-title {
+    align-items: center;
+    display: flex;
+    font-size: 1rem;
+    margin: 18px 0 8px;
+}
+
+.model-form-section-title button {
+    margin-left: auto;
+}
